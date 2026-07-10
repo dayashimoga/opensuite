@@ -172,8 +172,17 @@ class PdfViewerState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [status, filePath, currentPage, totalPages,
-    zoom, showThumbnails, searchQuery, annotations, pageRotations];
+  List<Object?> get props => [
+        status,
+        filePath,
+        currentPage,
+        totalPages,
+        zoom,
+        showThumbnails,
+        searchQuery,
+        annotations,
+        pageRotations
+      ];
 }
 
 // --- BLoC ---
@@ -194,7 +203,8 @@ class PdfViewerBloc extends Bloc<PdfViewerEvent, PdfViewerState> {
   }
 
   Future<void> _onLoad(LoadPdf event, Emitter<PdfViewerState> emit) async {
-    emit(state.copyWith(status: PdfViewerStatus.loading, filePath: event.filePath));
+    emit(state.copyWith(
+        status: PdfViewerStatus.loading, filePath: event.filePath));
     try {
       // In a real implementation, we'd use pdfrx/pdf_render to load the PDF.
       // For now, we set up the viewer state. The actual rendering is done
@@ -231,7 +241,8 @@ class PdfViewerBloc extends Bloc<PdfViewerEvent, PdfViewerState> {
     emit(state.copyWith(zoom: event.zoom.clamp(0.25, 5.0)));
   }
 
-  void _onToggleThumbnails(ToggleThumbnails event, Emitter<PdfViewerState> emit) {
+  void _onToggleThumbnails(
+      ToggleThumbnails event, Emitter<PdfViewerState> emit) {
     emit(state.copyWith(showThumbnails: !state.showThumbnails));
   }
 
@@ -246,9 +257,11 @@ class PdfViewerBloc extends Bloc<PdfViewerEvent, PdfViewerState> {
     ));
   }
 
-  void _onRemoveAnnotation(RemoveAnnotation event, Emitter<PdfViewerState> emit) {
+  void _onRemoveAnnotation(
+      RemoveAnnotation event, Emitter<PdfViewerState> emit) {
     emit(state.copyWith(
-      annotations: state.annotations.where((a) => a.id != event.annotationId).toList(),
+      annotations:
+          state.annotations.where((a) => a.id != event.annotationId).toList(),
     ));
   }
 

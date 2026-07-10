@@ -183,9 +183,22 @@ class TextEditorState extends Equatable {
 
   @override
   List<Object?> get props => [
-        status, documentId, title, content, fileType, isModified,
-        showPreview, showFindReplace, findQuery, findMatches,
-        wordCount, charCount, lineCount, documents, errorMessage, lastSavedAt,
+        status,
+        documentId,
+        title,
+        content,
+        fileType,
+        isModified,
+        showPreview,
+        showFindReplace,
+        findQuery,
+        findMatches,
+        wordCount,
+        charCount,
+        lineCount,
+        documents,
+        errorMessage,
+        lastSavedAt,
       ];
 }
 

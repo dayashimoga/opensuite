@@ -17,8 +17,7 @@ class AppConstants {
       'Open-source cross-platform Office & Productivity Suite';
 
   /// Application repository URL.
-  static const String repositoryUrl =
-      'https://github.com/user/opensuite';
+  static const String repositoryUrl = 'https://github.com/user/opensuite';
 
   /// Application license.
   static const String license = 'MIT';

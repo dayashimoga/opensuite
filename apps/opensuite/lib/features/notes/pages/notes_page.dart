@@ -128,10 +128,8 @@ class _NotesPageContent extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
         ],
         if (unpinned.isNotEmpty) ...[
-          if (pinned.isNotEmpty)
-            _SectionLabel(label: 'Other'),
-          if (pinned.isNotEmpty)
-            const SizedBox(height: AppSpacing.sm),
+          if (pinned.isNotEmpty) _SectionLabel(label: 'Other'),
+          if (pinned.isNotEmpty) const SizedBox(height: AppSpacing.sm),
           _NotesGrid(
             notes: unpinned,
             crossAxisCount: isDesktop ? 4 : 2,
@@ -151,10 +149,8 @@ class _SectionLabel extends StatelessWidget {
     return Text(
       label,
       style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            color: Theme.of(context)
-                .colorScheme
-                .onSurface
-                .withValues(alpha: 0.5),
+            color:
+                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
             fontWeight: FontWeight.w600,
           ),
     );
@@ -247,8 +243,7 @@ class _NoteCard extends StatelessWidget {
                 ),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.primary.withValues(alpha: 0.08),
-                  borderRadius:
-                      BorderRadius.circular(AppSpacing.radiusFull),
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
                 ),
                 child: Text(
                   note.contentType.label,

@@ -199,7 +199,8 @@ class _EditorContentState extends State<_EditorContent> {
                       hintText: 'Start writing...',
                       border: InputBorder.none,
                       hintStyle: theme.textTheme.bodyLarge?.copyWith(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.4),
                       ),
                     ),
                     style: theme.textTheme.bodyLarge?.copyWith(
@@ -279,9 +280,10 @@ class _StatRow extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: Theme.of(context).textTheme.bodyMedium),
-          Text(value, style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          )),
+          Text(value,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  )),
         ],
       ),
     );

@@ -40,7 +40,8 @@ class ResizeImageDimensions extends ImageEditorEvent {
   final int width;
   final int height;
   final bool maintainAspectRatio;
-  const ResizeImageDimensions(this.width, this.height, {this.maintainAspectRatio = true});
+  const ResizeImageDimensions(this.width, this.height,
+      {this.maintainAspectRatio = true});
   @override
   List<Object?> get props => [width, height, maintainAspectRatio];
 }
@@ -110,7 +111,15 @@ class SelectTool extends ImageEditorEvent {
 
 // --- State ---
 
-enum ImageEditorStatus { initial, loading, loaded, processing, saving, saved, error }
+enum ImageEditorStatus {
+  initial,
+  loading,
+  loaded,
+  processing,
+  saving,
+  saved,
+  error
+}
 
 class ImageAdjustments extends Equatable {
   final double brightness;
@@ -148,7 +157,14 @@ class ImageAdjustments extends Equatable {
   }
 
   @override
-  List<Object?> get props => [brightness, contrast, saturation, rotation, flipHorizontal, flipVertical];
+  List<Object?> get props => [
+        brightness,
+        contrast,
+        saturation,
+        rotation,
+        flipHorizontal,
+        flipVertical
+      ];
 }
 
 class ImageEditorState extends Equatable {
@@ -206,8 +222,16 @@ class ImageEditorState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [status, filePath, imageWidth, imageHeight,
-    activeTool, adjustments, undoStack, hasEdits];
+  List<Object?> get props => [
+        status,
+        filePath,
+        imageWidth,
+        imageHeight,
+        activeTool,
+        adjustments,
+        undoStack,
+        hasEdits
+      ];
 }
 
 // --- BLoC ---
@@ -264,21 +288,24 @@ class ImageEditorBloc extends Bloc<ImageEditorEvent, ImageEditorState> {
   void _onBrightness(SetBrightness event, Emitter<ImageEditorState> emit) {
     _pushUndo(emit);
     emit(state.copyWith(
-      adjustments: state.adjustments.copyWith(brightness: event.value.clamp(-1.0, 1.0)),
+      adjustments:
+          state.adjustments.copyWith(brightness: event.value.clamp(-1.0, 1.0)),
     ));
   }
 
   void _onContrast(SetContrast event, Emitter<ImageEditorState> emit) {
     _pushUndo(emit);
     emit(state.copyWith(
-      adjustments: state.adjustments.copyWith(contrast: event.value.clamp(0.0, 2.0)),
+      adjustments:
+          state.adjustments.copyWith(contrast: event.value.clamp(0.0, 2.0)),
     ));
   }
 
   void _onSaturation(SetSaturation event, Emitter<ImageEditorState> emit) {
     _pushUndo(emit);
     emit(state.copyWith(
-      adjustments: state.adjustments.copyWith(saturation: event.value.clamp(0.0, 2.0)),
+      adjustments:
+          state.adjustments.copyWith(saturation: event.value.clamp(0.0, 2.0)),
     ));
   }
 
@@ -286,8 +313,10 @@ class ImageEditorBloc extends Bloc<ImageEditorEvent, ImageEditorState> {
     _pushUndo(emit);
     emit(state.copyWith(
       adjustments: event.horizontal
-          ? state.adjustments.copyWith(flipHorizontal: !state.adjustments.flipHorizontal)
-          : state.adjustments.copyWith(flipVertical: !state.adjustments.flipVertical),
+          ? state.adjustments
+              .copyWith(flipHorizontal: !state.adjustments.flipHorizontal)
+          : state.adjustments
+              .copyWith(flipVertical: !state.adjustments.flipVertical),
     ));
   }
 
@@ -325,7 +354,8 @@ class ImageEditorBloc extends Bloc<ImageEditorEvent, ImageEditorState> {
     emit(state.copyWith(imageWidth: event.width, imageHeight: event.height));
   }
 
-  Future<void> _onExport(ExportImage event, Emitter<ImageEditorState> emit) async {
+  Future<void> _onExport(
+      ExportImage event, Emitter<ImageEditorState> emit) async {
     emit(state.copyWith(status: ImageEditorStatus.saving));
     try {
       // In production, apply adjustments and save to the chosen format

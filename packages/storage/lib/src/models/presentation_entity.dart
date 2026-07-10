@@ -73,5 +73,6 @@ class PresentationEntity extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, title, slideCount, theme, isFavorite, modifiedAt];
+  List<Object?> get props =>
+      [id, title, slideCount, theme, isFavorite, modifiedAt];
 }

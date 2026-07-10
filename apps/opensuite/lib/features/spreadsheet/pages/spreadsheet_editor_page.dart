@@ -71,7 +71,8 @@ class _EditorContentState extends State<_EditorContent> {
       },
       builder: (context, state) {
         if (state.status == SpreadsheetStatus.loading) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          return const Scaffold(
+              body: Center(child: CircularProgressIndicator()));
         }
 
         final activeSheet = state.activeSheet;
@@ -95,12 +96,16 @@ class _EditorContentState extends State<_EditorContent> {
               // Formatting buttons
               IconButton(
                 icon: const Icon(Icons.format_bold, size: 20),
-                onPressed: () => context.read<SpreadsheetBloc>().add(const FormatCells('bold')),
+                onPressed: () => context
+                    .read<SpreadsheetBloc>()
+                    .add(const FormatCells('bold')),
                 tooltip: 'Bold',
               ),
               IconButton(
                 icon: const Icon(Icons.format_italic, size: 20),
-                onPressed: () => context.read<SpreadsheetBloc>().add(const FormatCells('italic')),
+                onPressed: () => context
+                    .read<SpreadsheetBloc>()
+                    .add(const FormatCells('italic')),
                 tooltip: 'Italic',
               ),
               const SizedBox(width: 4),
@@ -108,7 +113,10 @@ class _EditorContentState extends State<_EditorContent> {
               if (state.status == SpreadsheetStatus.saving)
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 8),
-                  child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                  child: SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2)),
                 )
               else if (state.hasUnsavedChanges)
                 const Padding(
@@ -118,12 +126,16 @@ class _EditorContentState extends State<_EditorContent> {
               else
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Icon(Icons.cloud_done, size: 18, color: theme.colorScheme.primary.withValues(alpha: 0.6)),
+                  child: Icon(Icons.cloud_done,
+                      size: 18,
+                      color: theme.colorScheme.primary.withValues(alpha: 0.6)),
                 ),
               // Save button
               IconButton(
                 icon: const Icon(Icons.save_outlined),
-                onPressed: () => context.read<SpreadsheetBloc>().add(const SaveSpreadsheet()),
+                onPressed: () => context
+                    .read<SpreadsheetBloc>()
+                    .add(const SaveSpreadsheet()),
                 tooltip: 'Save',
               ),
             ],
@@ -136,7 +148,9 @@ class _EditorContentState extends State<_EditorContent> {
                 cellRef: state.selectedCell?.reference ?? 'A1',
                 onSubmitted: (value) {
                   if (state.selectedCell != null) {
-                    context.read<SpreadsheetBloc>().add(UpdateCell(state.selectedCell!, value));
+                    context
+                        .read<SpreadsheetBloc>()
+                        .add(UpdateCell(state.selectedCell!, value));
                   }
                 },
               ),
@@ -159,10 +173,14 @@ class _EditorContentState extends State<_EditorContent> {
               _SheetTabs(
                 sheets: state.sheets,
                 activeIndex: state.activeSheetIndex,
-                onSelect: (i) => context.read<SpreadsheetBloc>().add(SelectSheet(i)),
-                onAdd: () => context.read<SpreadsheetBloc>().add(const AddSheet()),
-                onRename: (i, name) => context.read<SpreadsheetBloc>().add(RenameSheet(i, name)),
-                onDelete: (i) => context.read<SpreadsheetBloc>().add(DeleteSheet(i)),
+                onSelect: (i) =>
+                    context.read<SpreadsheetBloc>().add(SelectSheet(i)),
+                onAdd: () =>
+                    context.read<SpreadsheetBloc>().add(const AddSheet()),
+                onRename: (i, name) =>
+                    context.read<SpreadsheetBloc>().add(RenameSheet(i, name)),
+                onDelete: (i) =>
+                    context.read<SpreadsheetBloc>().add(DeleteSheet(i)),
               ),
             ],
           ),
@@ -192,7 +210,8 @@ class _FormulaBar extends StatelessWidget {
       height: 36,
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: theme.colorScheme.outlineVariant, width: 0.5),
+          bottom:
+              BorderSide(color: theme.colorScheme.outlineVariant, width: 0.5),
         ),
       ),
       child: Row(
@@ -203,18 +222,21 @@ class _FormulaBar extends StatelessWidget {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               border: Border(
-                right: BorderSide(color: theme.colorScheme.outlineVariant, width: 0.5),
+                right: BorderSide(
+                    color: theme.colorScheme.outlineVariant, width: 0.5),
               ),
             ),
             child: Text(
               cellRef,
-              style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
+              style: theme.textTheme.labelMedium
+                  ?.copyWith(fontWeight: FontWeight.w600),
             ),
           ),
           // Formula icon
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Icon(Icons.functions, size: 18, color: theme.colorScheme.onSurfaceVariant),
+            child: Icon(Icons.functions,
+                size: 18, color: theme.colorScheme.onSurfaceVariant),
           ),
           // Formula input
           Expanded(
@@ -225,7 +247,8 @@ class _FormulaBar extends StatelessWidget {
                 contentPadding: EdgeInsets.symmetric(vertical: 8),
                 isDense: true,
               ),
-              style: theme.textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
+              style:
+                  theme.textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
               onSubmitted: onSubmitted,
             ),
           ),
@@ -276,7 +299,8 @@ class _SpreadsheetGrid extends StatelessWidget {
                   height: _headerHeight,
                   decoration: BoxDecoration(
                     color: theme.colorScheme.surfaceContainerHighest,
-                    border: Border.all(color: theme.colorScheme.outlineVariant, width: 0.5),
+                    border: Border.all(
+                        color: theme.colorScheme.outlineVariant, width: 0.5),
                   ),
                 ),
                 // Column letters
@@ -288,7 +312,8 @@ class _SpreadsheetGrid extends StatelessWidget {
                       color: selectedCell?.col == col
                           ? theme.colorScheme.primaryContainer
                           : theme.colorScheme.surfaceContainerHighest,
-                      border: Border.all(color: theme.colorScheme.outlineVariant, width: 0.5),
+                      border: Border.all(
+                          color: theme.colorScheme.outlineVariant, width: 0.5),
                     ),
                     alignment: Alignment.center,
                     child: Text(
@@ -312,7 +337,8 @@ class _SpreadsheetGrid extends StatelessWidget {
                       color: selectedCell?.row == row
                           ? theme.colorScheme.primaryContainer
                           : theme.colorScheme.surfaceContainerHighest,
-                      border: Border.all(color: theme.colorScheme.outlineVariant, width: 0.5),
+                      border: Border.all(
+                          color: theme.colorScheme.outlineVariant, width: 0.5),
                     ),
                     alignment: Alignment.center,
                     child: Text(
@@ -327,11 +353,13 @@ class _SpreadsheetGrid extends StatelessWidget {
                     _GridCell(
                       position: CellPosition(row, col),
                       cell: sheet.getCell(CellPosition(row, col)),
-                      isSelected: selectedCell?.row == row && selectedCell?.col == col,
+                      isSelected:
+                          selectedCell?.row == row && selectedCell?.col == col,
                       width: sheet.columnWidths[col] ?? _defaultColWidth,
                       height: sheet.rowHeights[row] ?? _defaultRowHeight,
                       onTap: () => onCellTap(CellPosition(row, col)),
-                      onEdit: (value) => onCellEdit(CellPosition(row, col), value),
+                      onEdit: (value) =>
+                          onCellEdit(CellPosition(row, col), value),
                     ),
                 ],
               ),
@@ -538,7 +566,8 @@ class _SheetTabs extends StatelessWidget {
                   onTap: () => onSelect(index),
                   onLongPress: () => _showSheetMenu(context, index),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                     margin: const EdgeInsets.only(right: 2),
                     decoration: BoxDecoration(
                       color: isActive
@@ -556,7 +585,8 @@ class _SheetTabs extends StatelessWidget {
                     child: Text(
                       sheets[index].name,
                       style: theme.textTheme.labelSmall?.copyWith(
-                        fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                        fontWeight:
+                            isActive ? FontWeight.w600 : FontWeight.normal,
                         color: isActive
                             ? theme.colorScheme.primary
                             : theme.colorScheme.onSurfaceVariant,
@@ -612,7 +642,9 @@ class _SheetTabs extends StatelessWidget {
           decoration: const InputDecoration(labelText: 'Sheet name'),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel')),
           FilledButton(
             onPressed: () {
               onRename(index, controller.text);

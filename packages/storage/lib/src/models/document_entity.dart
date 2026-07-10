@@ -115,5 +115,6 @@ class DocumentEntity extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, title, content, format, isFavorite, modifiedAt];
+  List<Object?> get props =>
+      [id, title, content, format, isFavorite, modifiedAt];
 }

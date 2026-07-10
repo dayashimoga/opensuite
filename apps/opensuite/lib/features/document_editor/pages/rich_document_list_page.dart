@@ -159,7 +159,8 @@ class _DocumentListContent extends StatelessWidget {
     ConfirmationDialog.show(
       context,
       title: 'Delete Document',
-      message: 'Are you sure you want to delete "${doc.title}"? This cannot be undone.',
+      message:
+          'Are you sure you want to delete "${doc.title}"? This cannot be undone.',
       confirmLabel: 'Delete',
       isDestructive: true,
     ).then((confirmed) {

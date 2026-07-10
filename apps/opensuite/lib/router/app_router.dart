@@ -99,8 +99,7 @@ class AppRouter {
               GoRoute(
                 path: 'new',
                 name: 'newRichDocument',
-                builder: (context, state) =>
-                    const RichDocumentEditorPage(),
+                builder: (context, state) => const RichDocumentEditorPage(),
               ),
               GoRoute(
                 path: ':id',
@@ -122,8 +121,7 @@ class AppRouter {
               GoRoute(
                 path: 'new',
                 name: 'newSpreadsheet',
-                builder: (context, state) =>
-                    const SpreadsheetEditorPage(),
+                builder: (context, state) => const SpreadsheetEditorPage(),
               ),
               GoRoute(
                 path: ':id',
@@ -145,8 +143,7 @@ class AppRouter {
               GoRoute(
                 path: 'new',
                 name: 'newPresentation',
-                builder: (context, state) =>
-                    const PresentationEditorPage(),
+                builder: (context, state) => const PresentationEditorPage(),
               ),
               GoRoute(
                 path: ':id',
@@ -206,4 +203,3 @@ class AppRouter {
     ],
   );
 }
-

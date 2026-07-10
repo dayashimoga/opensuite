@@ -11,9 +11,8 @@ class AppTypography {
 
   /// Creates the complete text theme for the application.
   static TextTheme textTheme({required bool isDark}) {
-    final baseColor = isDark
-        ? const Color(0xFFE2E8F0)
-        : const Color(0xFF1E293B);
+    final baseColor =
+        isDark ? const Color(0xFFE2E8F0) : const Color(0xFF1E293B);
 
     return GoogleFonts.interTextTheme(
       TextTheme(

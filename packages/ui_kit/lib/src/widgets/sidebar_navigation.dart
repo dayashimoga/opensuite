@@ -187,9 +187,7 @@ class SidebarNavigation extends StatelessWidget {
             child: Row(
               children: [
                 Icon(
-                  isSelected
-                      ? (item.selectedIcon ?? item.icon)
-                      : item.icon,
+                  isSelected ? (item.selectedIcon ?? item.icon) : item.icon,
                   color: color,
                   size: 22,
                 ),

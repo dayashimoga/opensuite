@@ -160,8 +160,7 @@ class SlideElement extends Equatable {
       );
 
   @override
-  List<Object?> get props =>
-      [id, type, x, y, width, height, content, zIndex];
+  List<Object?> get props => [id, type, x, y, width, height, content, zIndex];
 }
 
 /// Represents a single slide in a presentation.

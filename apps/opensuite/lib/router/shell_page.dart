@@ -116,8 +116,7 @@ class ShellPage extends StatelessWidget {
     return AppScaffold(
       destinations: _destinations,
       selectedIndex: selectedIndex,
-      onDestinationSelected: (index) =>
-          _onDestinationSelected(context, index),
+      onDestinationSelected: (index) => _onDestinationSelected(context, index),
       body: child,
     );
   }

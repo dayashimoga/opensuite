@@ -60,9 +60,11 @@ class _ListContent extends StatelessWidget {
               return _PresentationCard(
                 presentation: pres,
                 onTap: () => context.go('/presentations/${pres.id}'),
-                onFavorite: () => context.read<PresentationBloc>()
+                onFavorite: () => context
+                    .read<PresentationBloc>()
                     .add(TogglePresentationFavorite(pres.id)),
-                onDuplicate: () => context.read<PresentationBloc>()
+                onDuplicate: () => context
+                    .read<PresentationBloc>()
                     .add(DuplicatePresentationEntry(pres.id)),
                 onDelete: () {
                   ConfirmationDialog.show(
@@ -71,7 +73,8 @@ class _ListContent extends StatelessWidget {
                     message: 'Delete "${pres.title}"?',
                   ).then((confirmed) {
                     if (confirmed && context.mounted) {
-                      context.read<PresentationBloc>()
+                      context
+                          .read<PresentationBloc>()
                           .add(DeletePresentationEntry(pres.id));
                     }
                   });
@@ -124,11 +127,13 @@ class _PresentationCard extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.slideshow, size: 36, color: Colors.white.withValues(alpha: 0.7)),
+                    Icon(Icons.slideshow,
+                        size: 36, color: Colors.white.withValues(alpha: 0.7)),
                     const SizedBox(height: 4),
                     Text(
                       '${presentation.slideCount} slide${presentation.slideCount > 1 ? "s" : ""}',
-                      style: theme.textTheme.labelSmall?.copyWith(color: Colors.white70),
+                      style: theme.textTheme.labelSmall
+                          ?.copyWith(color: Colors.white70),
                     ),
                   ],
                 ),
@@ -162,20 +167,28 @@ class _PresentationCard extends StatelessWidget {
                   PopupMenuButton<String>(
                     iconSize: 18,
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                    constraints:
+                        const BoxConstraints(minWidth: 24, minHeight: 24),
                     itemBuilder: (_) => [
                       PopupMenuItem(
                         value: 'favorite',
-                        child: Text(presentation.isFavorite ? 'Unfavorite' : 'Favorite'),
+                        child: Text(presentation.isFavorite
+                            ? 'Unfavorite'
+                            : 'Favorite'),
                       ),
-                      const PopupMenuItem(value: 'duplicate', child: Text('Duplicate')),
-                      const PopupMenuItem(value: 'delete', child: Text('Delete')),
+                      const PopupMenuItem(
+                          value: 'duplicate', child: Text('Duplicate')),
+                      const PopupMenuItem(
+                          value: 'delete', child: Text('Delete')),
                     ],
                     onSelected: (value) {
                       switch (value) {
-                        case 'favorite': onFavorite();
-                        case 'duplicate': onDuplicate();
-                        case 'delete': onDelete();
+                        case 'favorite':
+                          onFavorite();
+                        case 'duplicate':
+                          onDuplicate();
+                        case 'delete':
+                          onDelete();
                       }
                     },
                   ),

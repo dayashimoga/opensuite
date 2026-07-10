@@ -137,9 +137,9 @@ class _TextEditorContentState extends State<_TextEditorContent> {
                 onPressed: () {
                   // Toggle between text and markdown
                   context.read<TextEditorBloc>().add(CreateNewDocument(
-                    title: state.title,
-                    fileType: state.isMarkdown ? 'text' : 'markdown',
-                  ));
+                        title: state.title,
+                        fileType: state.isMarkdown ? 'text' : 'markdown',
+                      ));
                 },
               ),
 
@@ -155,9 +155,7 @@ class _TextEditorContentState extends State<_TextEditorContent> {
                       ? AppLocalizations.edit
                       : AppLocalizations.preview,
                   onPressed: () {
-                    context
-                        .read<TextEditorBloc>()
-                        .add(const TogglePreview());
+                    context.read<TextEditorBloc>().add(const TogglePreview());
                   },
                 ),
 
@@ -166,9 +164,7 @@ class _TextEditorContentState extends State<_TextEditorContent> {
                 icon: const Icon(Icons.find_replace_rounded),
                 tooltip: AppLocalizations.findAndReplace,
                 onPressed: () {
-                  context
-                      .read<TextEditorBloc>()
-                      .add(const ToggleFindReplace());
+                  context.read<TextEditorBloc>().add(const ToggleFindReplace());
                 },
               ),
 
@@ -181,9 +177,7 @@ class _TextEditorContentState extends State<_TextEditorContent> {
                 ),
                 tooltip: AppLocalizations.save,
                 onPressed: () {
-                  context
-                      .read<TextEditorBloc>()
-                      .add(const SaveDocument());
+                  context.read<TextEditorBloc>().add(const SaveDocument());
                 },
               ),
             ],
@@ -223,9 +217,7 @@ class _TextEditorContentState extends State<_TextEditorContent> {
       child: TextField(
         controller: _contentController,
         onChanged: (value) {
-          context
-              .read<TextEditorBloc>()
-              .add(UpdateDocumentContent(value));
+          context.read<TextEditorBloc>().add(UpdateDocumentContent(value));
         },
         style: state.isMarkdown
             ? AppTypography.monoStyle(
@@ -301,9 +293,7 @@ class _FindReplaceBar extends StatelessWidget {
               child: TextField(
                 controller: findController,
                 onChanged: (value) {
-                  context
-                      .read<TextEditorBloc>()
-                      .add(FindInDocument(value));
+                  context.read<TextEditorBloc>().add(FindInDocument(value));
                 },
                 style: theme.textTheme.bodySmall,
                 decoration: InputDecoration(
@@ -356,9 +346,7 @@ class _FindReplaceBar extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.close_rounded, size: 18),
             onPressed: () {
-              context
-                  .read<TextEditorBloc>()
-                  .add(const ToggleFindReplace());
+              context.read<TextEditorBloc>().add(const ToggleFindReplace());
             },
           ),
         ],
@@ -388,9 +376,7 @@ class _StatusBar extends StatelessWidget {
       child: Row(
         children: [
           Icon(
-            state.isMarkdown
-                ? Icons.code_rounded
-                : Icons.text_snippet_rounded,
+            state.isMarkdown ? Icons.code_rounded : Icons.text_snippet_rounded,
             size: 14,
             color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
           ),

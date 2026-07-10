@@ -47,7 +47,8 @@ class ResponsiveBuilder extends StatelessWidget {
 
         return switch (screenSize) {
           ScreenSize.desktop => (desktop ?? tablet ?? mobile)(
-              context, screenSize,
+              context,
+              screenSize,
             ),
           ScreenSize.tablet => (tablet ?? mobile)(context, screenSize),
           ScreenSize.mobile => mobile(context, screenSize),

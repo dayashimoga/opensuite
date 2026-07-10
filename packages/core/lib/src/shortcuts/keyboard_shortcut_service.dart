@@ -65,11 +65,7 @@ class KeyboardShortcutService {
 
   /// Returns all unique categories.
   List<String> get categories {
-    return _shortcuts.values
-        .map((s) => s.category)
-        .toSet()
-        .toList()
-      ..sort();
+    return _shortcuts.values.map((s) => s.category).toSet().toList()..sort();
   }
 
   /// Builds a [Map] of [ShortcutActivator] → [Intent] for use with
@@ -117,92 +113,125 @@ class KeyboardShortcutService {
     VoidCallback? onPrint,
   }) {
     if (onSave != null) {
-      register('editor.save', KeyboardShortcutAction(
-        label: 'Save',
-        activator: const SingleActivator(LogicalKeyboardKey.keyS, control: true),
-        onInvoke: onSave,
-        category: 'File',
-      ));
+      register(
+          'editor.save',
+          KeyboardShortcutAction(
+            label: 'Save',
+            activator:
+                const SingleActivator(LogicalKeyboardKey.keyS, control: true),
+            onInvoke: onSave,
+            category: 'File',
+          ));
     }
     if (onNew != null) {
-      register('editor.new', KeyboardShortcutAction(
-        label: 'New Document',
-        activator: const SingleActivator(LogicalKeyboardKey.keyN, control: true),
-        onInvoke: onNew,
-        category: 'File',
-      ));
+      register(
+          'editor.new',
+          KeyboardShortcutAction(
+            label: 'New Document',
+            activator:
+                const SingleActivator(LogicalKeyboardKey.keyN, control: true),
+            onInvoke: onNew,
+            category: 'File',
+          ));
     }
     if (onOpen != null) {
-      register('editor.open', KeyboardShortcutAction(
-        label: 'Open',
-        activator: const SingleActivator(LogicalKeyboardKey.keyO, control: true),
-        onInvoke: onOpen,
-        category: 'File',
-      ));
+      register(
+          'editor.open',
+          KeyboardShortcutAction(
+            label: 'Open',
+            activator:
+                const SingleActivator(LogicalKeyboardKey.keyO, control: true),
+            onInvoke: onOpen,
+            category: 'File',
+          ));
     }
     if (onBold != null) {
-      register('editor.bold', KeyboardShortcutAction(
-        label: 'Bold',
-        activator: const SingleActivator(LogicalKeyboardKey.keyB, control: true),
-        onInvoke: onBold,
-        category: 'Format',
-      ));
+      register(
+          'editor.bold',
+          KeyboardShortcutAction(
+            label: 'Bold',
+            activator:
+                const SingleActivator(LogicalKeyboardKey.keyB, control: true),
+            onInvoke: onBold,
+            category: 'Format',
+          ));
     }
     if (onItalic != null) {
-      register('editor.italic', KeyboardShortcutAction(
-        label: 'Italic',
-        activator: const SingleActivator(LogicalKeyboardKey.keyI, control: true),
-        onInvoke: onItalic,
-        category: 'Format',
-      ));
+      register(
+          'editor.italic',
+          KeyboardShortcutAction(
+            label: 'Italic',
+            activator:
+                const SingleActivator(LogicalKeyboardKey.keyI, control: true),
+            onInvoke: onItalic,
+            category: 'Format',
+          ));
     }
     if (onUnderline != null) {
-      register('editor.underline', KeyboardShortcutAction(
-        label: 'Underline',
-        activator: const SingleActivator(LogicalKeyboardKey.keyU, control: true),
-        onInvoke: onUnderline,
-        category: 'Format',
-      ));
+      register(
+          'editor.underline',
+          KeyboardShortcutAction(
+            label: 'Underline',
+            activator:
+                const SingleActivator(LogicalKeyboardKey.keyU, control: true),
+            onInvoke: onUnderline,
+            category: 'Format',
+          ));
     }
     if (onUndo != null) {
-      register('editor.undo', KeyboardShortcutAction(
-        label: 'Undo',
-        activator: const SingleActivator(LogicalKeyboardKey.keyZ, control: true),
-        onInvoke: onUndo,
-        category: 'Edit',
-      ));
+      register(
+          'editor.undo',
+          KeyboardShortcutAction(
+            label: 'Undo',
+            activator:
+                const SingleActivator(LogicalKeyboardKey.keyZ, control: true),
+            onInvoke: onUndo,
+            category: 'Edit',
+          ));
     }
     if (onRedo != null) {
-      register('editor.redo', KeyboardShortcutAction(
-        label: 'Redo',
-        activator: const SingleActivator(LogicalKeyboardKey.keyZ, control: true, shift: true),
-        onInvoke: onRedo,
-        category: 'Edit',
-      ));
+      register(
+          'editor.redo',
+          KeyboardShortcutAction(
+            label: 'Redo',
+            activator: const SingleActivator(LogicalKeyboardKey.keyZ,
+                control: true, shift: true),
+            onInvoke: onRedo,
+            category: 'Edit',
+          ));
     }
     if (onFind != null) {
-      register('editor.find', KeyboardShortcutAction(
-        label: 'Find',
-        activator: const SingleActivator(LogicalKeyboardKey.keyF, control: true),
-        onInvoke: onFind,
-        category: 'Edit',
-      ));
+      register(
+          'editor.find',
+          KeyboardShortcutAction(
+            label: 'Find',
+            activator:
+                const SingleActivator(LogicalKeyboardKey.keyF, control: true),
+            onInvoke: onFind,
+            category: 'Edit',
+          ));
     }
     if (onFindReplace != null) {
-      register('editor.findReplace', KeyboardShortcutAction(
-        label: 'Find & Replace',
-        activator: const SingleActivator(LogicalKeyboardKey.keyH, control: true),
-        onInvoke: onFindReplace,
-        category: 'Edit',
-      ));
+      register(
+          'editor.findReplace',
+          KeyboardShortcutAction(
+            label: 'Find & Replace',
+            activator:
+                const SingleActivator(LogicalKeyboardKey.keyH, control: true),
+            onInvoke: onFindReplace,
+            category: 'Edit',
+          ));
     }
     if (onPrint != null) {
-      register('editor.print', KeyboardShortcutAction(
-        label: 'Print',
-        activator: const SingleActivator(LogicalKeyboardKey.keyP, control: true),
-        onInvoke: onPrint,
-        category: 'File',
-      ));
+      register(
+          'editor.print',
+          KeyboardShortcutAction(
+            label: 'Print',
+            activator:
+                const SingleActivator(LogicalKeyboardKey.keyP, control: true),
+            onInvoke: onPrint,
+            category: 'File',
+          ));
     }
   }
 }

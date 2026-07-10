@@ -83,7 +83,9 @@ class _ListContent extends StatelessWidget {
                       PopupMenuItem(
                         value: 'favorite',
                         child: Row(children: [
-                          Icon(sheet.isFavorite ? Icons.star : Icons.star_outline),
+                          Icon(sheet.isFavorite
+                              ? Icons.star
+                              : Icons.star_outline),
                           const SizedBox(width: 8),
                           Text(sheet.isFavorite ? 'Unfavorite' : 'Favorite'),
                         ]),
@@ -108,10 +110,12 @@ class _ListContent extends StatelessWidget {
                     onSelected: (value) {
                       switch (value) {
                         case 'favorite':
-                          context.read<SpreadsheetBloc>()
+                          context
+                              .read<SpreadsheetBloc>()
                               .add(ToggleSpreadsheetFavorite(sheet.id));
                         case 'duplicate':
-                          context.read<SpreadsheetBloc>()
+                          context
+                              .read<SpreadsheetBloc>()
                               .add(DuplicateSpreadsheetEntry(sheet.id));
                         case 'delete':
                           ConfirmationDialog.show(
@@ -120,7 +124,8 @@ class _ListContent extends StatelessWidget {
                             message: 'Delete "${sheet.title}"?',
                           ).then((confirmed) {
                             if (confirmed && context.mounted) {
-                              context.read<SpreadsheetBloc>()
+                              context
+                                  .read<SpreadsheetBloc>()
                                   .add(DeleteSpreadsheetEntry(sheet.id));
                             }
                           });
@@ -155,7 +160,8 @@ class _ListContent extends StatelessWidget {
     showSearch(
       context: context,
       delegate: _SpreadsheetSearchDelegate(
-        onSearch: (q) => context.read<SpreadsheetBloc>().add(SearchSpreadsheets(q)),
+        onSearch: (q) =>
+            context.read<SpreadsheetBloc>().add(SearchSpreadsheets(q)),
       ),
     );
   }
@@ -167,12 +173,17 @@ class _SpreadsheetSearchDelegate extends SearchDelegate<String> {
 
   @override
   List<Widget> buildActions(BuildContext context) => [
-        IconButton(icon: const Icon(Icons.clear), onPressed: () { query = ''; onSearch(''); }),
+        IconButton(
+            icon: const Icon(Icons.clear),
+            onPressed: () {
+              query = '';
+              onSearch('');
+            }),
       ];
 
   @override
-  Widget buildLeading(BuildContext context) =>
-      IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => close(context, ''));
+  Widget buildLeading(BuildContext context) => IconButton(
+      icon: const Icon(Icons.arrow_back), onPressed: () => close(context, ''));
 
   @override
   Widget buildResults(BuildContext context) {

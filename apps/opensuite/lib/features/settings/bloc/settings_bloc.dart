@@ -127,9 +127,15 @@ class SettingsState extends Equatable {
 
   @override
   List<Object?> get props => [
-        themeMode, fontSize, showLineNumbers,
-        wordWrap, autosaveEnabled, autosaveIntervalSeconds,
-        highContrastMode, localeCode, isLoading,
+        themeMode,
+        fontSize,
+        showLineNumbers,
+        wordWrap,
+        autosaveEnabled,
+        autosaveIntervalSeconds,
+        highContrastMode,
+        localeCode,
+        isLoading,
       ];
 }
 

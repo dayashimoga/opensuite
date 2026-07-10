@@ -32,7 +32,8 @@ class SearchDocuments extends DocumentEditorEvent {
 class CreateDocument extends DocumentEditorEvent {
   final String title;
   final String format;
-  const CreateDocument({this.title = 'Untitled Document', this.format = 'rich'});
+  const CreateDocument(
+      {this.title = 'Untitled Document', this.format = 'rich'});
 
   @override
   List<Object?> get props => [title, format];
@@ -245,7 +246,8 @@ class DocumentEditorState extends Equatable {
 /// BLoC managing the document editor feature.
 ///
 /// Handles document CRUD, formatting, undo/redo, and autosave.
-class DocumentEditorBloc extends Bloc<DocumentEditorEvent, DocumentEditorState> {
+class DocumentEditorBloc
+    extends Bloc<DocumentEditorEvent, DocumentEditorState> {
   final DocumentDao _documentDao;
 
   Timer? _autoSaveTimer;
@@ -476,9 +478,8 @@ class DocumentEditorBloc extends Bloc<DocumentEditorEvent, DocumentEditorState> 
   ) async {
     try {
       await _documentDao.deleteDocument(event.documentId);
-      final updated = state.documents
-          .where((d) => d.id != event.documentId)
-          .toList();
+      final updated =
+          state.documents.where((d) => d.id != event.documentId).toList();
       emit(state.copyWith(
         documents: updated,
         currentDocument: state.currentDocument?.id == event.documentId

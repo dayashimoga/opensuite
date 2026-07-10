@@ -124,8 +124,17 @@ class CellData extends Equatable {
   }
 
   @override
-  List<Object?> get props => [rawValue, displayValue, type, isBold, isItalic,
-    textColor, backgroundColor, alignment, fontSize];
+  List<Object?> get props => [
+        rawValue,
+        displayValue,
+        type,
+        isBold,
+        isItalic,
+        textColor,
+        backgroundColor,
+        alignment,
+        fontSize
+      ];
 }
 
 /// Represents a cell position in the spreadsheet grid.
@@ -292,6 +301,6 @@ class SheetData extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, name, cells, rowCount, colCount,
-    frozenRows, frozenCols];
+  List<Object?> get props =>
+      [id, name, cells, rowCount, colCount, frozenRows, frozenCols];
 }

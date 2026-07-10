@@ -91,7 +91,13 @@ class RecentFileEntity extends Equatable {
 
   @override
   List<Object?> get props => [
-        id, fileName, filePath, fileType,
-        sizeBytes, isFavorite, lastOpenedAt, createdAt,
+        id,
+        fileName,
+        filePath,
+        fileType,
+        sizeBytes,
+        isFavorite,
+        lastOpenedAt,
+        createdAt,
       ];
 }

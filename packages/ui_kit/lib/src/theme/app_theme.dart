@@ -53,7 +53,8 @@ class AppTheme {
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-          side: BorderSide(color: AppColors.lightOutline.withValues(alpha: 0.5)),
+          side:
+              BorderSide(color: AppColors.lightOutline.withValues(alpha: 0.5)),
         ),
         color: AppColors.lightSurface,
         surfaceTintColor: Colors.transparent,
@@ -334,8 +335,10 @@ class AppTheme {
         color: AppColors.hcSurface,
       ),
       navigationRailTheme: NavigationRailThemeData(
-        selectedIconTheme: const IconThemeData(color: AppColors.hcPrimary, size: 26),
-        unselectedIconTheme: const IconThemeData(color: AppColors.hcOnSurface, size: 24),
+        selectedIconTheme:
+            const IconThemeData(color: AppColors.hcPrimary, size: 26),
+        unselectedIconTheme:
+            const IconThemeData(color: AppColors.hcOnSurface, size: 24),
         selectedLabelTextStyle: textTheme.labelMedium?.copyWith(
           fontWeight: FontWeight.w700,
           color: AppColors.hcPrimary,
@@ -406,8 +409,10 @@ class AppTheme {
         color: AppColors.hcDarkSurface,
       ),
       navigationRailTheme: NavigationRailThemeData(
-        selectedIconTheme: const IconThemeData(color: AppColors.hcDarkPrimary, size: 26),
-        unselectedIconTheme: const IconThemeData(color: AppColors.hcDarkOnSurface, size: 24),
+        selectedIconTheme:
+            const IconThemeData(color: AppColors.hcDarkPrimary, size: 26),
+        unselectedIconTheme:
+            const IconThemeData(color: AppColors.hcDarkOnSurface, size: 24),
         selectedLabelTextStyle: textTheme.labelMedium?.copyWith(
           fontWeight: FontWeight.w700,
           color: AppColors.hcDarkPrimary,
@@ -417,11 +422,13 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-          borderSide: const BorderSide(color: AppColors.hcDarkOutline, width: 2),
+          borderSide:
+              const BorderSide(color: AppColors.hcDarkOutline, width: 2),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-          borderSide: const BorderSide(color: AppColors.hcDarkPrimary, width: 3),
+          borderSide:
+              const BorderSide(color: AppColors.hcDarkPrimary, width: 3),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -443,7 +450,8 @@ class AppTheme {
       displayMedium: theme.displayMedium?.copyWith(fontWeight: FontWeight.w700),
       displaySmall: theme.displaySmall?.copyWith(fontWeight: FontWeight.w700),
       headlineLarge: theme.headlineLarge?.copyWith(fontWeight: FontWeight.w700),
-      headlineMedium: theme.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
+      headlineMedium:
+          theme.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
       headlineSmall: theme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
       titleLarge: theme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
       titleMedium: theme.titleMedium?.copyWith(fontWeight: FontWeight.w600),

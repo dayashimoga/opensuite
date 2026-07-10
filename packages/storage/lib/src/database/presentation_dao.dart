@@ -13,7 +13,8 @@ class PresentationDao {
 
   Future<PresentationEntity?> getPresentation(String id) async {
     final db = await DatabaseProvider.instance.database;
-    final maps = await db.query('presentations', where: 'id = ?', whereArgs: [id], limit: 1);
+    final maps = await db.query('presentations',
+        where: 'id = ?', whereArgs: [id], limit: 1);
     if (maps.isEmpty) return null;
     return PresentationEntity.fromMap(maps.first);
   }
@@ -31,12 +32,14 @@ class PresentationDao {
 
   Future<void> insertPresentation(PresentationEntity presentation) async {
     final db = await DatabaseProvider.instance.database;
-    await db.insert('presentations', presentation.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+    await db.insert('presentations', presentation.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<void> updatePresentation(PresentationEntity presentation) async {
     final db = await DatabaseProvider.instance.database;
-    await db.update('presentations', presentation.toMap(), where: 'id = ?', whereArgs: [presentation.id]);
+    await db.update('presentations', presentation.toMap(),
+        where: 'id = ?', whereArgs: [presentation.id]);
   }
 
   Future<void> toggleFavorite(String id) async {

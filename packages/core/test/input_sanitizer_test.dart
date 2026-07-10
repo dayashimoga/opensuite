@@ -26,7 +26,8 @@ void main() {
 
     test('encodeHtml escapes special characters', () {
       expect(InputSanitizer.encodeHtml('<b>'), equals('&lt;b&gt;'));
-      expect(InputSanitizer.encodeHtml('"quotes"'), equals('&quot;quotes&quot;'));
+      expect(
+          InputSanitizer.encodeHtml('"quotes"'), equals('&quot;quotes&quot;'));
       expect(InputSanitizer.encodeHtml('a&b'), equals('a&amp;b'));
     });
   });
@@ -45,7 +46,8 @@ void main() {
     test('limits search query length', () {
       final longQuery = 'a' * 500;
       final result = InputSanitizer.sanitizeSearchQuery(longQuery);
-      expect(result.length, lessThanOrEqualTo(InputSanitizer.maxSearchQueryLength));
+      expect(result.length,
+          lessThanOrEqualTo(InputSanitizer.maxSearchQueryLength));
     });
   });
 
@@ -65,7 +67,8 @@ void main() {
     });
 
     test('allows safe relative paths', () {
-      expect(InputSanitizer.sanitizeFilePath('docs/file.txt'), equals('docs/file.txt'));
+      expect(InputSanitizer.sanitizeFilePath('docs/file.txt'),
+          equals('docs/file.txt'));
     });
   });
 

@@ -41,7 +41,8 @@ class _ViewerContent extends StatelessWidget {
               // Zoom controls
               IconButton(
                 icon: const Icon(Icons.zoom_out, size: 20),
-                onPressed: () => context.read<PdfViewerBloc>()
+                onPressed: () => context
+                    .read<PdfViewerBloc>()
                     .add(SetZoom(state.zoom - 0.25)),
                 tooltip: 'Zoom Out',
               ),
@@ -52,7 +53,8 @@ class _ViewerContent extends StatelessWidget {
               ),
               IconButton(
                 icon: const Icon(Icons.zoom_in, size: 20),
-                onPressed: () => context.read<PdfViewerBloc>()
+                onPressed: () => context
+                    .read<PdfViewerBloc>()
                     .add(SetZoom(state.zoom + 0.25)),
                 tooltip: 'Zoom In',
               ),
@@ -60,17 +62,20 @@ class _ViewerContent extends StatelessWidget {
               // Thumbnail toggle
               IconButton(
                 icon: Icon(
-                  state.showThumbnails ? Icons.view_sidebar : Icons.view_sidebar_outlined,
+                  state.showThumbnails
+                      ? Icons.view_sidebar
+                      : Icons.view_sidebar_outlined,
                   size: 20,
                 ),
-                onPressed: () => context.read<PdfViewerBloc>()
-                    .add(const ToggleThumbnails()),
+                onPressed: () =>
+                    context.read<PdfViewerBloc>().add(const ToggleThumbnails()),
                 tooltip: 'Thumbnails',
               ),
               // Rotate
               IconButton(
                 icon: const Icon(Icons.rotate_right, size: 20),
-                onPressed: () => context.read<PdfViewerBloc>()
+                onPressed: () => context
+                    .read<PdfViewerBloc>()
                     .add(RotatePage(state.currentPage, 90)),
                 tooltip: 'Rotate Page',
               ),
@@ -79,26 +84,34 @@ class _ViewerContent extends StatelessWidget {
                 icon: const Icon(Icons.edit_note, size: 20),
                 tooltip: 'Annotations',
                 itemBuilder: (_) => const [
-                  PopupMenuItem(value: 'highlight', child: Row(children: [
-                    Icon(Icons.highlight, color: Colors.yellow),
-                    SizedBox(width: 8),
-                    Text('Highlight'),
-                  ])),
-                  PopupMenuItem(value: 'underline', child: Row(children: [
-                    Icon(Icons.format_underlined, color: Colors.red),
-                    SizedBox(width: 8),
-                    Text('Underline'),
-                  ])),
-                  PopupMenuItem(value: 'note', child: Row(children: [
-                    Icon(Icons.sticky_note_2, color: Colors.amber),
-                    SizedBox(width: 8),
-                    Text('Sticky Note'),
-                  ])),
-                  PopupMenuItem(value: 'draw', child: Row(children: [
-                    Icon(Icons.draw, color: Colors.blue),
-                    SizedBox(width: 8),
-                    Text('Freehand Draw'),
-                  ])),
+                  PopupMenuItem(
+                      value: 'highlight',
+                      child: Row(children: [
+                        Icon(Icons.highlight, color: Colors.yellow),
+                        SizedBox(width: 8),
+                        Text('Highlight'),
+                      ])),
+                  PopupMenuItem(
+                      value: 'underline',
+                      child: Row(children: [
+                        Icon(Icons.format_underlined, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('Underline'),
+                      ])),
+                  PopupMenuItem(
+                      value: 'note',
+                      child: Row(children: [
+                        Icon(Icons.sticky_note_2, color: Colors.amber),
+                        SizedBox(width: 8),
+                        Text('Sticky Note'),
+                      ])),
+                  PopupMenuItem(
+                      value: 'draw',
+                      child: Row(children: [
+                        Icon(Icons.draw, color: Colors.blue),
+                        SizedBox(width: 8),
+                        Text('Freehand Draw'),
+                      ])),
                 ],
                 onSelected: (tool) => _addAnnotation(context, state, tool),
               ),
@@ -117,8 +130,8 @@ class _ViewerContent extends StatelessWidget {
                 _ThumbnailSidebar(
                   currentPage: state.currentPage,
                   totalPages: state.totalPages > 0 ? state.totalPages : 10,
-                  onPageTap: (page) => context.read<PdfViewerBloc>()
-                      .add(GoToPage(page)),
+                  onPageTap: (page) =>
+                      context.read<PdfViewerBloc>().add(GoToPage(page)),
                 ),
               // Main PDF viewing area
               Expanded(
@@ -130,7 +143,8 @@ class _ViewerContent extends StatelessWidget {
           bottomNavigationBar: _PageNavigationBar(
             currentPage: state.currentPage,
             totalPages: state.totalPages > 0 ? state.totalPages : 1,
-            onPrevious: () => context.read<PdfViewerBloc>().add(const PreviousPage()),
+            onPrevious: () =>
+                context.read<PdfViewerBloc>().add(const PreviousPage()),
             onNext: () => context.read<PdfViewerBloc>().add(const NextPage()),
             onGoTo: (page) => context.read<PdfViewerBloc>().add(GoToPage(page)),
           ),
@@ -148,7 +162,11 @@ class _ViewerContent extends StatelessWidget {
       y: 0.3,
       width: 0.4,
       height: 0.05,
-      color: type == 'highlight' ? '#FFFF00' : type == 'underline' ? '#FF0000' : '#FFA500',
+      color: type == 'highlight'
+          ? '#FFFF00'
+          : type == 'underline'
+              ? '#FF0000'
+              : '#FFA500',
       text: type == 'note' ? 'New note' : null,
     );
     context.read<PdfViewerBloc>().add(AddAnnotation(annotation));
@@ -195,7 +213,8 @@ class _ThumbnailSidebar extends StatelessWidget {
       width: 120,
       decoration: BoxDecoration(
         border: Border(
-          right: BorderSide(color: theme.colorScheme.outlineVariant, width: 0.5),
+          right:
+              BorderSide(color: theme.colorScheme.outlineVariant, width: 0.5),
         ),
       ),
       child: ListView.builder(
@@ -210,7 +229,9 @@ class _ThumbnailSidebar extends StatelessWidget {
               margin: const EdgeInsets.only(bottom: 8),
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: isActive ? theme.colorScheme.primary : theme.colorScheme.outlineVariant,
+                  color: isActive
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.outlineVariant,
                   width: isActive ? 2 : 1,
                 ),
                 borderRadius: BorderRadius.circular(4),
@@ -290,22 +311,26 @@ class _PdfContentArea extends StatelessWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.picture_as_pdf,
+                        Icon(
+                          Icons.picture_as_pdf,
                           size: 64,
-                          color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                          color:
+                              theme.colorScheme.primary.withValues(alpha: 0.3),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           'Page ${state.currentPage}',
                           style: theme.textTheme.titleLarge?.copyWith(
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.5),
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           state.filePath?.split('/').last ?? '',
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.3),
                           ),
                         ),
                       ],
@@ -314,7 +339,8 @@ class _PdfContentArea extends StatelessWidget {
                   // Annotation overlays
                   ...state.annotations
                       .where((a) => a.page == state.currentPage)
-                      .map((annotation) => _AnnotationOverlay(annotation: annotation)),
+                      .map((annotation) =>
+                          _AnnotationOverlay(annotation: annotation)),
                 ],
               ),
             ),
@@ -342,13 +368,16 @@ class _AnnotationOverlay extends StatelessWidget {
         decoration: BoxDecoration(
           color: _parseColor(annotation.color).withValues(alpha: 0.3),
           border: annotation.type == 'underline'
-              ? Border(bottom: BorderSide(color: _parseColor(annotation.color), width: 2))
+              ? Border(
+                  bottom: BorderSide(
+                      color: _parseColor(annotation.color), width: 2))
               : null,
         ),
         child: annotation.type == 'note'
             ? Tooltip(
                 message: annotation.text ?? '',
-                child: Icon(Icons.sticky_note_2, size: 20, color: _parseColor(annotation.color)),
+                child: Icon(Icons.sticky_note_2,
+                    size: 20, color: _parseColor(annotation.color)),
               )
             : null,
       ),

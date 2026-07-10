@@ -37,7 +37,8 @@ class _EditorContent extends StatelessWidget {
     return BlocBuilder<PresentationBloc, PresentationState>(
       builder: (context, state) {
         if (state.status == PresentationStatus.loading) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          return const Scaffold(
+              body: Center(child: CircularProgressIndicator()));
         }
 
         // Full-screen presentation mode
@@ -46,15 +47,21 @@ class _EditorContent extends StatelessWidget {
             slide: state.activeSlide,
             slideIndex: state.activeSlideIndex,
             totalSlides: state.slides.length,
-            onExit: () => context.read<PresentationBloc>().add(const TogglePresentationMode()),
+            onExit: () => context
+                .read<PresentationBloc>()
+                .add(const TogglePresentationMode()),
             onNext: () {
               if (state.activeSlideIndex < state.slides.length - 1) {
-                context.read<PresentationBloc>().add(SelectSlide(state.activeSlideIndex + 1));
+                context
+                    .read<PresentationBloc>()
+                    .add(SelectSlide(state.activeSlideIndex + 1));
               }
             },
             onPrevious: () {
               if (state.activeSlideIndex > 0) {
-                context.read<PresentationBloc>().add(SelectSlide(state.activeSlideIndex - 1));
+                context
+                    .read<PresentationBloc>()
+                    .add(SelectSlide(state.activeSlideIndex - 1));
               }
             },
           );
@@ -66,7 +73,9 @@ class _EditorContent extends StatelessWidget {
               icon: const Icon(Icons.arrow_back),
               onPressed: () {
                 if (state.hasUnsavedChanges) {
-                  context.read<PresentationBloc>().add(const SavePresentation());
+                  context
+                      .read<PresentationBloc>()
+                      .add(const SavePresentation());
                 }
                 context.go('/presentations');
               },
@@ -87,7 +96,8 @@ class _EditorContent extends StatelessWidget {
               const SizedBox(width: 8),
               // Present button
               FilledButton.tonalIcon(
-                onPressed: () => context.read<PresentationBloc>()
+                onPressed: () => context
+                    .read<PresentationBloc>()
                     .add(const TogglePresentationMode()),
                 icon: const Icon(Icons.slideshow, size: 18),
                 label: const Text('Present'),
@@ -96,7 +106,8 @@ class _EditorContent extends StatelessWidget {
               // Save
               IconButton(
                 icon: const Icon(Icons.save_outlined),
-                onPressed: () => context.read<PresentationBloc>()
+                onPressed: () => context
+                    .read<PresentationBloc>()
                     .add(const SavePresentation()),
                 tooltip: 'Save',
               ),
@@ -108,10 +119,14 @@ class _EditorContent extends StatelessWidget {
               _SlidePanel(
                 slides: state.slides,
                 activeIndex: state.activeSlideIndex,
-                onSelect: (i) => context.read<PresentationBloc>().add(SelectSlide(i)),
-                onAdd: () => context.read<PresentationBloc>().add(const AddSlide()),
-                onDelete: (i) => context.read<PresentationBloc>().add(DeleteSlide(i)),
-                onDuplicate: (i) => context.read<PresentationBloc>().add(DuplicateSlide(i)),
+                onSelect: (i) =>
+                    context.read<PresentationBloc>().add(SelectSlide(i)),
+                onAdd: () =>
+                    context.read<PresentationBloc>().add(const AddSlide()),
+                onDelete: (i) =>
+                    context.read<PresentationBloc>().add(DeleteSlide(i)),
+                onDuplicate: (i) =>
+                    context.read<PresentationBloc>().add(DuplicateSlide(i)),
               ),
               // Main canvas
               Expanded(
@@ -123,18 +138,22 @@ class _EditorContent extends StatelessWidget {
                       child: _SlideCanvas(
                         slide: state.activeSlide,
                         selectedElementId: state.selectedElementId,
-                        onSelectElement: (id) => context.read<PresentationBloc>()
+                        onSelectElement: (id) => context
+                            .read<PresentationBloc>()
                             .add(SelectElement(id)),
-                        onMoveElement: (id, x, y) => context.read<PresentationBloc>()
+                        onMoveElement: (id, x, y) => context
+                            .read<PresentationBloc>()
                             .add(MoveElement(id, x, y)),
-                        onDeleteElement: (id) => context.read<PresentationBloc>()
+                        onDeleteElement: (id) => context
+                            .read<PresentationBloc>()
                             .add(DeleteElement(id)),
                       ),
                     ),
                     // Speaker notes
                     _SpeakerNotesPanel(
                       notes: state.activeSlide?.speakerNotes ?? '',
-                      onChanged: (notes) => context.read<PresentationBloc>()
+                      onChanged: (notes) => context
+                          .read<PresentationBloc>()
                           .add(UpdateSpeakerNotes(notes)),
                     ),
                   ],
@@ -149,28 +168,28 @@ class _EditorContent extends StatelessWidget {
 
   void _addTextBox(BuildContext context) {
     context.read<PresentationBloc>().add(AddElement(SlideElement(
-      id: 'text_${DateTime.now().microsecondsSinceEpoch}',
-      type: 'text',
-      x: 0.2,
-      y: 0.3,
-      width: 0.6,
-      height: 0.15,
-      content: 'Click to edit text',
-      fontSize: 24,
-    )));
+          id: 'text_${DateTime.now().microsecondsSinceEpoch}',
+          type: 'text',
+          x: 0.2,
+          y: 0.3,
+          width: 0.6,
+          height: 0.15,
+          content: 'Click to edit text',
+          fontSize: 24,
+        )));
   }
 
   void _addShape(BuildContext context) {
     context.read<PresentationBloc>().add(AddElement(SlideElement(
-      id: 'shape_${DateTime.now().microsecondsSinceEpoch}',
-      type: 'shape',
-      x: 0.3,
-      y: 0.3,
-      width: 0.2,
-      height: 0.2,
-      shapeType: 'rectangle',
-      fillColor: '#4A90D9',
-    )));
+          id: 'shape_${DateTime.now().microsecondsSinceEpoch}',
+          type: 'shape',
+          x: 0.3,
+          y: 0.3,
+          width: 0.2,
+          height: 0.2,
+          shapeType: 'rectangle',
+          fillColor: '#4A90D9',
+        )));
   }
 }
 
@@ -200,7 +219,8 @@ class _SlidePanel extends StatelessWidget {
       width: 160,
       decoration: BoxDecoration(
         border: Border(
-          right: BorderSide(color: theme.colorScheme.outlineVariant, width: 0.5),
+          right:
+              BorderSide(color: theme.colorScheme.outlineVariant, width: 0.5),
         ),
       ),
       child: Column(
@@ -349,8 +369,10 @@ class _SlideCanvas extends StatelessWidget {
                         isSelected: element.id == selectedElementId,
                         onTap: () => onSelectElement(element.id),
                         onMove: (dx, dy) {
-                          final newX = (element.x + dx / constraints.maxWidth).clamp(0.0, 1.0);
-                          final newY = (element.y + dy / constraints.maxHeight).clamp(0.0, 1.0);
+                          final newX = (element.x + dx / constraints.maxWidth)
+                              .clamp(0.0, 1.0);
+                          final newY = (element.y + dy / constraints.maxHeight)
+                              .clamp(0.0, 1.0);
                           onMoveElement(element.id, newX, newY);
                         },
                         onDelete: () => onDeleteElement(element.id),
@@ -446,7 +468,8 @@ class _CanvasElement extends StatelessWidget {
                         color: theme.colorScheme.error,
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(Icons.close, size: 12, color: theme.colorScheme.onError),
+                      child: Icon(Icons.close,
+                          size: 12, color: theme.colorScheme.onError),
                     ),
                   ),
                 ),
@@ -482,7 +505,9 @@ class _CanvasElement extends StatelessWidget {
             element.content,
             style: TextStyle(
               fontSize: element.fontSize * 0.5, // Scale to canvas
-              fontWeight: element.fontWeight == 'bold' ? FontWeight.bold : FontWeight.normal,
+              fontWeight: element.fontWeight == 'bold'
+                  ? FontWeight.bold
+                  : FontWeight.normal,
               color: _parseColor(element.textColor),
             ),
             textAlign: element.textAlign == 'center'
@@ -544,7 +569,8 @@ class _SpeakerNotesPanel extends StatelessWidget {
               controller: TextEditingController(text: notes),
               decoration: const InputDecoration(
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 hintText: 'Add speaker notes...',
               ),
               style: theme.textTheme.bodySmall,
@@ -626,7 +652,8 @@ class _PresentationModeView extends StatelessWidget {
                 bottom: 16,
                 right: 16,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: Colors.black54,
                     borderRadius: BorderRadius.circular(16),
@@ -664,7 +691,9 @@ class _PresentationModeView extends StatelessWidget {
               element.content,
               style: TextStyle(
                 fontSize: element.fontSize,
-                fontWeight: element.fontWeight == 'bold' ? FontWeight.bold : FontWeight.normal,
+                fontWeight: element.fontWeight == 'bold'
+                    ? FontWeight.bold
+                    : FontWeight.normal,
                 color: _parseColor(element.textColor),
               ),
               textAlign: element.textAlign == 'center'
@@ -678,7 +707,9 @@ class _PresentationModeView extends StatelessWidget {
       case 'shape':
         return Container(
           decoration: BoxDecoration(
-            color: element.fillColor != null ? _parseColor(element.fillColor!) : Colors.blue,
+            color: element.fillColor != null
+                ? _parseColor(element.fillColor!)
+                : Colors.blue,
             borderRadius: element.shapeType == 'circle'
                 ? BorderRadius.circular(9999)
                 : BorderRadius.circular(4),

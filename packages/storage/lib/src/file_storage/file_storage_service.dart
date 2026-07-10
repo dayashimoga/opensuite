@@ -167,9 +167,8 @@ class FileStorageService {
     String? subdirectory,
   }) async {
     final dir = await appDirectory;
-    final targetDir = subdirectory != null
-        ? Directory(p.join(dir.path, subdirectory))
-        : dir;
+    final targetDir =
+        subdirectory != null ? Directory(p.join(dir.path, subdirectory)) : dir;
 
     if (!await targetDir.exists()) {
       await targetDir.create(recursive: true);

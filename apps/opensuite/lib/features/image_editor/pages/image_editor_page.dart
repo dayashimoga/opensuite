@@ -44,14 +44,16 @@ class _EditorContent extends StatelessWidget {
               IconButton(
                 icon: const Icon(Icons.undo, size: 20),
                 onPressed: state.canUndo
-                    ? () => context.read<ImageEditorBloc>().add(const UndoEdit())
+                    ? () =>
+                        context.read<ImageEditorBloc>().add(const UndoEdit())
                     : null,
                 tooltip: 'Undo',
               ),
               IconButton(
                 icon: const Icon(Icons.redo, size: 20),
                 onPressed: state.canRedo
-                    ? () => context.read<ImageEditorBloc>().add(const RedoEdit())
+                    ? () =>
+                        context.read<ImageEditorBloc>().add(const RedoEdit())
                     : null,
                 tooltip: 'Redo',
               ),
@@ -60,7 +62,8 @@ class _EditorContent extends StatelessWidget {
               IconButton(
                 icon: const Icon(Icons.refresh, size: 20),
                 onPressed: state.hasEdits
-                    ? () => context.read<ImageEditorBloc>().add(const ResetEdits())
+                    ? () =>
+                        context.read<ImageEditorBloc>().add(const ResetEdits())
                     : null,
                 tooltip: 'Reset',
               ),
@@ -74,7 +77,8 @@ class _EditorContent extends StatelessWidget {
                   PopupMenuItem(value: 'jpeg', child: Text('Export as JPEG')),
                   PopupMenuItem(value: 'webp', child: Text('Export as WebP')),
                 ],
-                onSelected: (format) => context.read<ImageEditorBloc>()
+                onSelected: (format) => context
+                    .read<ImageEditorBloc>()
                     .add(ExportImage(format: format)),
               ),
             ],
@@ -84,8 +88,8 @@ class _EditorContent extends StatelessWidget {
               // Tool sidebar
               _ToolSidebar(
                 activeTool: state.activeTool,
-                onSelectTool: (tool) => context.read<ImageEditorBloc>()
-                    .add(SelectTool(tool)),
+                onSelectTool: (tool) =>
+                    context.read<ImageEditorBloc>().add(SelectTool(tool)),
               ),
               // Main canvas
               Expanded(
@@ -125,7 +129,8 @@ class _ToolSidebar extends StatelessWidget {
       width: 64,
       decoration: BoxDecoration(
         border: Border(
-          right: BorderSide(color: theme.colorScheme.outlineVariant, width: 0.5),
+          right:
+              BorderSide(color: theme.colorScheme.outlineVariant, width: 0.5),
         ),
       ),
       child: Column(
@@ -139,12 +144,12 @@ class _ToolSidebar extends StatelessWidget {
                 width: 64,
                 height: 56,
                 decoration: BoxDecoration(
-                  color: isActive
-                      ? theme.colorScheme.primaryContainer
-                      : null,
+                  color: isActive ? theme.colorScheme.primaryContainer : null,
                   border: Border(
                     left: BorderSide(
-                      color: isActive ? theme.colorScheme.primary : Colors.transparent,
+                      color: isActive
+                          ? theme.colorScheme.primary
+                          : Colors.transparent,
                       width: 3,
                     ),
                   ),
@@ -152,7 +157,9 @@ class _ToolSidebar extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(tool.$2, size: 20,
+                    Icon(
+                      tool.$2,
+                      size: 20,
                       color: isActive
                           ? theme.colorScheme.primary
                           : theme.colorScheme.onSurfaceVariant,
@@ -230,24 +237,29 @@ class _ImageCanvas extends StatelessWidget {
                 ],
               ),
               child: ColorFiltered(
-                colorFilter: ColorFilter.matrix(_buildColorMatrix(state.adjustments)),
+                colorFilter:
+                    ColorFilter.matrix(_buildColorMatrix(state.adjustments)),
                 child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.image, size: 80,
-                        color: theme.colorScheme.primary.withValues(alpha: 0.3)),
+                      Icon(Icons.image,
+                          size: 80,
+                          color:
+                              theme.colorScheme.primary.withValues(alpha: 0.3)),
                       const SizedBox(height: 8),
                       Text(
                         state.filePath?.split('/').last ?? '',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.5),
                         ),
                       ),
                       Text(
                         '${state.imageWidth} × ${state.imageHeight}',
                         style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.3),
                         ),
                       ),
                     ],
@@ -277,10 +289,26 @@ class _ImageCanvas extends StatelessWidget {
     final sb = (1 - s) * lb;
 
     return [
-      c * (sr + s), c * sg, c * sb, 0, b * 255 * 0.5,
-      c * sr, c * (sg + s), c * sb, 0, b * 255 * 0.5,
-      c * sr, c * sg, c * (sb + s), 0, b * 255 * 0.5,
-      0, 0, 0, 1, 0,
+      c * (sr + s),
+      c * sg,
+      c * sb,
+      0,
+      b * 255 * 0.5,
+      c * sr,
+      c * (sg + s),
+      c * sb,
+      0,
+      b * 255 * 0.5,
+      c * sr,
+      c * sg,
+      c * (sb + s),
+      0,
+      b * 255 * 0.5,
+      0,
+      0,
+      0,
+      1,
+      0,
     ];
   }
 }
@@ -340,14 +368,23 @@ class _AdjustmentsPanel extends StatelessWidget {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  _ActionChip(label: 'Rotate 90°', icon: Icons.rotate_right,
-                    onTap: () => bloc.add(const RotateImage(90))),
-                  _ActionChip(label: 'Rotate -90°', icon: Icons.rotate_left,
-                    onTap: () => bloc.add(const RotateImage(-90))),
-                  _ActionChip(label: 'Flip H', icon: Icons.flip,
-                    onTap: () => bloc.add(const FlipImage(horizontal: true))),
-                  _ActionChip(label: 'Flip V', icon: Icons.flip,
-                    onTap: () => bloc.add(const FlipImage(horizontal: false))),
+                  _ActionChip(
+                      label: 'Rotate 90°',
+                      icon: Icons.rotate_right,
+                      onTap: () => bloc.add(const RotateImage(90))),
+                  _ActionChip(
+                      label: 'Rotate -90°',
+                      icon: Icons.rotate_left,
+                      onTap: () => bloc.add(const RotateImage(-90))),
+                  _ActionChip(
+                      label: 'Flip H',
+                      icon: Icons.flip,
+                      onTap: () => bloc.add(const FlipImage(horizontal: true))),
+                  _ActionChip(
+                      label: 'Flip V',
+                      icon: Icons.flip,
+                      onTap: () =>
+                          bloc.add(const FlipImage(horizontal: false))),
                 ],
               ),
               const SizedBox(height: 16),
@@ -356,29 +393,43 @@ class _AdjustmentsPanel extends StatelessWidget {
                 value: state.adjustments.rotation,
                 min: -180,
                 max: 180,
-                onChanged: (v) => bloc.add(RotateImage(v - state.adjustments.rotation)),
+                onChanged: (v) =>
+                    bloc.add(RotateImage(v - state.adjustments.rotation)),
               ),
             ],
             if (state.activeTool == 'resize') ...[
               Text('Resize', style: theme.textTheme.titleSmall),
               const SizedBox(height: 12),
-              Text('Width: ${state.imageWidth}px', style: theme.textTheme.bodySmall),
-              Text('Height: ${state.imageHeight}px', style: theme.textTheme.bodySmall),
+              Text('Width: ${state.imageWidth}px',
+                  style: theme.textTheme.bodySmall),
+              Text('Height: ${state.imageHeight}px',
+                  style: theme.textTheme.bodySmall),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  _ActionChip(label: '50%', icon: Icons.photo_size_select_small,
-                    onTap: () => bloc.add(ResizeImageDimensions(
-                      state.imageWidth ~/ 2, state.imageHeight ~/ 2))),
-                  _ActionChip(label: '75%', icon: Icons.photo_size_select_large,
-                    onTap: () => bloc.add(ResizeImageDimensions(
-                      (state.imageWidth * 0.75).toInt(), (state.imageHeight * 0.75).toInt()))),
-                  _ActionChip(label: '1080p', icon: Icons.hd,
-                    onTap: () => bloc.add(const ResizeImageDimensions(1920, 1080))),
-                  _ActionChip(label: '720p', icon: Icons.sd,
-                    onTap: () => bloc.add(const ResizeImageDimensions(1280, 720))),
+                  _ActionChip(
+                      label: '50%',
+                      icon: Icons.photo_size_select_small,
+                      onTap: () => bloc.add(ResizeImageDimensions(
+                          state.imageWidth ~/ 2, state.imageHeight ~/ 2))),
+                  _ActionChip(
+                      label: '75%',
+                      icon: Icons.photo_size_select_large,
+                      onTap: () => bloc.add(ResizeImageDimensions(
+                          (state.imageWidth * 0.75).toInt(),
+                          (state.imageHeight * 0.75).toInt()))),
+                  _ActionChip(
+                      label: '1080p',
+                      icon: Icons.hd,
+                      onTap: () =>
+                          bloc.add(const ResizeImageDimensions(1920, 1080))),
+                  _ActionChip(
+                      label: '720p',
+                      icon: Icons.sd,
+                      onTap: () =>
+                          bloc.add(const ResizeImageDimensions(1280, 720))),
                 ],
               ),
             ],
@@ -386,16 +437,20 @@ class _AdjustmentsPanel extends StatelessWidget {
               Text('Crop', style: theme.textTheme.titleSmall),
               const SizedBox(height: 12),
               Text('Drag handles on the image to crop.',
-                style: theme.textTheme.bodySmall),
+                  style: theme.textTheme.bodySmall),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  _ActionChip(label: 'Free', icon: Icons.crop_free, onTap: () {}),
-                  _ActionChip(label: '16:9', icon: Icons.crop_16_9, onTap: () {}),
-                  _ActionChip(label: '4:3', icon: Icons.crop_landscape, onTap: () {}),
-                  _ActionChip(label: '1:1', icon: Icons.crop_square, onTap: () {}),
+                  _ActionChip(
+                      label: 'Free', icon: Icons.crop_free, onTap: () {}),
+                  _ActionChip(
+                      label: '16:9', icon: Icons.crop_16_9, onTap: () {}),
+                  _ActionChip(
+                      label: '4:3', icon: Icons.crop_landscape, onTap: () {}),
+                  _ActionChip(
+                      label: '1:1', icon: Icons.crop_square, onTap: () {}),
                 ],
               ),
             ],
@@ -450,7 +505,8 @@ class _ActionChip extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
 
-  const _ActionChip({required this.label, required this.icon, required this.onTap});
+  const _ActionChip(
+      {required this.label, required this.icon, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -482,17 +538,21 @@ class _StatusBar extends StatelessWidget {
       child: Row(
         children: [
           Text('${state.imageWidth} × ${state.imageHeight}',
-            style: theme.textTheme.labelSmall),
+              style: theme.textTheme.labelSmall),
           const Spacer(),
           if (state.adjustments.rotation != 0)
-            Text('Rotation: ${state.adjustments.rotation.toStringAsFixed(0)}°  ',
-              style: theme.textTheme.labelSmall),
+            Text(
+                'Rotation: ${state.adjustments.rotation.toStringAsFixed(0)}°  ',
+                style: theme.textTheme.labelSmall),
           if (state.hasEdits)
-            Text('Modified', style: theme.textTheme.labelSmall?.copyWith(
-              color: Colors.orange)),
+            Text('Modified',
+                style:
+                    theme.textTheme.labelSmall?.copyWith(color: Colors.orange)),
           if (state.status == ImageEditorStatus.saving)
-            const SizedBox(width: 16, height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2)),
+            const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2)),
         ],
       ),
     );

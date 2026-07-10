@@ -75,7 +75,9 @@ class ChangeViewMode extends FileManagerEvent {
 // ── State ───────────────────────────────────────────────────
 
 enum FileManagerStatus { initial, loading, loaded, error }
+
 enum FileViewMode { grid, list }
+
 enum FileTab { recent, favorites }
 
 class FileManagerState extends Equatable {
@@ -115,7 +117,12 @@ class FileManagerState extends Equatable {
 
   @override
   List<Object?> get props => [
-        status, files, searchQuery, viewMode, activeTab, errorMessage,
+        status,
+        files,
+        searchQuery,
+        viewMode,
+        activeTab,
+        errorMessage,
       ];
 }
 

@@ -163,7 +163,16 @@ class DuplicatePresentationEntry extends PresentationEvent {
 
 // --- State ---
 
-enum PresentationStatus { initial, loading, loaded, editing, presenting, saving, saved, error }
+enum PresentationStatus {
+  initial,
+  loading,
+  loaded,
+  editing,
+  presenting,
+  saving,
+  saved,
+  error
+}
 
 class PresentationState extends Equatable {
   final PresentationStatus status;
@@ -220,9 +229,17 @@ class PresentationState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [status, presentations, currentPresentation,
-    slides, activeSlideIndex, selectedElementId, isPresentationMode,
-    hasUnsavedChanges, errorMessage];
+  List<Object?> get props => [
+        status,
+        presentations,
+        currentPresentation,
+        slides,
+        activeSlideIndex,
+        selectedElementId,
+        isPresentationMode,
+        hasUnsavedChanges,
+        errorMessage
+      ];
 }
 
 // --- BLoC ---
@@ -258,17 +275,21 @@ class PresentationBloc extends Bloc<PresentationEvent, PresentationState> {
     on<DuplicatePresentationEntry>(_onDuplicate);
   }
 
-  Future<void> _onLoad(LoadPresentations event, Emitter<PresentationState> emit) async {
+  Future<void> _onLoad(
+      LoadPresentations event, Emitter<PresentationState> emit) async {
     emit(state.copyWith(status: PresentationStatus.loading));
     try {
       final list = await _dao.getAllPresentations();
-      emit(state.copyWith(status: PresentationStatus.loaded, presentations: list));
+      emit(state.copyWith(
+          status: PresentationStatus.loaded, presentations: list));
     } catch (e) {
-      emit(state.copyWith(status: PresentationStatus.error, errorMessage: '$e'));
+      emit(
+          state.copyWith(status: PresentationStatus.error, errorMessage: '$e'));
     }
   }
 
-  Future<void> _onCreate(CreatePresentation event, Emitter<PresentationState> emit) async {
+  Future<void> _onCreate(
+      CreatePresentation event, Emitter<PresentationState> emit) async {
     final now = DateTime.now();
     final titleSlide = SlideData(
       id: '1',
@@ -321,20 +342,25 @@ class PresentationBloc extends Bloc<PresentationEvent, PresentationState> {
         hasUnsavedChanges: false,
       ));
     } catch (e) {
-      emit(state.copyWith(status: PresentationStatus.error, errorMessage: '$e'));
+      emit(
+          state.copyWith(status: PresentationStatus.error, errorMessage: '$e'));
     }
   }
 
-  Future<void> _onOpen(OpenPresentation event, Emitter<PresentationState> emit) async {
+  Future<void> _onOpen(
+      OpenPresentation event, Emitter<PresentationState> emit) async {
     emit(state.copyWith(status: PresentationStatus.loading));
     try {
       final entity = await _dao.getPresentation(event.id);
       if (entity == null) {
-        emit(state.copyWith(status: PresentationStatus.error, errorMessage: 'Not found'));
+        emit(state.copyWith(
+            status: PresentationStatus.error, errorMessage: 'Not found'));
         return;
       }
       final slidesJson = jsonDecode(entity.content) as List;
-      final slides = slidesJson.map((s) => SlideData.fromMap(s as Map<String, dynamic>)).toList();
+      final slides = slidesJson
+          .map((s) => SlideData.fromMap(s as Map<String, dynamic>))
+          .toList();
       emit(state.copyWith(
         status: PresentationStatus.editing,
         currentPresentation: entity,
@@ -343,13 +369,15 @@ class PresentationBloc extends Bloc<PresentationEvent, PresentationState> {
         hasUnsavedChanges: false,
       ));
     } catch (e) {
-      emit(state.copyWith(status: PresentationStatus.error, errorMessage: '$e'));
+      emit(
+          state.copyWith(status: PresentationStatus.error, errorMessage: '$e'));
     }
   }
 
   void _onSelectSlide(SelectSlide event, Emitter<PresentationState> emit) {
     if (event.index >= 0 && event.index < state.slides.length) {
-      emit(state.copyWith(activeSlideIndex: event.index, selectedElementId: null));
+      emit(state.copyWith(
+          activeSlideIndex: event.index, selectedElementId: null));
     }
   }
 
@@ -374,34 +402,40 @@ class PresentationBloc extends Bloc<PresentationEvent, PresentationState> {
     final newIndex = state.activeSlideIndex >= newSlides.length
         ? newSlides.length - 1
         : state.activeSlideIndex;
-    emit(state.copyWith(slides: newSlides, activeSlideIndex: newIndex, hasUnsavedChanges: true));
+    emit(state.copyWith(
+        slides: newSlides,
+        activeSlideIndex: newIndex,
+        hasUnsavedChanges: true));
     _scheduleAutoSave();
   }
 
-  void _onDuplicateSlide(DuplicateSlide event, Emitter<PresentationState> emit) {
+  void _onDuplicateSlide(
+      DuplicateSlide event, Emitter<PresentationState> emit) {
     if (event.index >= 0 && event.index < state.slides.length) {
       final original = state.slides[event.index];
       final copy = SlideData(
         id: DateTime.now().microsecondsSinceEpoch.toString(),
         backgroundColor: original.backgroundColor,
-        elements: original.elements.map((e) => SlideElement(
-          id: '${e.id}_copy_${DateTime.now().microsecond}',
-          type: e.type,
-          x: e.x,
-          y: e.y,
-          width: e.width,
-          height: e.height,
-          content: e.content,
-          fontSize: e.fontSize,
-          fontWeight: e.fontWeight,
-          textAlign: e.textAlign,
-          textColor: e.textColor,
-          fillColor: e.fillColor,
-          borderColor: e.borderColor,
-          borderWidth: e.borderWidth,
-          shapeType: e.shapeType,
-          zIndex: e.zIndex,
-        )).toList(),
+        elements: original.elements
+            .map((e) => SlideElement(
+                  id: '${e.id}_copy_${DateTime.now().microsecond}',
+                  type: e.type,
+                  x: e.x,
+                  y: e.y,
+                  width: e.width,
+                  height: e.height,
+                  content: e.content,
+                  fontSize: e.fontSize,
+                  fontWeight: e.fontWeight,
+                  textAlign: e.textAlign,
+                  textColor: e.textColor,
+                  fillColor: e.fillColor,
+                  borderColor: e.borderColor,
+                  borderWidth: e.borderWidth,
+                  shapeType: e.shapeType,
+                  zIndex: e.zIndex,
+                ))
+            .toList(),
         speakerNotes: original.speakerNotes,
         transition: original.transition,
         layout: original.layout,
@@ -435,7 +469,9 @@ class PresentationBloc extends Bloc<PresentationEvent, PresentationState> {
 
   void _onDeleteElement(DeleteElement event, Emitter<PresentationState> emit) {
     if (state.activeSlide == null) return;
-    final elements = state.activeSlide!.elements.where((e) => e.id != event.elementId).toList();
+    final elements = state.activeSlide!.elements
+        .where((e) => e.id != event.elementId)
+        .toList();
     _updateCurrentSlide(emit, state.activeSlide!.copyWith(elements: elements));
     emit(state.copyWith(selectedElementId: null));
   }
@@ -462,22 +498,29 @@ class PresentationBloc extends Bloc<PresentationEvent, PresentationState> {
     _updateCurrentSlide(emit, state.activeSlide!.copyWith(elements: elements));
   }
 
-  void _onUpdateSpeakerNotes(UpdateSpeakerNotes event, Emitter<PresentationState> emit) {
+  void _onUpdateSpeakerNotes(
+      UpdateSpeakerNotes event, Emitter<PresentationState> emit) {
     if (state.activeSlide == null) return;
-    _updateCurrentSlide(emit, state.activeSlide!.copyWith(speakerNotes: event.notes));
+    _updateCurrentSlide(
+        emit, state.activeSlide!.copyWith(speakerNotes: event.notes));
   }
 
-  void _onSetTransition(SetSlideTransition event, Emitter<PresentationState> emit) {
+  void _onSetTransition(
+      SetSlideTransition event, Emitter<PresentationState> emit) {
     if (state.activeSlide == null) return;
-    _updateCurrentSlide(emit, state.activeSlide!.copyWith(transition: event.transition));
+    _updateCurrentSlide(
+        emit, state.activeSlide!.copyWith(transition: event.transition));
   }
 
-  void _onSetBackground(SetSlideBackground event, Emitter<PresentationState> emit) {
+  void _onSetBackground(
+      SetSlideBackground event, Emitter<PresentationState> emit) {
     if (state.activeSlide == null) return;
-    _updateCurrentSlide(emit, state.activeSlide!.copyWith(backgroundColor: event.color));
+    _updateCurrentSlide(
+        emit, state.activeSlide!.copyWith(backgroundColor: event.color));
   }
 
-  void _onTogglePresentationMode(TogglePresentationMode event, Emitter<PresentationState> emit) {
+  void _onTogglePresentationMode(
+      TogglePresentationMode event, Emitter<PresentationState> emit) {
     emit(state.copyWith(
       isPresentationMode: !state.isPresentationMode,
       status: state.isPresentationMode
@@ -486,14 +529,16 @@ class PresentationBloc extends Bloc<PresentationEvent, PresentationState> {
     ));
   }
 
-  void _updateCurrentSlide(Emitter<PresentationState> emit, SlideData updatedSlide) {
+  void _updateCurrentSlide(
+      Emitter<PresentationState> emit, SlideData updatedSlide) {
     final newSlides = List<SlideData>.from(state.slides);
     newSlides[state.activeSlideIndex] = updatedSlide;
     emit(state.copyWith(slides: newSlides, hasUnsavedChanges: true));
     _scheduleAutoSave();
   }
 
-  Future<void> _onSave(SavePresentation event, Emitter<PresentationState> emit) async {
+  Future<void> _onSave(
+      SavePresentation event, Emitter<PresentationState> emit) async {
     if (state.currentPresentation == null) return;
     emit(state.copyWith(status: PresentationStatus.saving));
     try {
@@ -512,11 +557,13 @@ class PresentationBloc extends Bloc<PresentationEvent, PresentationState> {
       await Future.delayed(const Duration(milliseconds: 500));
       emit(state.copyWith(status: PresentationStatus.editing));
     } catch (e) {
-      emit(state.copyWith(status: PresentationStatus.error, errorMessage: '$e'));
+      emit(
+          state.copyWith(status: PresentationStatus.error, errorMessage: '$e'));
     }
   }
 
-  Future<void> _onAutoSave(AutoSavePresentation event, Emitter<PresentationState> emit) async {
+  Future<void> _onAutoSave(
+      AutoSavePresentation event, Emitter<PresentationState> emit) async {
     if (state.currentPresentation == null || !state.hasUnsavedChanges) return;
     try {
       final content = jsonEncode(state.slides.map((s) => s.toMap()).toList());
@@ -526,35 +573,43 @@ class PresentationBloc extends Bloc<PresentationEvent, PresentationState> {
         modifiedAt: DateTime.now(),
       );
       await _dao.updatePresentation(updated);
-      emit(state.copyWith(currentPresentation: updated, hasUnsavedChanges: false));
+      emit(state.copyWith(
+          currentPresentation: updated, hasUnsavedChanges: false));
     } catch (_) {}
   }
 
-  Future<void> _onDelete(DeletePresentationEntry event, Emitter<PresentationState> emit) async {
+  Future<void> _onDelete(
+      DeletePresentationEntry event, Emitter<PresentationState> emit) async {
     try {
       await _dao.deletePresentation(event.id);
-      final updated = state.presentations.where((p) => p.id != event.id).toList();
+      final updated =
+          state.presentations.where((p) => p.id != event.id).toList();
       emit(state.copyWith(presentations: updated));
     } catch (e) {
-      emit(state.copyWith(status: PresentationStatus.error, errorMessage: '$e'));
+      emit(
+          state.copyWith(status: PresentationStatus.error, errorMessage: '$e'));
     }
   }
 
-  Future<void> _onToggleFavorite(TogglePresentationFavorite event, Emitter<PresentationState> emit) async {
+  Future<void> _onToggleFavorite(
+      TogglePresentationFavorite event, Emitter<PresentationState> emit) async {
     try {
       await _dao.toggleFavorite(event.id);
       add(const LoadPresentations());
     } catch (e) {
-      emit(state.copyWith(status: PresentationStatus.error, errorMessage: '$e'));
+      emit(
+          state.copyWith(status: PresentationStatus.error, errorMessage: '$e'));
     }
   }
 
-  Future<void> _onDuplicate(DuplicatePresentationEntry event, Emitter<PresentationState> emit) async {
+  Future<void> _onDuplicate(
+      DuplicatePresentationEntry event, Emitter<PresentationState> emit) async {
     try {
       await _dao.duplicatePresentation(event.id);
       add(const LoadPresentations());
     } catch (e) {
-      emit(state.copyWith(status: PresentationStatus.error, errorMessage: '$e'));
+      emit(
+          state.copyWith(status: PresentationStatus.error, errorMessage: '$e'));
     }
   }
 

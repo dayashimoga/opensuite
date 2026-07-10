@@ -197,15 +197,11 @@ enum FileType {
 
   /// Whether this type is a spreadsheet format.
   bool get isSpreadsheet =>
-      this == FileType.xlsx ||
-      this == FileType.csv ||
-      this == FileType.ods;
+      this == FileType.xlsx || this == FileType.csv || this == FileType.ods;
 
   /// Whether this type is a presentation format.
-  bool get isPresentation =>
-      this == FileType.pptx || this == FileType.odp;
+  bool get isPresentation => this == FileType.pptx || this == FileType.odp;
 
   /// The primary extension (first in the list) or empty string.
-  String get primaryExtension =>
-      extensions.isNotEmpty ? extensions.first : '';
+  String get primaryExtension => extensions.isNotEmpty ? extensions.first : '';
 }

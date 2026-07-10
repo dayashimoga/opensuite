@@ -84,5 +84,6 @@ class SpreadsheetEntity extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, title, content, sheetCount, isFavorite, modifiedAt];
+  List<Object?> get props =>
+      [id, title, content, sheetCount, isFavorite, modifiedAt];
 }

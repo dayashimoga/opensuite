@@ -50,9 +50,7 @@ class _FileManagerContent extends StatelessWidget {
                   final newMode = state.viewMode == FileViewMode.grid
                       ? FileViewMode.list
                       : FileViewMode.grid;
-                  context
-                      .read<FileManagerBloc>()
-                      .add(ChangeViewMode(newMode));
+                  context.read<FileManagerBloc>().add(ChangeViewMode(newMode));
                 },
               );
             },
@@ -81,9 +79,7 @@ class _FileManagerContent extends StatelessWidget {
                   confirmLabel: 'Clear',
                 );
                 if (confirmed && context.mounted) {
-                  context
-                      .read<FileManagerBloc>()
-                      .add(const ClearRecentFiles());
+                  context.read<FileManagerBloc>().add(const ClearRecentFiles());
                 }
               }
             },
@@ -274,9 +270,7 @@ class _FileListTile extends StatelessWidget {
         children: [
           IconButton(
             icon: Icon(
-              file.isFavorite
-                  ? Icons.star_rounded
-                  : Icons.star_outline_rounded,
+              file.isFavorite ? Icons.star_rounded : Icons.star_outline_rounded,
               color: file.isFavorite ? AppColors.secondary : null,
               size: 20,
             ),
@@ -284,9 +278,7 @@ class _FileListTile extends StatelessWidget {
                 ? AppLocalizations.unfavoriteNote
                 : AppLocalizations.favoriteNote,
             onPressed: () {
-              context
-                  .read<FileManagerBloc>()
-                  .add(ToggleFileFavorite(file.id));
+              context.read<FileManagerBloc>().add(ToggleFileFavorite(file.id));
             },
           ),
           PopupMenuButton<String>(
@@ -305,9 +297,7 @@ class _FileListTile extends StatelessWidget {
             ],
             onSelected: (value) {
               if (value == 'delete') {
-                context
-                    .read<FileManagerBloc>()
-                    .add(DeleteRecentFile(file.id));
+                context.read<FileManagerBloc>().add(DeleteRecentFile(file.id));
               }
             },
           ),

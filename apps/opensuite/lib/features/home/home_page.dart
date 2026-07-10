@@ -50,7 +50,10 @@ class HomePage extends StatelessWidget {
   Widget _buildHeader(BuildContext context, ThemeData theme) {
     return Container(
       padding: const EdgeInsets.fromLTRB(
-        AppSpacing.xxl, AppSpacing.xxxl, AppSpacing.xxl, AppSpacing.lg,
+        AppSpacing.xxl,
+        AppSpacing.xxxl,
+        AppSpacing.xxl,
+        AppSpacing.lg,
       ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -135,7 +138,8 @@ class HomePage extends StatelessWidget {
     final modules = [
       _ModuleInfo(
         title: AppLocalizations.notes,
-        description: 'Create and organize notes with rich text, markdown, and checklists.',
+        description:
+            'Create and organize notes with rich text, markdown, and checklists.',
         icon: Icons.note_alt_rounded,
         color: const Color(0xFF8B5CF6),
         route: AppRouter.notes,
@@ -149,14 +153,16 @@ class HomePage extends StatelessWidget {
       ),
       _ModuleInfo(
         title: AppLocalizations.textEditor,
-        description: 'Edit text and markdown files with live preview and syntax support.',
+        description:
+            'Edit text and markdown files with live preview and syntax support.',
         icon: Icons.edit_document,
         color: const Color(0xFF14B8A6),
         route: AppRouter.editor,
       ),
       _ModuleInfo(
         title: AppLocalizations.documents,
-        description: 'Create and edit rich documents with formatting, tables, and images.',
+        description:
+            'Create and edit rich documents with formatting, tables, and images.',
         icon: Icons.description_rounded,
         color: const Color(0xFF3B82F6),
         route: null, // Coming soon
@@ -164,7 +170,8 @@ class HomePage extends StatelessWidget {
       ),
       _ModuleInfo(
         title: AppLocalizations.spreadsheets,
-        description: 'Work with spreadsheets featuring formulas, charts, and more.',
+        description:
+            'Work with spreadsheets featuring formulas, charts, and more.',
         icon: Icons.table_chart_rounded,
         color: const Color(0xFF22C55E),
         route: null,
@@ -195,8 +202,7 @@ class HomePage extends StatelessWidget {
             mainAxisSpacing: AppSpacing.md,
           ),
           itemCount: modules.length,
-          itemBuilder: (context, index) =>
-              _ModuleCard(module: modules[index]),
+          itemBuilder: (context, index) => _ModuleCard(module: modules[index]),
         ),
       ],
     );
@@ -233,9 +239,7 @@ class _ModuleCard extends StatelessWidget {
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: module.route != null
-            ? () => context.go(module.route!)
-            : null,
+        onTap: module.route != null ? () => context.go(module.route!) : null,
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
@@ -247,8 +251,7 @@ class _ModuleCard extends StatelessWidget {
                     padding: const EdgeInsets.all(AppSpacing.sm),
                     decoration: BoxDecoration(
                       color: module.color.withValues(alpha: 0.12),
-                      borderRadius:
-                          BorderRadius.circular(AppSpacing.radiusMd),
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                     ),
                     child: Icon(
                       module.icon,

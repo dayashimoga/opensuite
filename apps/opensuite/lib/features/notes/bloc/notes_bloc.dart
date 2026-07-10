@@ -90,8 +90,7 @@ class NotesState extends Equatable {
   final NoteEntity? selectedNote;
 
   /// Notes filtered by pinned status.
-  List<NoteEntity> get pinnedNotes =>
-      notes.where((n) => n.isPinned).toList();
+  List<NoteEntity> get pinnedNotes => notes.where((n) => n.isPinned).toList();
 
   /// Notes that are not pinned.
   List<NoteEntity> get unpinnedNotes =>
@@ -115,7 +114,11 @@ class NotesState extends Equatable {
 
   @override
   List<Object?> get props => [
-        status, notes, searchQuery, errorMessage, selectedNote,
+        status,
+        notes,
+        searchQuery,
+        errorMessage,
+        selectedNote,
       ];
 }
 

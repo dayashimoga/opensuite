@@ -110,9 +110,8 @@ class NoteEntity extends Equatable {
   /// Preview of the content, truncated to 100 characters.
   String get contentPreview {
     if (content.isEmpty) return 'Empty note';
-    final text = content.length > 100
-        ? '${content.substring(0, 100)}…'
-        : content;
+    final text =
+        content.length > 100 ? '${content.substring(0, 100)}…' : content;
     return text.replaceAll('\n', ' ');
   }
 
@@ -123,8 +122,16 @@ class NoteEntity extends Equatable {
 
   @override
   List<Object?> get props => [
-        id, title, content, contentType, isPinned,
-        isFavorite, color, tags, createdAt, modifiedAt,
+        id,
+        title,
+        content,
+        contentType,
+        isPinned,
+        isFavorite,
+        color,
+        tags,
+        createdAt,
+        modifiedAt,
       ];
 }
 

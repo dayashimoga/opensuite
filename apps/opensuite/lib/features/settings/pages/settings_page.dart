@@ -41,17 +41,15 @@ class SettingsPage extends StatelessWidget {
                 title: Text(AppLocalizations.lineNumbers),
                 subtitle: const Text('Show line numbers in the text editor'),
                 value: state.showLineNumbers,
-                onChanged: (_) => context
-                    .read<SettingsBloc>()
-                    .add(const ToggleLineNumbers()),
+                onChanged: (_) =>
+                    context.read<SettingsBloc>().add(const ToggleLineNumbers()),
               ),
               SwitchListTile(
                 title: Text(AppLocalizations.wordWrap),
                 subtitle: const Text('Wrap long lines to fit the editor width'),
                 value: state.wordWrap,
-                onChanged: (_) => context
-                    .read<SettingsBloc>()
-                    .add(const ToggleWordWrap()),
+                onChanged: (_) =>
+                    context.read<SettingsBloc>().add(const ToggleWordWrap()),
               ),
               const Divider(height: AppSpacing.xxxl),
 
@@ -61,9 +59,8 @@ class SettingsPage extends StatelessWidget {
                 title: Text(AppLocalizations.autosave),
                 subtitle: const Text('Automatically save changes'),
                 value: state.autosaveEnabled,
-                onChanged: (_) => context
-                    .read<SettingsBloc>()
-                    .add(const ToggleAutosave()),
+                onChanged: (_) =>
+                    context.read<SettingsBloc>().add(const ToggleAutosave()),
               ),
               if (state.autosaveEnabled)
                 _AutosaveIntervalSelector(
@@ -75,7 +72,8 @@ class SettingsPage extends StatelessWidget {
               const _SectionHeader(title: 'Accessibility'),
               SwitchListTile(
                 title: const Text('High Contrast Mode'),
-                subtitle: const Text('WCAG AAA compliant colors with increased contrast ratios'),
+                subtitle: const Text(
+                    'WCAG AAA compliant colors with increased contrast ratios'),
                 value: state.highContrastMode,
                 onChanged: (_) => context
                     .read<SettingsBloc>()
@@ -214,9 +212,7 @@ class _ThemeSelector extends StatelessWidget {
         ],
         selected: {currentMode},
         onSelectionChanged: (selection) {
-          context
-              .read<SettingsBloc>()
-              .add(ChangeThemeMode(selection.first));
+          context.read<SettingsBloc>().add(ChangeThemeMode(selection.first));
         },
       ),
     );
@@ -260,16 +256,12 @@ class _AutosaveIntervalSelector extends StatelessWidget {
       trailing: DropdownButton<int>(
         value: options.contains(currentSeconds) ? currentSeconds : 30,
         items: options.map((seconds) {
-          final label = seconds < 60
-              ? '${seconds}s'
-              : '${seconds ~/ 60}m';
+          final label = seconds < 60 ? '${seconds}s' : '${seconds ~/ 60}m';
           return DropdownMenuItem(value: seconds, child: Text(label));
         }).toList(),
         onChanged: (value) {
           if (value != null) {
-            context
-                .read<SettingsBloc>()
-                .add(ChangeAutosaveInterval(value));
+            context.read<SettingsBloc>().add(ChangeAutosaveInterval(value));
           }
         },
       ),

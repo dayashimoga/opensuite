@@ -205,9 +205,8 @@ class FormulaEngine {
         return (_evaluateExpression(args[0]) as num).abs();
       case 'ROUND':
         final val = (_evaluateExpression(args[0]) as num).toDouble();
-        final digits = args.length > 1
-            ? (_evaluateExpression(args[1]) as num).toInt()
-            : 0;
+        final digits =
+            args.length > 1 ? (_evaluateExpression(args[1]) as num).toInt() : 0;
         final multiplier = math.pow(10, digits);
         return (val * multiplier).roundToDouble() / multiplier;
       case 'FLOOR':
@@ -254,15 +253,14 @@ class FormulaEngine {
         final vals = _flattenToNumbers(args)..sort();
         if (vals.isEmpty) return 0.0;
         final mid = vals.length ~/ 2;
-        return vals.length.isOdd
-            ? vals[mid]
-            : (vals[mid - 1] + vals[mid]) / 2;
+        return vals.length.isOdd ? vals[mid] : (vals[mid - 1] + vals[mid]) / 2;
       case 'STDEV':
         final vals = _flattenToNumbers(args);
         if (vals.length < 2) return 0.0;
         final avg = vals.reduce((a, b) => a + b) / vals.length;
-        final variance = vals.map((v) => math.pow(v - avg, 2))
-            .reduce((a, b) => a + b) / (vals.length - 1);
+        final variance =
+            vals.map((v) => math.pow(v - avg, 2)).reduce((a, b) => a + b) /
+                (vals.length - 1);
         return math.sqrt(variance);
       case 'PRODUCT':
         final vals = _flattenToNumbers(args);
@@ -273,7 +271,9 @@ class FormulaEngine {
         final condition = _evaluateExpression(args[0]);
         final isTrue = condition is bool
             ? condition
-            : (condition is num ? condition != 0 : condition.toString().isNotEmpty);
+            : (condition is num
+                ? condition != 0
+                : condition.toString().isNotEmpty);
         return isTrue
             ? _evaluateExpression(args[1])
             : (args.length > 2 ? _evaluateExpression(args[2]) : 0);
@@ -306,15 +306,13 @@ class FormulaEngine {
         return textResolver(args[0].trim()).trim();
       case 'LEFT':
         final text = textResolver(args[0].trim());
-        final n = args.length > 1
-            ? (_evaluateExpression(args[1]) as num).toInt()
-            : 1;
+        final n =
+            args.length > 1 ? (_evaluateExpression(args[1]) as num).toInt() : 1;
         return text.substring(0, math.min(n, text.length));
       case 'RIGHT':
         final text = textResolver(args[0].trim());
-        final n = args.length > 1
-            ? (_evaluateExpression(args[1]) as num).toInt()
-            : 1;
+        final n =
+            args.length > 1 ? (_evaluateExpression(args[1]) as num).toInt() : 1;
         return text.substring(math.max(0, text.length - n));
       case 'MID':
         final text = textResolver(args[0].trim());
@@ -326,7 +324,9 @@ class FormulaEngine {
         return args.map((a) {
           final val = _evaluateExpression(a);
           return val is num
-              ? (val == val.roundToDouble() ? val.toInt().toString() : val.toString())
+              ? (val == val.roundToDouble()
+                  ? val.toInt().toString()
+                  : val.toString())
               : val.toString();
         }).join();
       case 'SUBSTITUTE':
@@ -403,14 +403,12 @@ class FormulaResult {
     this.errorMessage,
   });
 
-  factory FormulaResult.success(dynamic value) =>
-      FormulaResult._(value: value);
+  factory FormulaResult.success(dynamic value) => FormulaResult._(value: value);
 
-  factory FormulaResult.text(String text) =>
-      FormulaResult._(value: text);
+  factory FormulaResult.text(String text) => FormulaResult._(value: text);
 
-  factory FormulaResult.error(String code, String message) =>
-      FormulaResult._(value: code, isError: true, errorCode: code, errorMessage: message);
+  factory FormulaResult.error(String code, String message) => FormulaResult._(
+      value: code, isError: true, errorCode: code, errorMessage: message);
 
   /// Returns the display string for this result.
   String get displayValue {

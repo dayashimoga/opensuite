@@ -134,7 +134,15 @@ class SortColumn extends SpreadsheetEvent {
 
 // --- State ---
 
-enum SpreadsheetStatus { initial, loading, loaded, editing, saving, saved, error }
+enum SpreadsheetStatus {
+  initial,
+  loading,
+  loaded,
+  editing,
+  saving,
+  saved,
+  error
+}
 
 class SpreadsheetState extends Equatable {
   final SpreadsheetStatus status;
@@ -200,9 +208,18 @@ class SpreadsheetState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [status, spreadsheets, currentSpreadsheet,
-    sheets, activeSheetIndex, selectedCell, cellEditValue,
-    hasUnsavedChanges, searchQuery, errorMessage];
+  List<Object?> get props => [
+        status,
+        spreadsheets,
+        currentSpreadsheet,
+        sheets,
+        activeSheetIndex,
+        selectedCell,
+        cellEditValue,
+        hasUnsavedChanges,
+        searchQuery,
+        errorMessage
+      ];
 }
 
 // --- BLoC ---
@@ -261,29 +278,34 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
     }
   }
 
-  Future<void> _onLoad(LoadSpreadsheets event, Emitter<SpreadsheetState> emit) async {
+  Future<void> _onLoad(
+      LoadSpreadsheets event, Emitter<SpreadsheetState> emit) async {
     emit(state.copyWith(status: SpreadsheetStatus.loading));
     try {
       final list = await _dao.getAllSpreadsheets();
-      emit(state.copyWith(status: SpreadsheetStatus.loaded, spreadsheets: list));
+      emit(
+          state.copyWith(status: SpreadsheetStatus.loaded, spreadsheets: list));
     } catch (e) {
       emit(state.copyWith(status: SpreadsheetStatus.error, errorMessage: '$e'));
     }
   }
 
-  Future<void> _onSearch(SearchSpreadsheets event, Emitter<SpreadsheetState> emit) async {
+  Future<void> _onSearch(
+      SearchSpreadsheets event, Emitter<SpreadsheetState> emit) async {
     emit(state.copyWith(searchQuery: event.query));
     try {
       final list = event.query.isEmpty
           ? await _dao.getAllSpreadsheets()
           : await _dao.searchSpreadsheets(event.query);
-      emit(state.copyWith(status: SpreadsheetStatus.loaded, spreadsheets: list));
+      emit(
+          state.copyWith(status: SpreadsheetStatus.loaded, spreadsheets: list));
     } catch (e) {
       emit(state.copyWith(status: SpreadsheetStatus.error, errorMessage: '$e'));
     }
   }
 
-  Future<void> _onCreate(CreateSpreadsheet event, Emitter<SpreadsheetState> emit) async {
+  Future<void> _onCreate(
+      CreateSpreadsheet event, Emitter<SpreadsheetState> emit) async {
     final now = DateTime.now();
     final defaultSheet = SheetData(
       id: '1',
@@ -316,17 +338,21 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
     }
   }
 
-  Future<void> _onOpen(OpenSpreadsheet event, Emitter<SpreadsheetState> emit) async {
+  Future<void> _onOpen(
+      OpenSpreadsheet event, Emitter<SpreadsheetState> emit) async {
     emit(state.copyWith(status: SpreadsheetStatus.loading));
     try {
       final entity = await _dao.getSpreadsheet(event.id);
       if (entity == null) {
-        emit(state.copyWith(status: SpreadsheetStatus.error, errorMessage: 'Not found'));
+        emit(state.copyWith(
+            status: SpreadsheetStatus.error, errorMessage: 'Not found'));
         return;
       }
 
       final sheetsJson = jsonDecode(entity.content) as List;
-      final sheets = sheetsJson.map((s) => _sheetFromJson(s as Map<String, dynamic>)).toList();
+      final sheets = sheetsJson
+          .map((s) => _sheetFromJson(s as Map<String, dynamic>))
+          .toList();
 
       emit(state.copyWith(
         status: SpreadsheetStatus.editing,
@@ -422,7 +448,8 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
         return;
     }
 
-    final updatedSheet = state.activeSheet!.setCell(state.selectedCell!, updated);
+    final updatedSheet =
+        state.activeSheet!.setCell(state.selectedCell!, updated);
     final newSheets = List<SheetData>.from(state.sheets);
     newSheets[state.activeSheetIndex] = updatedSheet;
 
@@ -458,7 +485,8 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
   void _onRenameSheet(RenameSheet event, Emitter<SpreadsheetState> emit) {
     if (event.index >= 0 && event.index < state.sheets.length) {
       final newSheets = List<SheetData>.from(state.sheets);
-      newSheets[event.index] = newSheets[event.index].copyWith(name: event.name);
+      newSheets[event.index] =
+          newSheets[event.index].copyWith(name: event.name);
       emit(state.copyWith(sheets: newSheets, hasUnsavedChanges: true));
       _scheduleAutoSave();
     }
@@ -478,7 +506,8 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
     _scheduleAutoSave();
   }
 
-  Future<void> _onSave(SaveSpreadsheet event, Emitter<SpreadsheetState> emit) async {
+  Future<void> _onSave(
+      SaveSpreadsheet event, Emitter<SpreadsheetState> emit) async {
     if (state.currentSpreadsheet == null) return;
     emit(state.copyWith(status: SpreadsheetStatus.saving));
     try {
@@ -501,7 +530,8 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
     }
   }
 
-  Future<void> _onAutoSave(AutoSaveSpreadsheet event, Emitter<SpreadsheetState> emit) async {
+  Future<void> _onAutoSave(
+      AutoSaveSpreadsheet event, Emitter<SpreadsheetState> emit) async {
     if (state.currentSpreadsheet == null || !state.hasUnsavedChanges) return;
     try {
       final content = jsonEncode(state.sheets.map(_sheetToJson).toList());
@@ -511,21 +541,25 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
         modifiedAt: DateTime.now(),
       );
       await _dao.updateSpreadsheet(updated);
-      emit(state.copyWith(currentSpreadsheet: updated, hasUnsavedChanges: false));
+      emit(state.copyWith(
+          currentSpreadsheet: updated, hasUnsavedChanges: false));
     } catch (_) {}
   }
 
-  Future<void> _onDelete(DeleteSpreadsheetEntry event, Emitter<SpreadsheetState> emit) async {
+  Future<void> _onDelete(
+      DeleteSpreadsheetEntry event, Emitter<SpreadsheetState> emit) async {
     try {
       await _dao.deleteSpreadsheet(event.id);
-      final updated = state.spreadsheets.where((s) => s.id != event.id).toList();
+      final updated =
+          state.spreadsheets.where((s) => s.id != event.id).toList();
       emit(state.copyWith(spreadsheets: updated));
     } catch (e) {
       emit(state.copyWith(status: SpreadsheetStatus.error, errorMessage: '$e'));
     }
   }
 
-  Future<void> _onToggleFavorite(ToggleSpreadsheetFavorite event, Emitter<SpreadsheetState> emit) async {
+  Future<void> _onToggleFavorite(
+      ToggleSpreadsheetFavorite event, Emitter<SpreadsheetState> emit) async {
     try {
       await _dao.toggleFavorite(event.id);
       add(const LoadSpreadsheets());
@@ -534,7 +568,8 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
     }
   }
 
-  Future<void> _onDuplicate(DuplicateSpreadsheetEntry event, Emitter<SpreadsheetState> emit) async {
+  Future<void> _onDuplicate(
+      DuplicateSpreadsheetEntry event, Emitter<SpreadsheetState> emit) async {
     try {
       await _dao.duplicateSpreadsheet(event.id);
       add(const LoadSpreadsheets());
