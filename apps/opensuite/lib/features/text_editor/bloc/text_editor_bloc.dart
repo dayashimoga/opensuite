@@ -207,9 +207,7 @@ class TextEditorState extends Equatable {
 class TextEditorBloc extends Bloc<TextEditorEvent, TextEditorState> {
   TextEditorBloc({
     required FileStorageService fileStorageService,
-    required PreferencesService preferencesService,
   })  : _fileStorage = fileStorageService,
-        _prefs = preferencesService,
         super(const TextEditorState()) {
     on<LoadDocument>(_onLoadDocument);
     on<CreateNewDocument>(_onCreateNewDocument);
@@ -225,7 +223,6 @@ class TextEditorBloc extends Bloc<TextEditorEvent, TextEditorState> {
   }
 
   final FileStorageService _fileStorage;
-  final PreferencesService _prefs;
   static const _uuid = Uuid();
 
   Future<void> _onLoadDocument(

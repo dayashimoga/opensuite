@@ -131,9 +131,7 @@ class FileManagerState extends Equatable {
 class FileManagerBloc extends Bloc<FileManagerEvent, FileManagerState> {
   FileManagerBloc({
     required RecentFileDao recentFileDao,
-    required FileStorageService fileStorageService,
   })  : _recentFileDao = recentFileDao,
-        _fileStorageService = fileStorageService,
         super(const FileManagerState()) {
     on<LoadRecentFiles>(_onLoadRecentFiles);
     on<LoadFavoriteFiles>(_onLoadFavoriteFiles);
@@ -146,7 +144,6 @@ class FileManagerBloc extends Bloc<FileManagerEvent, FileManagerState> {
   }
 
   final RecentFileDao _recentFileDao;
-  final FileStorageService _fileStorageService;
 
   Future<void> _onLoadRecentFiles(
     LoadRecentFiles event,

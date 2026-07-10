@@ -37,13 +37,11 @@ class AppModule {
   /// Creates a new [FileManagerBloc] instance.
   static FileManagerBloc get fileManagerBloc => FileManagerBloc(
         recentFileDao: sl<RecentFileDao>(),
-        fileStorageService: sl<FileStorageService>(),
       );
 
   /// Creates a new [TextEditorBloc] instance.
   static TextEditorBloc get textEditorBloc => TextEditorBloc(
         fileStorageService: sl<FileStorageService>(),
-        preferencesService: sl<PreferencesService>(),
       );
 
   /// Creates a new [DocumentEditorBloc] instance.

@@ -315,8 +315,6 @@ class _QuickActionChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return ActionChip(
       avatar: Icon(icon, size: 18),
       label: Text(label),

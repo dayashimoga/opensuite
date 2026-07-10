@@ -26,8 +26,6 @@ class _ListContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
       appBar: AppBar(title: const Text('Presentations')),
       body: BlocBuilder<PresentationBloc, PresentationState>(

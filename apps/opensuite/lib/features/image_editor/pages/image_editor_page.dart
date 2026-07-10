@@ -32,8 +32,6 @@ class _EditorContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return BlocBuilder<ImageEditorBloc, ImageEditorState>(
       builder: (context, state) {
         return Scaffold(
