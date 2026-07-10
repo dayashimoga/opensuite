@@ -43,7 +43,7 @@ class _EditorContentState extends State<_EditorContent> {
   final _cellEditController = TextEditingController();
   final _scrollController = ScrollController();
   final _horizontalScrollController = ScrollController();
-  bool _isEditing = false;
+  final bool _isEditing = false;
 
   @override
   void dispose() {
@@ -280,7 +280,7 @@ class _SpreadsheetGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     // Show a reasonable viewport
-    final visibleRows = 50;
+    const visibleRows = 50;
     final visibleCols = sheet.colCount;
 
     return SingleChildScrollView(

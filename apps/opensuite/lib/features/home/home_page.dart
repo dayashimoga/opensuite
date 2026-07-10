@@ -1,7 +1,7 @@
+import 'package:fileutility_l10n/fileutility_l10n.dart';
+import 'package:fileutility_ui_kit/fileutility_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:fileutility_ui_kit/fileutility_ui_kit.dart';
-import 'package:fileutility_l10n/fileutility_l10n.dart';
 
 import '../../router/app_router.dart';
 
@@ -136,52 +136,52 @@ class HomePage extends StatelessWidget {
     bool isDesktop,
   ) {
     final modules = [
-      _ModuleInfo(
+      const _ModuleInfo(
         title: AppLocalizations.notes,
         description:
             'Create and organize notes with rich text, markdown, and checklists.',
         icon: Icons.note_alt_rounded,
-        color: const Color(0xFF8B5CF6),
+        color: Color(0xFF8B5CF6),
         route: AppRouter.notes,
       ),
-      _ModuleInfo(
+      const _ModuleInfo(
         title: AppLocalizations.fileManager,
         description: 'Browse, search, and manage your documents and files.',
         icon: Icons.folder_rounded,
-        color: const Color(0xFFF59E0B),
+        color: Color(0xFFF59E0B),
         route: AppRouter.files,
       ),
-      _ModuleInfo(
+      const _ModuleInfo(
         title: AppLocalizations.textEditor,
         description:
             'Edit text and markdown files with live preview and syntax support.',
         icon: Icons.edit_document,
-        color: const Color(0xFF14B8A6),
+        color: Color(0xFF14B8A6),
         route: AppRouter.editor,
       ),
-      _ModuleInfo(
+      const _ModuleInfo(
         title: AppLocalizations.documents,
         description:
             'Create and edit rich documents with formatting, tables, and images.',
         icon: Icons.description_rounded,
-        color: const Color(0xFF3B82F6),
+        color: Color(0xFF3B82F6),
         route: null, // Coming soon
         comingSoon: true,
       ),
-      _ModuleInfo(
+      const _ModuleInfo(
         title: AppLocalizations.spreadsheets,
         description:
             'Work with spreadsheets featuring formulas, charts, and more.',
         icon: Icons.table_chart_rounded,
-        color: const Color(0xFF22C55E),
+        color: Color(0xFF22C55E),
         route: null,
         comingSoon: true,
       ),
-      _ModuleInfo(
+      const _ModuleInfo(
         title: AppLocalizations.pdf,
         description: 'View, annotate, merge, split, and manage PDF documents.',
         icon: Icons.picture_as_pdf_rounded,
-        color: const Color(0xFFEF4444),
+        color: Color(0xFFEF4444),
         route: null,
         comingSoon: true,
       ),

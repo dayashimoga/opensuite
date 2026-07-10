@@ -1,11 +1,11 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fileutility_l10n/fileutility_l10n.dart';
 import 'package:fileutility_ui_kit/fileutility_ui_kit.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'di/app_module.dart';
 import 'features/settings/bloc/settings_bloc.dart';
 import 'router/app_router.dart';
-import 'di/app_module.dart';
 
 /// Root application widget.
 ///

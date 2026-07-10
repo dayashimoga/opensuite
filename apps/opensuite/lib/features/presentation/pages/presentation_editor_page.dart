@@ -612,7 +612,9 @@ class _PresentationModeView extends StatelessWidget {
           if (event is KeyDownEvent) {
             if (event.logicalKey == LogicalKeyboardKey.escape) onExit();
             if (event.logicalKey == LogicalKeyboardKey.arrowRight ||
-                event.logicalKey == LogicalKeyboardKey.space) onNext();
+                event.logicalKey == LogicalKeyboardKey.space) {
+              onNext();
+            }
             if (event.logicalKey == LogicalKeyboardKey.arrowLeft) onPrevious();
           }
         },

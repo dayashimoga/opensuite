@@ -1,8 +1,8 @@
+import 'package:fileutility_core/fileutility_core.dart';
+import 'package:fileutility_l10n/fileutility_l10n.dart';
+import 'package:fileutility_ui_kit/fileutility_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:fileutility_core/fileutility_core.dart';
-import 'package:fileutility_ui_kit/fileutility_ui_kit.dart';
-import 'package:fileutility_l10n/fileutility_l10n.dart';
 
 import '../bloc/settings_bloc.dart';
 
@@ -15,7 +15,7 @@ class SettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(AppLocalizations.settings),
+        title: const Text(AppLocalizations.settings),
         centerTitle: false,
       ),
       body: BlocBuilder<SettingsBloc, SettingsState>(
@@ -28,22 +28,22 @@ class SettingsPage extends StatelessWidget {
             padding: const EdgeInsets.all(AppSpacing.lg),
             children: [
               // Appearance section
-              _SectionHeader(title: AppLocalizations.appearance),
+              const _SectionHeader(title: AppLocalizations.appearance),
               _ThemeSelector(currentMode: state.themeMode),
               const Divider(height: AppSpacing.xxxl),
 
               // Editor section
-              _SectionHeader(title: AppLocalizations.editor),
+              const _SectionHeader(title: AppLocalizations.editor),
               _FontSizeSlider(fontSize: state.fontSize),
               SwitchListTile(
-                title: Text(AppLocalizations.lineNumbers),
+                title: const Text(AppLocalizations.lineNumbers),
                 subtitle: const Text('Show line numbers in the text editor'),
                 value: state.showLineNumbers,
                 onChanged: (_) =>
                     context.read<SettingsBloc>().add(const ToggleLineNumbers()),
               ),
               SwitchListTile(
-                title: Text(AppLocalizations.wordWrap),
+                title: const Text(AppLocalizations.wordWrap),
                 subtitle: const Text('Wrap long lines to fit the editor width'),
                 value: state.wordWrap,
                 onChanged: (_) =>
@@ -52,9 +52,9 @@ class SettingsPage extends StatelessWidget {
               const Divider(height: AppSpacing.xxxl),
 
               // Autosave section
-              _SectionHeader(title: AppLocalizations.autosave),
+              const _SectionHeader(title: AppLocalizations.autosave),
               SwitchListTile(
-                title: Text(AppLocalizations.autosave),
+                title: const Text(AppLocalizations.autosave),
                 subtitle: const Text('Automatically save changes'),
                 value: state.autosaveEnabled,
                 onChanged: (_) =>
@@ -78,7 +78,7 @@ class SettingsPage extends StatelessWidget {
                     .add(const ToggleHighContrast()),
               ),
               ListTile(
-                title: Text(AppLocalizations.language),
+                title: const Text(AppLocalizations.language),
                 subtitle: Text(SupportedLocales.getDisplayName(
                   Locale(state.localeCode),
                 )),
@@ -88,7 +88,7 @@ class SettingsPage extends StatelessWidget {
               const Divider(height: AppSpacing.xxxl),
 
               // About section
-              _SectionHeader(title: AppLocalizations.about),
+              const _SectionHeader(title: AppLocalizations.about),
               ListTile(
                 leading: Container(
                   width: 40,
@@ -106,7 +106,7 @@ class SettingsPage extends StatelessWidget {
                   ),
                 ),
                 title: const Text(AppLocalizations.appName),
-                subtitle: Text(
+                subtitle: const Text(
                   '${AppLocalizations.version} ${AppConstants.appVersion}',
                 ),
               ),
@@ -118,10 +118,10 @@ class SettingsPage extends StatelessWidget {
                   // Would open URL — handled by url_launcher
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.balance_rounded),
-                title: const Text('License'),
-                subtitle: const Text(AppConstants.license),
+              const ListTile(
+                leading: Icon(Icons.balance_rounded),
+                title: Text('License'),
+                subtitle: Text(AppConstants.license),
               ),
             ],
           );
@@ -134,7 +134,7 @@ class SettingsPage extends StatelessWidget {
     showDialog(
       context: context,
       builder: (_) => SimpleDialog(
-        title: Text(AppLocalizations.language),
+        title: const Text(AppLocalizations.language),
         children: SupportedLocales.all.map((locale) {
           final code = locale.languageCode;
           final isSelected = code == currentCode;
@@ -250,7 +250,7 @@ class _AutosaveIntervalSelector extends StatelessWidget {
     final options = [10, 15, 30, 60, 120, 300];
 
     return ListTile(
-      title: Text(AppLocalizations.autosaveInterval),
+      title: const Text(AppLocalizations.autosaveInterval),
       trailing: DropdownButton<int>(
         value: options.contains(currentSeconds) ? currentSeconds : 30,
         items: options.map((seconds) {

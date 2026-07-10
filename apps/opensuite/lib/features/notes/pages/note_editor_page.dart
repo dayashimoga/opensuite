@@ -1,11 +1,11 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:fileutility_core/fileutility_core.dart';
-import 'package:fileutility_ui_kit/fileutility_ui_kit.dart';
 import 'package:fileutility_l10n/fileutility_l10n.dart';
 import 'package:fileutility_storage/fileutility_storage.dart';
+import 'package:fileutility_ui_kit/fileutility_ui_kit.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../di/app_module.dart';
 import '../bloc/notes_bloc.dart';
@@ -190,7 +190,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
               controller: _titleController,
               onChanged: (_) => _onContentChanged(),
               style: theme.textTheme.headlineSmall,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 hintText: AppLocalizations.noteTitle,
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,

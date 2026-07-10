@@ -308,7 +308,7 @@ class PresentationBloc extends Bloc<PresentationEvent, PresentationState> {
           textColor: '#FFFFFF',
           textAlign: 'center',
         ),
-        SlideElement(
+        const SlideElement(
           id: 'subtitle_1',
           type: 'text',
           x: 0.2,

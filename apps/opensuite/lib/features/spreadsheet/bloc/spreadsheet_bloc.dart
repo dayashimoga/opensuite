@@ -307,7 +307,7 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
   Future<void> _onCreate(
       CreateSpreadsheet event, Emitter<SpreadsheetState> emit) async {
     final now = DateTime.now();
-    final defaultSheet = SheetData(
+    const defaultSheet = SheetData(
       id: '1',
       name: 'Sheet1',
       rowCount: 100,

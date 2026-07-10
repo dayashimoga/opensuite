@@ -1,10 +1,10 @@
+import 'package:fileutility_core/fileutility_core.dart';
+import 'package:fileutility_l10n/fileutility_l10n.dart';
+import 'package:fileutility_storage/fileutility_storage.dart';
+import 'package:fileutility_ui_kit/fileutility_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:fileutility_core/fileutility_core.dart';
-import 'package:fileutility_ui_kit/fileutility_ui_kit.dart';
-import 'package:fileutility_l10n/fileutility_l10n.dart';
-import 'package:fileutility_storage/fileutility_storage.dart';
 
 import '../../../di/app_module.dart';
 import '../../../router/app_router.dart';
@@ -117,7 +117,7 @@ class _NotesPageContent extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
         if (pinned.isNotEmpty) ...[
-          _SectionLabel(label: 'Pinned'),
+          const _SectionLabel(label: 'Pinned'),
           const SizedBox(height: AppSpacing.sm),
           _NotesGrid(
             notes: pinned,
@@ -126,7 +126,7 @@ class _NotesPageContent extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
         ],
         if (unpinned.isNotEmpty) ...[
-          if (pinned.isNotEmpty) _SectionLabel(label: 'Other'),
+          if (pinned.isNotEmpty) const _SectionLabel(label: 'Other'),
           if (pinned.isNotEmpty) const SizedBox(height: AppSpacing.sm),
           _NotesGrid(
             notes: unpinned,

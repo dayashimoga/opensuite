@@ -115,7 +115,7 @@ class _TextEditorContentState extends State<_TextEditorContent> {
                       .add(UpdateDocumentTitle(value));
                 },
                 style: theme.textTheme.titleMedium,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   hintText: AppLocalizations.untitled,
                   border: InputBorder.none,
                   enabledBorder: InputBorder.none,
@@ -314,9 +314,9 @@ class _FindReplaceBar extends StatelessWidget {
               child: TextField(
                 controller: replaceController,
                 style: theme.textTheme.bodySmall,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   hintText: AppLocalizations.replacePlaceholder,
-                  contentPadding: const EdgeInsets.symmetric(
+                  contentPadding: EdgeInsets.symmetric(
                     horizontal: AppSpacing.md,
                   ),
                 ),
@@ -341,7 +341,7 @@ class _FindReplaceBar extends StatelessWidget {
                     replaceAll: true,
                   ));
             },
-            child: Text(AppLocalizations.replaceAll),
+            child: const Text(AppLocalizations.replaceAll),
           ),
           IconButton(
             icon: const Icon(Icons.close_rounded, size: 18),
