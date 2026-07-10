@@ -1,0 +1,65 @@
+services:
+  dev:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    volumes:
+      - ..:/app
+    working_dir: /app
+    command: bash
+    stdin_open: true
+    tty: true
+
+  test:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    volumes:
+      - ..:/app
+    working_dir: /app/apps/opensuite
+    command: flutter test --coverage
+
+  lint:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    volumes:
+      - ..:/app
+    working_dir: /app/apps/opensuite
+    command: flutter analyze
+
+  format:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    volumes:
+      - ..:/app
+    working_dir: /app
+    command: dart format --set-exit-if-changed .
+
+  build-web:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    volumes:
+      - ..:/app
+    working_dir: /app/apps/opensuite
+    command: flutter build web --release
+
+  build-android:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    volumes:
+      - ..:/app
+    working_dir: /app/apps/opensuite
+    command: flutter build apk --release
+
+  build-linux:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    volumes:
+      - ..:/app
+    working_dir: /app/apps/opensuite
+    command: flutter build linux --release

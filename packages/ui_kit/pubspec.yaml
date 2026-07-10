@@ -1,0 +1,20 @@
+name: fileutility_ui_kit
+description: Design system providing themes, responsive layouts, and reusable UI components for FileUtility.
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.10.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  fileutility_core:
+    path: ../core
+  google_fonts: ^6.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0

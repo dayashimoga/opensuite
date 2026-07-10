@@ -1,0 +1,53 @@
+# Flutter/Dart
+**/build/
+**/.dart_tool/
+**/.packages
+**/.pub-cache/
+**/.pub/
+**/pubspec.lock
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Docker
+docker/.env
+
+# Coverage
+**/coverage/
+**/lcov.info
+
+# Generated
+**/*.g.dart
+**/*.freezed.dart
+**/*.mocks.dart
+**/l10n/generated/
+
+# Secrets
+*.env
+*.env.local
+*.keystore
+*.jks
+*.p12
+*.key
+*.pem
+
+# Build artifacts
+**/*.apk
+**/*.aab
+**/*.ipa
+**/*.exe
+**/*.dmg
+**/*.deb
+**/*.rpm
+**/*.snap
+**/*.AppImage
