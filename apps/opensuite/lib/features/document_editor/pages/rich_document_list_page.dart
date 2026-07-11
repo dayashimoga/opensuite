@@ -3,6 +3,7 @@ import 'package:fileutility_storage/fileutility_storage.dart';
 import 'package:fileutility_ui_kit/fileutility_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../di/app_module.dart';
 import '../bloc/document_editor_bloc.dart';
@@ -147,12 +148,10 @@ class _DocumentListContent extends StatelessWidget {
 
   void _createDocument(BuildContext context) {
     context.read<DocumentEditorBloc>().add(const CreateDocument());
-    // Navigate to editor after BLoC creates the document
   }
 
   void _openDocument(BuildContext context, String id) {
-    // Navigation will be handled by GoRouter
-    Navigator.of(context).pushNamed('/documents/edit', arguments: id);
+    context.go('/documents/$id');
   }
 
   void _confirmDelete(BuildContext context, DocumentEntity doc) {

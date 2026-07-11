@@ -165,8 +165,7 @@ class HomePage extends StatelessWidget {
             'Create and edit rich documents with formatting, tables, and images.',
         icon: Icons.description_rounded,
         color: Color(0xFF3B82F6),
-        route: null, // Coming soon
-        comingSoon: true,
+        route: AppRouter.documents,
       ),
       const _ModuleInfo(
         title: AppLocalizations.spreadsheets,
@@ -174,16 +173,14 @@ class HomePage extends StatelessWidget {
             'Work with spreadsheets featuring formulas, charts, and more.',
         icon: Icons.table_chart_rounded,
         color: Color(0xFF22C55E),
-        route: null,
-        comingSoon: true,
+        route: AppRouter.spreadsheets,
       ),
       const _ModuleInfo(
         title: AppLocalizations.pdf,
         description: 'View, annotate, merge, split, and manage PDF documents.',
         icon: Icons.picture_as_pdf_rounded,
         color: Color(0xFFEF4444),
-        route: null,
-        comingSoon: true,
+        route: AppRouter.pdfViewer,
       ),
     ];
 
@@ -216,7 +213,6 @@ class _ModuleInfo {
     required this.icon,
     required this.color,
     this.route,
-    this.comingSoon = false,
   });
 
   final String title;
@@ -224,7 +220,6 @@ class _ModuleInfo {
   final IconData icon;
   final Color color;
   final String? route;
-  final bool comingSoon;
 }
 
 class _ModuleCard extends StatelessWidget {
@@ -260,22 +255,6 @@ class _ModuleCard extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
-                  if (module.comingSoon)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.sm,
-                        vertical: AppSpacing.xxs,
-                      ),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.outline.withValues(alpha: 0.2),
-                        borderRadius:
-                            BorderRadius.circular(AppSpacing.radiusFull),
-                      ),
-                      child: Text(
-                        'Soon',
-                        style: theme.textTheme.labelSmall,
-                      ),
-                    ),
                 ],
               ),
               const Spacer(),
