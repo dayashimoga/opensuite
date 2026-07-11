@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:fileutility_ui_kit/fileutility_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -125,13 +126,16 @@ class _ViewerContent extends StatelessWidget {
           ),
           body: Row(
             children: [
-              // Thumbnail sidebar
+              // Thumbnail sidebar (hidden on mobile by default)
               if (state.showThumbnails)
-                _ThumbnailSidebar(
-                  currentPage: state.currentPage,
-                  totalPages: state.totalPages > 0 ? state.totalPages : 10,
-                  onPageTap: (page) =>
-                      context.read<PdfViewerBloc>().add(GoToPage(page)),
+                ResponsiveVisibility(
+                  visibleOn: const {ScreenSize.tablet, ScreenSize.desktop},
+                  child: _ThumbnailSidebar(
+                    currentPage: state.currentPage,
+                    totalPages: state.totalPages > 0 ? state.totalPages : 10,
+                    onPageTap: (page) =>
+                        context.read<PdfViewerBloc>().add(GoToPage(page)),
+                  ),
                 ),
               // Main PDF viewing area
               Expanded(
@@ -277,8 +281,18 @@ class _PdfContentArea extends StatelessWidget {
         title: 'No PDF Open',
         description: 'Open a PDF file to view it here',
         actionLabel: 'Open PDF',
-        onAction: () {
-          // Would trigger file picker
+        onAction: () async {
+          final result = await FilePicker.platform.pickFiles(
+            type: FileType.custom,
+            allowedExtensions: ['pdf'],
+            allowMultiple: false,
+          );
+          if (result != null && result.files.isNotEmpty) {
+            final path = result.files.single.path;
+            if (path != null && context.mounted) {
+              context.read<PdfViewerBloc>().add(LoadPdf(path));
+            }
+          }
         },
       );
     }

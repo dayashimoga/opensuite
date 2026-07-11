@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-07-11
+
+### Fixed
+- **Database crash on Android**: `PRAGMA journal_mode = WAL` now uses `rawQuery()` instead of `execute()` which crashed on sqflite native driver
+- **GoRouter navigation**: Document and Spreadsheet list pages now use `context.go()` instead of `Navigator.pushNamed()` which didn't work with GoRouter
+- **Image Editor layout crash on mobile**: Replaced fixed 3-column Row with responsive layout (vertical on mobile, horizontal on desktop)
+- **PDF Viewer thumbnail sidebar**: Hidden on mobile to prevent layout overflow
+
+### Changed
+- **Navigation redesigned**: Bottom nav reduced from 10 to 5 items on mobile (Home, Notes, Docs, Tools, Settings). Desktop retains full 10-item sidebar
+- **Home page**: Removed all "Coming Soon" placeholders — Documents, Spreadsheets, and PDF now navigate to their working feature pages
+- **Image Editor**: "Open Image" button now opens system file picker via `file_picker` package
+- **PDF Viewer**: "Open PDF" button now opens system file picker for PDF files
+
+### Added
+- 54 unit tests across 5 test files:
+  - `notes_bloc_test.dart` (13 tests)
+  - `file_manager_bloc_test.dart` (9 tests)
+  - `image_editor_bloc_test.dart` (15 tests)
+  - `settings_bloc_test.dart` (11 tests)
+  - `app_test.dart` (6 smoke tests)
+- Model tests for NoteEntity and RecentFileEntity (fromMap, toMap, roundtrip, copyWith)
+- Mobile tool bar widget for Image Editor responsive layout
+- `_MobileToolBar` horizontal chip-based tool selector
+
+### CI/CD
+- Cloudflare Pages project auto-creation (`wrangler pages project create`)
+- Node.js 22 via `setup-node@v4` (fixes deprecation warning)
+- Direct Wrangler v3 install replaces deprecated `wrangler-action@v3`
+- Consolidated `flutter pub get` with for-loop across all packages
+
 ## [1.0.0] - 2026-07-08
 
 ### Added

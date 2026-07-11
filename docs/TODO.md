@@ -111,3 +111,28 @@
 - [ ] Performance profiling and optimization
 - [ ] Rust FFI modules (performance-critical operations)
 - [ ] End-to-end test suite (widget tests)
+
+## Sprint 8: Production Stabilization (v1.1.0)
+- [x] Fix database PRAGMA crash (rawQuery for journal_mode)
+- [x] Remove all "Coming Soon" placeholders (Documents, Spreadsheets, PDF)
+- [x] Fix GoRouter navigation (Documents, Spreadsheets list pages)
+- [x] Image Editor responsive layout (mobile vertical, desktop horizontal)
+- [x] Wire file_picker to Image Editor "Open Image"
+- [x] Wire file_picker to PDF Viewer "Open PDF"
+- [x] PDF Viewer responsive thumbnail sidebar (hidden on mobile)
+- [x] Navigation redesign: 10→5 items on mobile bottom nav
+- [x] CI/CD: Cloudflare auto-create project
+- [x] CI/CD: Node.js 22 + Wrangler v3 direct install
+- [x] CI/CD: Consolidated flutter pub get
+- [x] BLoC unit tests: NotesBloc (13 tests)
+- [x] BLoC unit tests: FileManagerBloc (9 tests)
+- [x] BLoC unit tests: ImageEditorBloc (15 tests)
+- [x] BLoC unit tests: SettingsBloc (11 tests)
+- [x] Smoke tests: app_test.dart (6 tests)
+- [x] Model tests: NoteEntity, RecentFileEntity
+- [x] CHANGELOG.md updated
+- [ ] DOCX import via custom OOXML parser
+- [ ] XLSX import/export
+- [ ] PPTX import/export
+- [ ] PDF merge, compress, form fill
+- [ ] Chart support (fl_chart integration)

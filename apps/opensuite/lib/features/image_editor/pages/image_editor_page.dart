@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:file_picker/file_picker.dart';
 import 'package:fileutility_ui_kit/fileutility_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -224,7 +225,18 @@ class _ImageCanvas extends StatelessWidget {
         title: 'No Image Open',
         description: 'Open an image to start editing',
         actionLabel: 'Open Image',
-        onAction: () {},
+        onAction: () async {
+          final result = await FilePicker.platform.pickFiles(
+            type: FileType.image,
+            allowMultiple: false,
+          );
+          if (result != null && result.files.isNotEmpty) {
+            final path = result.files.single.path;
+            if (path != null && context.mounted) {
+              context.read<ImageEditorBloc>().add(LoadImage(path));
+            }
+          }
+        },
       );
     }
 
