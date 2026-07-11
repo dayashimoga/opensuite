@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../router/app_router.dart';
+import 'widgets/animated_card.dart';
 
 /// Home / Dashboard page.
 ///
@@ -119,6 +120,16 @@ class HomePage extends StatelessWidget {
                 onTap: () => context.go(AppRouter.newDocument),
               ),
               _QuickActionChip(
+                icon: Icons.table_chart_rounded,
+                label: 'New Sheet',
+                onTap: () => context.go(AppRouter.newSpreadsheet),
+              ),
+              _QuickActionChip(
+                icon: Icons.slideshow_rounded,
+                label: 'New Slides',
+                onTap: () => context.go(AppRouter.newPresentation),
+              ),
+              _QuickActionChip(
                 icon: Icons.folder_open_rounded,
                 label: AppLocalizations.browse,
                 onTap: () => context.go(AppRouter.files),
@@ -136,54 +147,66 @@ class HomePage extends StatelessWidget {
     bool isDesktop,
   ) {
     final modules = [
-      const _ModuleInfo(
+      _ModuleInfo(
         title: AppLocalizations.notes,
         description:
             'Create and organize notes with rich text, markdown, and checklists.',
         icon: Icons.note_alt_rounded,
-        color: Color(0xFF8B5CF6),
+        color: const Color(0xFF8B5CF6),
         route: AppRouter.notes,
       ),
-      const _ModuleInfo(
+      _ModuleInfo(
         title: AppLocalizations.fileManager,
         description: 'Browse, search, and manage your documents and files.',
         icon: Icons.folder_rounded,
-        color: Color(0xFFF59E0B),
+        color: const Color(0xFFF59E0B),
         route: AppRouter.files,
       ),
-      const _ModuleInfo(
+      _ModuleInfo(
         title: AppLocalizations.textEditor,
         description:
             'Edit text and markdown files with live preview and syntax support.',
         icon: Icons.edit_document,
-        color: Color(0xFF14B8A6),
+        color: const Color(0xFF14B8A6),
         route: AppRouter.editor,
       ),
-      const _ModuleInfo(
+      _ModuleInfo(
         title: AppLocalizations.documents,
         description:
             'Create and edit rich documents with formatting, tables, and images.',
         icon: Icons.description_rounded,
-        color: Color(0xFF3B82F6),
-        route: null, // Coming soon
-        comingSoon: true,
+        color: const Color(0xFF3B82F6),
+        route: AppRouter.documents,
       ),
-      const _ModuleInfo(
+      _ModuleInfo(
         title: AppLocalizations.spreadsheets,
         description:
             'Work with spreadsheets featuring formulas, charts, and more.',
         icon: Icons.table_chart_rounded,
-        color: Color(0xFF22C55E),
-        route: null,
-        comingSoon: true,
+        color: const Color(0xFF22C55E),
+        route: AppRouter.spreadsheets,
       ),
-      const _ModuleInfo(
+      _ModuleInfo(
         title: AppLocalizations.pdf,
         description: 'View, annotate, merge, split, and manage PDF documents.',
         icon: Icons.picture_as_pdf_rounded,
-        color: Color(0xFFEF4444),
-        route: null,
-        comingSoon: true,
+        color: const Color(0xFFEF4444),
+        route: AppRouter.pdfViewer,
+      ),
+      _ModuleInfo(
+        title: 'Presentations',
+        description:
+            'Create slide decks with themes, transitions, and speaker notes.',
+        icon: Icons.slideshow_rounded,
+        color: const Color(0xFFEC4899),
+        route: AppRouter.presentations,
+      ),
+      _ModuleInfo(
+        title: 'Image Editor',
+        description: 'Crop, rotate, resize, and adjust images with filters.',
+        icon: Icons.image_rounded,
+        color: const Color(0xFF06B6D4),
+        route: AppRouter.imageEditor,
       ),
     ];
 
@@ -196,13 +219,24 @@ class HomePage extends StatelessWidget {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: isDesktop ? 3 : 2,
-            childAspectRatio: isDesktop ? 1.8 : 1.4,
+            crossAxisCount: isDesktop ? 4 : 2,
+            childAspectRatio: isDesktop ? 1.6 : 1.4,
             crossAxisSpacing: AppSpacing.md,
             mainAxisSpacing: AppSpacing.md,
           ),
           itemCount: modules.length,
-          itemBuilder: (context, index) => _ModuleCard(module: modules[index]),
+          itemBuilder: (context, index) {
+            final module = modules[index];
+            return AnimatedModuleCard(
+              title: module.title,
+              description: module.description,
+              icon: module.icon,
+              color: module.color,
+              staggerIndex: index,
+              onTap:
+                  module.route != null ? () => context.go(module.route!) : null,
+            );
+          },
         ),
       ],
     );
@@ -210,13 +244,12 @@ class HomePage extends StatelessWidget {
 }
 
 class _ModuleInfo {
-  const _ModuleInfo({
+  _ModuleInfo({
     required this.title,
     required this.description,
     required this.icon,
     required this.color,
     this.route,
-    this.comingSoon = false,
   });
 
   final String title;
@@ -224,82 +257,6 @@ class _ModuleInfo {
   final IconData icon;
   final Color color;
   final String? route;
-  final bool comingSoon;
-}
-
-class _ModuleCard extends StatelessWidget {
-  const _ModuleCard({required this.module});
-
-  final _ModuleInfo module;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: module.route != null ? () => context.go(module.route!) : null,
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(AppSpacing.sm),
-                    decoration: BoxDecoration(
-                      color: module.color.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                    ),
-                    child: Icon(
-                      module.icon,
-                      color: module.color,
-                      size: 24,
-                    ),
-                  ),
-                  const Spacer(),
-                  if (module.comingSoon)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.sm,
-                        vertical: AppSpacing.xxs,
-                      ),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.outline.withValues(alpha: 0.2),
-                        borderRadius:
-                            BorderRadius.circular(AppSpacing.radiusFull),
-                      ),
-                      child: Text(
-                        'Soon',
-                        style: theme.textTheme.labelSmall,
-                      ),
-                    ),
-                ],
-              ),
-              const Spacer(),
-              Text(
-                module.title,
-                style: theme.textTheme.titleSmall,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: AppSpacing.xxs),
-              Expanded(
-                child: Text(
-                  module.description,
-                  style: theme.textTheme.bodySmall,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class _QuickActionChip extends StatelessWidget {

@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:bloc_concurrency/bloc_concurrency.dart';
+
 import 'package:equatable/equatable.dart';
 import 'package:fileutility_storage/fileutility_storage.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -259,7 +261,7 @@ class DocumentEditorBloc
       : _documentDao = documentDao,
         super(const DocumentEditorState()) {
     on<LoadDocuments>(_onLoadDocuments);
-    on<SearchDocuments>(_onSearchDocuments);
+    on<SearchDocuments>(_onSearchDocuments, transformer: restartable());
     on<CreateDocument>(_onCreateDocument);
     on<OpenDocument>(_onOpenDocument);
     on<UpdateDocumentTitle>(_onUpdateTitle);

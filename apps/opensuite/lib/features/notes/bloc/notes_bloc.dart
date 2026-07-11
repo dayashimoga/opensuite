@@ -1,3 +1,4 @@
+import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:equatable/equatable.dart';
 import 'package:fileutility_storage/fileutility_storage.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -129,7 +130,7 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
       : _noteDao = noteDao,
         super(const NotesState()) {
     on<LoadNotes>(_onLoadNotes);
-    on<SearchNotes>(_onSearchNotes);
+    on<SearchNotes>(_onSearchNotes, transformer: restartable());
     on<CreateNote>(_onCreateNote);
     on<UpdateNote>(_onUpdateNote);
     on<DeleteNote>(_onDeleteNote);

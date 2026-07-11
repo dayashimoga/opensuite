@@ -1,7 +1,9 @@
+import 'package:csv/csv.dart';
 import 'package:fileutility_core/fileutility_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../di/app_module.dart';
 import '../bloc/spreadsheet_bloc.dart';
@@ -61,11 +63,20 @@ class _EditorContentState extends State<_EditorContent> {
     return BlocConsumer<SpreadsheetBloc, SpreadsheetState>(
       listenWhen: (prev, curr) =>
           prev.selectedCell != curr.selectedCell ||
-          prev.cellEditValue != curr.cellEditValue,
+          prev.cellEditValue != curr.cellEditValue ||
+          prev.status != curr.status,
       listener: (context, state) {
         _formulaController.text = state.formulaBarValue;
         if (!_isEditing) {
           _cellEditController.text = state.cellEditValue;
+        }
+        if (state.status == SpreadsheetStatus.saved) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Saved ✓'),
+              duration: Duration(seconds: 1),
+            ),
+          );
         }
       },
       builder: (context, state) {
@@ -137,6 +148,36 @@ class _EditorContentState extends State<_EditorContent> {
                     .add(const SaveSpreadsheet()),
                 tooltip: 'Save',
               ),
+              // Overflow menu with Share and Export
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert),
+                itemBuilder: (_) => [
+                  const PopupMenuItem(
+                    value: 'export_csv',
+                    child: Row(children: [
+                      Icon(Icons.download, size: 20),
+                      SizedBox(width: 8),
+                      Text('Export as CSV'),
+                    ]),
+                  ),
+                  const PopupMenuItem(
+                    value: 'share',
+                    child: Row(children: [
+                      Icon(Icons.share, size: 20),
+                      SizedBox(width: 8),
+                      Text('Share'),
+                    ]),
+                  ),
+                ],
+                onSelected: (value) {
+                  switch (value) {
+                    case 'export_csv':
+                      _exportCsv(context, state);
+                    case 'share':
+                      _shareSpreadsheet(context, state);
+                  }
+                },
+              ),
             ],
           ),
           body: Column(
@@ -185,6 +226,39 @@ class _EditorContentState extends State<_EditorContent> {
           ),
         );
       },
+    );
+  }
+
+  void _exportCsv(BuildContext context, SpreadsheetState state) {
+    final sheet = state.activeSheet;
+    if (sheet == null) return;
+
+    final rows = <List<String>>[];
+    for (int r = 0; r < sheet.rowCount; r++) {
+      final row = <String>[];
+      for (int c = 0; c < sheet.colCount; c++) {
+        final cell = sheet.getCell(CellPosition(r, c));
+        row.add(cell.displayValue);
+      }
+      rows.add(row);
+    }
+
+    final csv = const ListToCsvConverter().convert(rows);
+    final title = state.currentSpreadsheet?.title ?? 'spreadsheet';
+
+    Share.share(
+      csv,
+      subject: '$title.csv',
+    );
+  }
+
+  void _shareSpreadsheet(BuildContext context, SpreadsheetState state) {
+    final title = state.currentSpreadsheet?.title ?? 'Spreadsheet';
+    final sheetInfo =
+        '${state.sheets.length} sheet${state.sheets.length > 1 ? "s" : ""}';
+    Share.share(
+      '$title - $sheetInfo',
+      subject: title,
     );
   }
 }

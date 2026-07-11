@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../di/app_module.dart';
 import '../bloc/presentation_bloc.dart';
@@ -34,7 +35,18 @@ class _EditorContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<PresentationBloc, PresentationState>(
+    return BlocConsumer<PresentationBloc, PresentationState>(
+      listenWhen: (prev, curr) => prev.status != curr.status,
+      listener: (context, state) {
+        if (state.status == PresentationStatus.saved) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Saved ✓'),
+              duration: Duration(seconds: 1),
+            ),
+          );
+        }
+      },
       builder: (context, state) {
         if (state.status == PresentationStatus.loading) {
           return const Scaffold(
@@ -110,6 +122,19 @@ class _EditorContent extends StatelessWidget {
                     .read<PresentationBloc>()
                     .add(const SavePresentation()),
                 tooltip: 'Save',
+              ),
+              // Share
+              IconButton(
+                icon: const Icon(Icons.share),
+                tooltip: 'Share',
+                onPressed: () {
+                  final title =
+                      state.currentPresentation?.title ?? 'Presentation';
+                  Share.share(
+                    '$title - ${state.slides.length} slides',
+                    subject: title,
+                  );
+                },
               ),
             ],
           ),

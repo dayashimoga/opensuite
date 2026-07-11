@@ -229,3 +229,87 @@
 - [x] Formula engine test suite (30+ test cases)
 - [x] Input sanitizer test suite (20+ test cases)
 - [x] Core test suite maintained (40+ test cases)
+
+---
+
+## Sprint 9 — Production Enhancement (v1.2.0) ✅
+
+### PDF Viewer — Real Rendering
+- [x] pdfrx dependency for cross-platform PDF rendering (Android, iOS, Web, Windows, Linux, macOS)
+- [x] PdfViewerBloc refactored: SetTotalPages event from widget callback, ClosePdf event
+- [x] PdfViewerPage rewritten with PdfViewer.file() widget for real page rendering
+- [x] PDF file picker integration (Open PDF button)
+- [x] PDF share via share_plus
+- [x] Page navigation bar with go-to-page dialog
+- [x] Zoom controls in AppBar
+
+### Spreadsheet — Debounce & Share
+- [x] Creation debounce guard (_isCreating flag) prevents duplicate creates
+- [x] BlocListener navigates to editor after creation
+- [x] Save feedback (SnackBar "Saved ✓")
+- [x] Error feedback (SnackBar with error message)
+- [x] csv dependency for CSV export
+- [x] Export as CSV via share_plus
+- [x] Share spreadsheet summary
+- [x] Open File button (file_picker for xlsx/xls/csv/ods)
+- [x] Loading indicator on FAB during creation
+
+### Document Editor — Share & Feedback
+- [x] Creation debounce guard prevents duplicate creates
+- [x] BlocListener navigates to editor after creation
+- [x] Save feedback (SnackBar "Saved ✓")
+- [x] Export as TXT/Markdown via share_plus
+- [x] Share document content
+- [x] Open File button (file_picker for docx/doc/txt/md/rtf/odt)
+
+### Presentation — Share & Feedback
+- [x] BlocConsumer with save feedback (SnackBar "Saved ✓")
+- [x] Share presentation summary via share_plus
+- [x] Open File button (file_picker for pptx/ppt/odp)
+
+### Notes — Share & Feedback
+- [x] Save feedback (SnackBar "Saved ✓")
+- [x] Share note (title + content) via share_plus
+
+### Cross-Module
+- [x] Version bumped to 1.2.0+2
+- [x] All list pages have "Open File" button for browsing existing files
+- [x] All editors have Share button
+- [x] All save operations show visual confirmation
+
+---
+
+## Sprint 10 — Production Optimization & UI/UX (v1.3.0) ✅
+
+### Performance & Event Debouncing
+- [x] added `bloc_concurrency` dependency
+- [x] `restartable()` transformer added on search events in `SpreadsheetBloc`, `DocumentEditorBloc`, and `NotesBloc` to debounce rapid typing queries
+- [x] Default spreadsheet row count optimized from 100 to 50 for faster workbook initialization
+- [x] Removed double state emission from `_onDeleteElement` in `PresentationBloc` and supported deselect/null via constructor emission
+
+### UI/UX Design Enhancements
+- [x] Reusable `AnimatedModuleCard` widget with:
+  - Slide-up and fade-in staggered entrance animation (80ms cascade)
+  - Desktop hover scale effect (1.02x zoom) and elevated drop-shadows
+  - Accent-colored left border gradient stripe matching module theme
+  - Clean vector arrow trailing navigation indicator on hover
+- [x] Dashboards (Home Page) redesigned with:
+  - Clean modular grid structure (4 columns on desktop, 2 on tablet/mobile)
+  - Staggered animated cards for all 8 modules (Notes, Files, Text Editor, Documents, Spreadsheets, PDF, Presentations, Image Editor)
+  - Quick action chips for New Note, New Document, New Sheet, New Slides, and Browse Files
+  - Dynamic gradient-themed header greeting
+- [x] Page navigation page-swaps optimized with smooth fade-in transitions using `AnimatedSwitcher` within `ShellPage` (for both mobile bottom navigation and desktop sidebar navigation)
+
+### CI/CD Hardening
+- [x] Caching of pub cache dependencies using `actions/cache` across both linux and windows runners
+- [x] Run coverage-enabled unit test suites on both root package and app module level
+- [x] Brand new `build-windows` jobs on GitHub actions runner to ensure native compile targets succeed
+
+### Comprehensive Test Suite
+- [x] Added `spreadsheet_bloc_test.dart` (Load, Search, Create, Open, Cell operations, Format, Sheet actions, Save, Delete, FrozenPanes)
+- [x] Added `document_editor_bloc_test.dart` (Load, Search, Create, Open, Title/Content updates, Save cycle, Delete, Formatting, Toolbar toggles, Undo/Redo)
+- [x] Added `presentation_bloc_test.dart` (Load, Create, Open, Slide management, Element actions, Save cycle)
+- [x] Added `pdf_viewer_bloc_test.dart` (LoadPdf, Page navigation, Zoom clamps, Thumbnails toggle, Annotations add/remove, Page rotation accumulation)
+- [x] Added `text_editor_bloc_test.dart` (Load, Create, Updates, Save to storage, Search matches, Single/All replace operations)
+- [x] 100% test coverage pass for all 134 suite test cases
+

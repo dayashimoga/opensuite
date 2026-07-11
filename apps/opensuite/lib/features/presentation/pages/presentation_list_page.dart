@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart' as fp;
 import 'package:fileutility_core/fileutility_core.dart';
 import 'package:fileutility_storage/fileutility_storage.dart';
 import 'package:fileutility_ui_kit/fileutility_ui_kit.dart';
@@ -27,7 +28,16 @@ class _ListContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Presentations')),
+      appBar: AppBar(
+        title: const Text('Presentations'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.folder_open),
+            tooltip: 'Open File',
+            onPressed: () => _openFile(context),
+          ),
+        ],
+      ),
       body: BlocBuilder<PresentationBloc, PresentationState>(
         builder: (context, state) {
           if (state.status == PresentationStatus.loading) {
@@ -88,6 +98,23 @@ class _ListContent extends StatelessWidget {
         label: const Text('New Presentation'),
       ),
     );
+  }
+
+  Future<void> _openFile(BuildContext context) async {
+    final result = await fp.FilePicker.platform.pickFiles(
+      type: fp.FileType.custom,
+      allowedExtensions: ['pptx', 'ppt', 'odp'],
+      allowMultiple: false,
+    );
+    if (result != null && result.files.isNotEmpty && context.mounted) {
+      final file = result.files.single;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Opened: ${file.name}'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 }
 

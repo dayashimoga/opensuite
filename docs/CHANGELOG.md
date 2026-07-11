@@ -5,6 +5,97 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0+3] - 2026-07-11
+
+### Added
+- **Premium UI/UX Design**:
+  - Staggered entrance animations (fade-in & slide-up) for module cards
+  - Elevation & hover zoom transformations (1.02x scale) on desktop
+  - Left accent border gradient stripes custom-themed by module
+  - Vector navigation arrows appearing dynamically on hover
+  - Full modular Grid layouts support for all 8 application modules
+  - Navigation page switching transitions using `AnimatedSwitcher` inside navigation shell
+- **Comprehensive BLoC Test Coverage**:
+  - Added `spreadsheet_bloc_test.dart` (20+ tests covering Load, Search, Create, Open, Cell editing, Formula calculation, Sheets, Save/Delete, FrozenPanes)
+  - Added `document_editor_bloc_test.dart` (15+ tests covering Load, Search, Create, Open, Content updates, Save, Delete, Toolbar, Undo/Redo)
+  - Added `presentation_bloc_test.dart` (18+ tests covering Load, Create, Open, Slide operations, Canvas element CRUD, Save/Delete)
+  - Added `pdf_viewer_bloc_test.dart` (12+ tests covering Load, Navigation range bounds, Zoom clamping, Sidebar toggle, Annotations CRUD, Rotation accumulation)
+  - Added `text_editor_bloc_test.dart` (10+ tests covering Load, Create, Updates, Save, Search matches, Single/Global replace actions)
+  - All 134 test suites pass successfully on local system and inside Docker context
+- **CI/CD Hardening**:
+  - Dependency caching via `actions/cache` across ubuntu and windows GitHub runners
+  - Coverage-enabled package-level unit tests for foundational core libraries
+  - New Native Windows target compilation check jobs
+
+### Fixed
+- **Deselection State Clearance**: Corrected copyWith null-coalescing issue in BLoC state; Presentation elements and highlights can now be fully deselected to null when clicking off-canvas
+
+### Changed
+- **Autosave & Search Performance**: Debounced search events via `restartable()` event transformers in BLoCs to reduce database queries while typing
+- **Default Spreadsheet Row Limit**: Reduced default worksheet size from 100 to 50 rows for much faster creation and document loading performance
+- Version bumped to 1.3.0+3
+
+### Dependencies
+- Added `bloc_concurrency: ^0.3.0` for stream transformers
+
+## [1.2.0+2] - 2026-07-11
+
+### Added
+- **PDF real rendering**: Replaced placeholder gray box with pdfrx PdfViewer widget for actual PDF page rendering across all platforms
+- **CSV export**: Spreadsheet data can now be exported as CSV via share_plus
+- **Share across all modules**: Notes, Documents, Spreadsheets, Presentations, and PDF all have Share buttons
+- **Open File in all list pages**: Documents, Spreadsheets, and Presentations list pages now have "Open File" button via file_picker for browsing existing files
+- **Save feedback**: All editors (Notes, Documents, Spreadsheets, Presentations) now show "Saved ✓" SnackBar on successful save
+
+### Fixed
+- **Spreadsheet double-creation**: Added `_isCreating` debounce guard to prevent creating multiple spreadsheets when clicking FAB rapidly
+- **Document double-creation**: Added `_isCreating` debounce guard to prevent creating multiple documents
+- **Navigation after create**: Spreadsheet and Document creation now navigates directly to the editor after creation via BlocListener
+- **PDF viewer blank page**: PdfViewerBloc no longer hardcodes `totalPages: 1`; uses pdfrx callback to set real page count
+
+### Changed
+- Version bumped to 1.2.0+2
+- PdfViewerBloc: added SetTotalPages and ClosePdf events, uses pdfrx for rendering
+- SpreadsheetListPage: converted to StatefulWidget with creation guard
+- DocumentListPage: converted to StatefulWidget with creation guard
+- PresentationEditorPage: BlocBuilder → BlocConsumer for save feedback
+- DocumentEditorPage: BlocConsumer listener enhanced for save feedback
+
+### Dependencies
+- Added `pdfrx: ^1.0.0` — cross-platform PDF rendering
+- Added `csv: ^6.0.0` — CSV serialization/deserialization
+
+## [1.1.0] - 2026-07-11
+
+### Fixed
+- **Database crash on Android**: `PRAGMA journal_mode = WAL` now uses `rawQuery()` instead of `execute()` which crashed on sqflite native driver
+- **GoRouter navigation**: Document and Spreadsheet list pages now use `context.go()` instead of `Navigator.pushNamed()` which didn't work with GoRouter
+- **Image Editor layout crash on mobile**: Replaced fixed 3-column Row with responsive layout (vertical on mobile, horizontal on desktop)
+- **PDF Viewer thumbnail sidebar**: Hidden on mobile to prevent layout overflow
+
+### Changed
+- **Navigation redesigned**: Bottom nav reduced from 10 to 5 items on mobile (Home, Notes, Docs, Tools, Settings). Desktop retains full 10-item sidebar
+- **Home page**: Removed all "Coming Soon" placeholders — Documents, Spreadsheets, and PDF now navigate to their working feature pages
+- **Image Editor**: "Open Image" button now opens system file picker via `file_picker` package
+- **PDF Viewer**: "Open PDF" button now opens system file picker for PDF files
+
+### Added
+- 54 unit tests across 5 test files:
+  - `notes_bloc_test.dart` (13 tests)
+  - `file_manager_bloc_test.dart` (9 tests)
+  - `image_editor_bloc_test.dart` (15 tests)
+  - `settings_bloc_test.dart` (11 tests)
+  - `app_test.dart` (6 smoke tests)
+- Model tests for NoteEntity and RecentFileEntity (fromMap, toMap, roundtrip, copyWith)
+- Mobile tool bar widget for Image Editor responsive layout
+- `_MobileToolBar` horizontal chip-based tool selector
+
+### CI/CD
+- Cloudflare Pages project auto-creation (`wrangler pages project create`)
+- Node.js 22 via `setup-node@v4` (fixes deprecation warning)
+- Direct Wrangler v3 install replaces deprecated `wrangler-action@v3`
+- Consolidated `flutter pub get` with for-loop across all packages
+
 ## [1.0.0] - 2026-07-08
 
 ### Added

@@ -472,12 +472,37 @@ class PresentationBloc extends Bloc<PresentationEvent, PresentationState> {
     final elements = state.activeSlide!.elements
         .where((e) => e.id != event.elementId)
         .toList();
-    _updateCurrentSlide(emit, state.activeSlide!.copyWith(elements: elements));
-    emit(state.copyWith(selectedElementId: null));
+    final updatedSlide = state.activeSlide!.copyWith(elements: elements);
+    final newSlides = List<SlideData>.from(state.slides);
+    newSlides[state.activeSlideIndex] = updatedSlide;
+    emit(PresentationState(
+      status: state.status,
+      presentations: state.presentations,
+      currentPresentation: state.currentPresentation,
+      slides: newSlides,
+      activeSlideIndex: state.activeSlideIndex,
+      selectedElementId: null,
+      isPresentationMode: state.isPresentationMode,
+      showSpeakerNotes: state.showSpeakerNotes,
+      hasUnsavedChanges: true,
+      errorMessage: state.errorMessage,
+    ));
+    _scheduleAutoSave();
   }
 
   void _onSelectElement(SelectElement event, Emitter<PresentationState> emit) {
-    emit(state.copyWith(selectedElementId: event.elementId));
+    emit(PresentationState(
+      status: state.status,
+      presentations: state.presentations,
+      currentPresentation: state.currentPresentation,
+      slides: state.slides,
+      activeSlideIndex: state.activeSlideIndex,
+      selectedElementId: event.elementId,
+      isPresentationMode: state.isPresentationMode,
+      showSpeakerNotes: state.showSpeakerNotes,
+      hasUnsavedChanges: state.hasUnsavedChanges,
+      errorMessage: state.errorMessage,
+    ));
   }
 
   void _onMoveElement(MoveElement event, Emitter<PresentationState> emit) {

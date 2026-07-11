@@ -6,6 +6,7 @@ import 'package:fileutility_storage/fileutility_storage.dart';
 import 'package:fileutility_ui_kit/fileutility_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../di/app_module.dart';
 import '../bloc/notes_bloc.dart';
@@ -112,6 +113,14 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     }
 
     setState(() => _isModified = false);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Saved ✓'),
+          duration: Duration(seconds: 1),
+        ),
+      );
+    }
   }
 
   @override
@@ -178,6 +187,21 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
             ),
             tooltip: AppLocalizations.save,
             onPressed: _save,
+          ),
+          // Share button
+          IconButton(
+            icon: const Icon(Icons.share_rounded),
+            tooltip: 'Share',
+            onPressed: () {
+              final title = _titleController.text.isNotEmpty
+                  ? _titleController.text
+                  : 'Note';
+              final content = _contentController.text;
+              Share.share(
+                '$title\n\n$content',
+                subject: title,
+              );
+            },
           ),
         ],
       ),

@@ -3,6 +3,7 @@ import 'package:fileutility_ui_kit/fileutility_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../di/app_module.dart';
 import '../bloc/document_editor_bloc.dart';
@@ -68,12 +69,21 @@ class _EditorContentState extends State<_EditorContent> {
     return BlocConsumer<DocumentEditorBloc, DocumentEditorState>(
       listenWhen: (prev, curr) =>
           prev.currentDocument?.id != curr.currentDocument?.id ||
-          (!_isInitialized && curr.currentDocument != null),
+          (!_isInitialized && curr.currentDocument != null) ||
+          prev.status != curr.status,
       listener: (context, state) {
         if (state.currentDocument != null && !_isInitialized) {
           _titleController.text = state.currentDocument!.title;
           _contentController.text = state.currentDocument!.plainText;
           _isInitialized = true;
+        }
+        if (state.status == DocumentEditorStatus.saved) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Saved ✓'),
+              duration: Duration(seconds: 1),
+            ),
+          );
         }
       },
       builder: (context, state) {
@@ -173,6 +183,21 @@ class _EditorContentState extends State<_EditorContent> {
                   switch (value) {
                     case 'word_count':
                       _showStats(context, state);
+                    case 'export_txt':
+                    case 'export_md':
+                      final title = state.currentDocument?.title ?? 'Document';
+                      final content = _contentController.text;
+                      Share.share(
+                        content,
+                        subject:
+                            '$title.${value == 'export_md' ? 'md' : 'txt'}',
+                      );
+                    case 'share':
+                      final title = state.currentDocument?.title ?? 'Document';
+                      Share.share(
+                        _contentController.text,
+                        subject: title,
+                      );
                   }
                 },
               ),

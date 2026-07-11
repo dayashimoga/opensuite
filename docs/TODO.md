@@ -111,3 +111,67 @@
 - [ ] Performance profiling and optimization
 - [ ] Rust FFI modules (performance-critical operations)
 - [ ] End-to-end test suite (widget tests)
+
+## Sprint 8: Production Stabilization (v1.1.0)
+- [x] Fix database PRAGMA crash (rawQuery for journal_mode)
+- [x] Remove all "Coming Soon" placeholders (Documents, Spreadsheets, PDF)
+- [x] Fix GoRouter navigation (Documents, Spreadsheets list pages)
+- [x] Image Editor responsive layout (mobile vertical, desktop horizontal)
+- [x] Wire file_picker to Image Editor "Open Image"
+- [x] Wire file_picker to PDF Viewer "Open PDF"
+- [x] PDF Viewer responsive thumbnail sidebar (hidden on mobile)
+- [x] Navigation redesign: 10→5 items on mobile bottom nav
+- [x] CI/CD: Cloudflare auto-create project
+- [x] CI/CD: Node.js 22 + Wrangler v3 direct install
+- [x] CI/CD: Consolidated flutter pub get
+- [x] BLoC unit tests: NotesBloc (13 tests)
+- [x] BLoC unit tests: FileManagerBloc (9 tests)
+- [x] BLoC unit tests: ImageEditorBloc (15 tests)
+- [x] BLoC unit tests: SettingsBloc (11 tests)
+- [x] Smoke tests: app_test.dart (6 tests)
+- [x] Model tests: NoteEntity, RecentFileEntity
+- [x] CHANGELOG.md updated
+- [ ] DOCX import via custom OOXML parser
+- [ ] XLSX import/export
+- [ ] PPTX import/export
+- [ ] PDF merge, compress, form fill
+- [ ] Chart support (fl_chart integration)
+
+## Sprint 9: Production Enhancement (v1.2.0+2)
+- [x] PDF real rendering via pdfrx (replaces placeholder)
+- [x] PDF share via share_plus
+- [x] PDF file picker integration
+- [x] Spreadsheet creation debounce (prevents duplicate creates)
+- [x] Spreadsheet save feedback (SnackBar)
+- [x] Spreadsheet CSV export via share_plus
+- [x] Spreadsheet Open File button (xlsx/xls/csv/ods)
+- [x] Document creation debounce
+- [x] Document save feedback
+- [x] Document share/export (TXT/Markdown)
+- [x] Document Open File button (docx/doc/txt/md/rtf/odt)
+- [x] Presentation save feedback (SnackBar)
+- [x] Presentation share via share_plus
+- [x] Presentation Open File button (pptx/ppt/odp)
+- [x] Notes save feedback
+- [x] Notes share via share_plus
+- [x] Navigation after create (Spreadsheet, Document)
+- [x] IMPLEMENTATION.md updated
+- [x] CHANGELOG.md updated
+- [x] TODO.md updated
+- [x] flutter analyze: all clean
+- [x] dart format: all clean
+- [x] flutter test: all passing
+- [x] Web build verification
+
+## Sprint 10: Optimization & UX Premium (v1.3.0)
+- [x] Add search event debounce using `restartable()` in BLoC
+- [x] Optimize default spreadsheet grid sizes (100 -> 50)
+- [x] Reusable staggered animated card widget (`AnimatedModuleCard`)
+- [x] Redesigned dashboard home page with modular grid and staggered layout
+- [x] Add quick action chips for spreadsheet and presentation modules
+- [x] Navigation page transitions using `AnimatedSwitcher`
+- [x] Harden CI pipeline (caching, multi-package tests, windows build)
+- [x] Comprehensive BLoC test suites covering remaining untested components
+- [x] 100% test coverage pass locally and in Docker
+- [x] Release build verification
+

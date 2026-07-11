@@ -38,26 +38,61 @@ class FormulaEngine {
   }
 
   dynamic _evaluateExpression(String expr) {
-    final upper = expr.toUpperCase().trim();
+    var trimmed = expr.trim();
+
+    // Handle parentheses recursively for arithmetic
+    var hasParen = true;
+    while (hasParen) {
+      hasParen = false;
+      var i = 0;
+      while (i < trimmed.length) {
+        if (trimmed[i] == ')') {
+          var openIdx = -1;
+          for (var j = i - 1; j >= 0; j--) {
+            if (trimmed[j] == '(') {
+              openIdx = j;
+              break;
+            }
+          }
+          if (openIdx != -1) {
+            final prefixMatch = RegExp(r'[A-Za-z_]+$')
+                .firstMatch(trimmed.substring(0, openIdx));
+            if (prefixMatch == null) {
+              final inside = trimmed.substring(openIdx + 1, i);
+              final val = _evaluateExpression(inside);
+              trimmed = trimmed.replaceRange(openIdx, i + 1, val.toString());
+              hasParen = true;
+              break;
+            }
+          }
+        }
+        i++;
+      }
+    }
+
+    // Try as string literal
+    if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+      return trimmed.substring(1, trimmed.length - 1);
+    }
 
     // Function call pattern: FUNC(args)
-    final funcMatch = RegExp(r'^([A-Z_]+)\((.+)\)$').firstMatch(upper);
+    final funcMatch = RegExp(r'^([A-Za-z_]+)\((.*)\)$').firstMatch(trimmed);
     if (funcMatch != null) {
-      final funcName = funcMatch.group(1)!;
+      final funcName = funcMatch.group(1)!.toUpperCase();
       final argsStr = funcMatch.group(2)!;
       return _callFunction(funcName, argsStr);
     }
 
     // Try as number
-    final numVal = double.tryParse(expr);
+    final numVal = double.tryParse(trimmed);
     if (numVal != null) return numVal;
 
     // Try as cell reference
-    final cellVal = cellResolver(upper);
+    final cellVal = cellResolver(trimmed.toUpperCase());
     if (cellVal != null) return cellVal;
 
     // Try as simple arithmetic
-    return _evaluateArithmetic(expr);
+    return _evaluateArithmetic(trimmed);
   }
 
   double _evaluateArithmetic(String expr) {
@@ -119,7 +154,7 @@ class FormulaEngine {
     final parts = rangeStr.split(':');
     if (parts.length != 2) {
       // Single cell reference
-      final val = cellResolver(rangeStr.trim());
+      final val = cellResolver(rangeStr.trim().toUpperCase());
       return val != null ? [val] : [];
     }
 
@@ -158,6 +193,26 @@ class FormulaEngine {
       c = (c ~/ 26) - 1;
     }
     return result;
+  }
+
+  String _resolveText(String arg) {
+    final trimmed = arg.trim();
+    if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+      return trimmed.substring(1, trimmed.length - 1);
+    }
+    final numVal = double.tryParse(trimmed);
+    if (numVal != null) {
+      return numVal == numVal.roundToDouble()
+          ? numVal.toInt().toString()
+          : numVal.toString();
+    }
+    try {
+      final evaluated = _evaluateExpression(trimmed);
+      if (evaluated is bool) return evaluated ? 'TRUE' : 'FALSE';
+      return evaluated.toString();
+    } catch (_) {
+      return textResolver(trimmed.toUpperCase());
+    }
   }
 
   /// Splits function arguments respecting nested parentheses.
@@ -297,25 +352,25 @@ class FormulaEngine {
 
       // --- Text functions ---
       case 'LEN':
-        return textResolver(args[0].trim()).length.toDouble();
+        return _resolveText(args[0]).length.toDouble();
       case 'UPPER':
-        return textResolver(args[0].trim()).toUpperCase();
+        return _resolveText(args[0]).toUpperCase();
       case 'LOWER':
-        return textResolver(args[0].trim()).toLowerCase();
+        return _resolveText(args[0]).toLowerCase();
       case 'TRIM':
-        return textResolver(args[0].trim()).trim();
+        return _resolveText(args[0]).trim();
       case 'LEFT':
-        final text = textResolver(args[0].trim());
+        final text = _resolveText(args[0]);
         final n =
             args.length > 1 ? (_evaluateExpression(args[1]) as num).toInt() : 1;
         return text.substring(0, math.min(n, text.length));
       case 'RIGHT':
-        final text = textResolver(args[0].trim());
+        final text = _resolveText(args[0]);
         final n =
             args.length > 1 ? (_evaluateExpression(args[1]) as num).toInt() : 1;
         return text.substring(math.max(0, text.length - n));
       case 'MID':
-        final text = textResolver(args[0].trim());
+        final text = _resolveText(args[0]);
         final start = (_evaluateExpression(args[1]) as num).toInt() - 1;
         final len = (_evaluateExpression(args[2]) as num).toInt();
         return text.substring(start, math.min(start + len, text.length));
@@ -327,10 +382,10 @@ class FormulaEngine {
               ? (val == val.roundToDouble()
                   ? val.toInt().toString()
                   : val.toString())
-              : val.toString();
+              : (val is bool ? (val ? 'TRUE' : 'FALSE') : val.toString());
         }).join();
       case 'SUBSTITUTE':
-        final text = textResolver(args[0].trim());
+        final text = _resolveText(args[0]);
         final oldText = args[1].replaceAll('"', '');
         final newText = args[2].replaceAll('"', '');
         return text.replaceAll(oldText, newText);
@@ -346,11 +401,11 @@ class FormulaEngine {
         final now = DateTime.now();
         return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
       case 'YEAR':
-        return DateTime.parse(textResolver(args[0].trim())).year.toDouble();
+        return DateTime.parse(_resolveText(args[0])).year.toDouble();
       case 'MONTH':
-        return DateTime.parse(textResolver(args[0].trim())).month.toDouble();
+        return DateTime.parse(_resolveText(args[0])).month.toDouble();
       case 'DAY':
-        return DateTime.parse(textResolver(args[0].trim())).day.toDouble();
+        return DateTime.parse(_resolveText(args[0])).day.toDouble();
 
       // --- Financial functions ---
       case 'PMT':
@@ -376,12 +431,26 @@ class FormulaEngine {
       if (arg.contains(':')) {
         values.addAll(_resolveRange(arg));
       } else {
-        final num = double.tryParse(arg);
-        if (num != null) {
-          values.add(num);
-        } else {
-          final val = cellResolver(arg.trim().toUpperCase());
-          if (val != null) values.add(val);
+        try {
+          final evaluated = _evaluateExpression(arg);
+          if (evaluated is num) {
+            values.add(evaluated.toDouble());
+          } else if (evaluated is bool) {
+            values.add(evaluated ? 1.0 : 0.0);
+          } else {
+            final numVal = double.tryParse(evaluated.toString());
+            if (numVal != null) {
+              values.add(numVal);
+            }
+          }
+        } catch (_) {
+          final numVal = double.tryParse(arg);
+          if (numVal != null) {
+            values.add(numVal);
+          } else {
+            final val = cellResolver(arg.trim().toUpperCase());
+            if (val != null) values.add(val);
+          }
         }
       }
     }

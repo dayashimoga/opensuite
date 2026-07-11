@@ -6,8 +6,8 @@ import 'app_router.dart';
 
 /// Shell page providing the main navigation scaffold.
 ///
-/// Wraps all top-level routes with either a sidebar (desktop/tablet)
-/// or bottom navigation bar (mobile) using [AppScaffold].
+/// On desktop/tablet: shows a full sidebar with all navigation items.
+/// On mobile: shows a condensed 5-item bottom navigation bar.
 class ShellPage extends StatelessWidget {
   /// Creates a [ShellPage].
   const ShellPage({required this.child, super.key});
@@ -15,8 +15,8 @@ class ShellPage extends StatelessWidget {
   /// The child route page to display.
   final Widget child;
 
-  /// Navigation destinations.
-  static const List<NavigationItem> _destinations = [
+  /// Full navigation destinations (used on desktop sidebar).
+  static const List<NavigationItem> _allDestinations = [
     NavigationItem(
       label: 'Home',
       icon: Icons.home_outlined,
@@ -69,8 +69,37 @@ class ShellPage extends StatelessWidget {
     ),
   ];
 
-  /// Maps route paths to navigation indices.
-  static int _calculateSelectedIndex(BuildContext context) {
+  /// Mobile-only condensed destinations (max 5 for Material 3).
+  static const List<NavigationItem> _mobileDestinations = [
+    NavigationItem(
+      label: 'Home',
+      icon: Icons.home_outlined,
+      selectedIcon: Icons.home_rounded,
+    ),
+    NavigationItem(
+      label: 'Notes',
+      icon: Icons.note_alt_outlined,
+      selectedIcon: Icons.note_alt_rounded,
+    ),
+    NavigationItem(
+      label: 'Docs',
+      icon: Icons.description_outlined,
+      selectedIcon: Icons.description_rounded,
+    ),
+    NavigationItem(
+      label: 'Tools',
+      icon: Icons.build_outlined,
+      selectedIcon: Icons.build_rounded,
+    ),
+    NavigationItem(
+      label: 'Settings',
+      icon: Icons.settings_outlined,
+      selectedIcon: Icons.settings_rounded,
+    ),
+  ];
+
+  /// Maps route paths to desktop navigation indices (0-9).
+  static int _calculateDesktopIndex(BuildContext context) {
     final location = GoRouterState.of(context).uri.path;
     if (location.startsWith(AppRouter.notes)) return 1;
     if (location.startsWith(AppRouter.documents)) return 2;
@@ -84,7 +113,28 @@ class ShellPage extends StatelessWidget {
     return 0; // home
   }
 
-  void _onDestinationSelected(BuildContext context, int index) {
+  /// Maps route paths to mobile navigation indices (0-4).
+  static int _calculateMobileIndex(BuildContext context) {
+    final location = GoRouterState.of(context).uri.path;
+    if (location.startsWith(AppRouter.notes)) return 1;
+    // Documents hub: documents, spreadsheets, presentations
+    if (location.startsWith(AppRouter.documents) ||
+        location.startsWith(AppRouter.spreadsheets) ||
+        location.startsWith(AppRouter.presentations)) {
+      return 2;
+    }
+    // Tools hub: PDF, Images, Files, Editor
+    if (location.startsWith(AppRouter.pdfViewer) ||
+        location.startsWith(AppRouter.imageEditor) ||
+        location.startsWith(AppRouter.files) ||
+        location.startsWith(AppRouter.editor)) {
+      return 3;
+    }
+    if (location.startsWith(AppRouter.settings)) return 4;
+    return 0; // home
+  }
+
+  void _onDesktopDestinationSelected(BuildContext context, int index) {
     switch (index) {
       case 0:
         context.go(AppRouter.home);
@@ -109,15 +159,72 @@ class ShellPage extends StatelessWidget {
     }
   }
 
+  void _onMobileDestinationSelected(BuildContext context, int index) {
+    switch (index) {
+      case 0:
+        context.go(AppRouter.home);
+      case 1:
+        context.go(AppRouter.notes);
+      case 2:
+        // Documents hub — go to documents list
+        context.go(AppRouter.documents);
+      case 3:
+        // Tools hub — go to files as default entry
+        context.go(AppRouter.files);
+      case 4:
+        context.go(AppRouter.settings);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final selectedIndex = _calculateSelectedIndex(context);
+    final screenSize = ResponsiveBuilder.of(context);
+    final isMobile = screenSize == ScreenSize.mobile;
+
+    if (isMobile) {
+      return _buildMobileLayout(context);
+    }
+    return _buildDesktopLayout(context,
+        compact: screenSize == ScreenSize.tablet);
+  }
+
+  Widget _buildMobileLayout(BuildContext context) {
+    final selectedIndex = _calculateMobileIndex(context);
 
     return AppScaffold(
-      destinations: _destinations,
+      destinations: _mobileDestinations,
       selectedIndex: selectedIndex,
-      onDestinationSelected: (index) => _onDestinationSelected(context, index),
-      body: child,
+      onDestinationSelected: (index) =>
+          _onMobileDestinationSelected(context, index),
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 250),
+        switchInCurve: Curves.easeOut,
+        switchOutCurve: Curves.easeIn,
+        child: KeyedSubtree(
+          key: ValueKey(selectedIndex),
+          child: child,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDesktopLayout(BuildContext context, {required bool compact}) {
+    final selectedIndex = _calculateDesktopIndex(context);
+
+    return AppScaffold(
+      destinations: _allDestinations,
+      selectedIndex: selectedIndex,
+      onDestinationSelected: (index) =>
+          _onDesktopDestinationSelected(context, index),
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 250),
+        switchInCurve: Curves.easeOut,
+        switchOutCurve: Curves.easeIn,
+        child: KeyedSubtree(
+          key: ValueKey(selectedIndex),
+          child: child,
+        ),
+      ),
     );
   }
 }

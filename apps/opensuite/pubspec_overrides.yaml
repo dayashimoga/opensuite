@@ -1,0 +1,10 @@
+# melos_managed_dependency_overrides: fileutility_core,fileutility_l10n,fileutility_storage,fileutility_ui_kit
+dependency_overrides:
+  fileutility_core:
+    path: ../../packages/core
+  fileutility_l10n:
+    path: ../../packages/l10n
+  fileutility_storage:
+    path: ../../packages/storage
+  fileutility_ui_kit:
+    path: ../../packages/ui_kit

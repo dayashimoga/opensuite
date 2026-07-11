@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:file_picker/file_picker.dart';
 import 'package:fileutility_ui_kit/fileutility_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -81,21 +82,42 @@ class _EditorContent extends StatelessWidget {
               ),
             ],
           ),
-          body: Row(
-            children: [
-              // Tool sidebar
-              _ToolSidebar(
-                activeTool: state.activeTool,
-                onSelectTool: (tool) =>
-                    context.read<ImageEditorBloc>().add(SelectTool(tool)),
-              ),
-              // Main canvas
-              Expanded(
-                child: _ImageCanvas(state: state),
-              ),
-              // Adjustments panel
-              _AdjustmentsPanel(state: state),
-            ],
+          body: ResponsiveBuilder(
+            mobile: (context, _) => Column(
+              children: [
+                // Main canvas
+                Expanded(
+                  child: _ImageCanvas(state: state),
+                ),
+                // Tool selector as horizontal chips
+                _MobileToolBar(
+                  activeTool: state.activeTool,
+                  onSelectTool: (tool) =>
+                      context.read<ImageEditorBloc>().add(SelectTool(tool)),
+                ),
+                // Adjustments panel (scrollable)
+                SizedBox(
+                  height: 160,
+                  child: _AdjustmentsPanel(state: state),
+                ),
+              ],
+            ),
+            desktop: (context, _) => Row(
+              children: [
+                // Tool sidebar
+                _ToolSidebar(
+                  activeTool: state.activeTool,
+                  onSelectTool: (tool) =>
+                      context.read<ImageEditorBloc>().add(SelectTool(tool)),
+                ),
+                // Main canvas
+                Expanded(
+                  child: _ImageCanvas(state: state),
+                ),
+                // Adjustments panel
+                _AdjustmentsPanel(state: state),
+              ],
+            ),
           ),
           // Status bar
           bottomNavigationBar: _StatusBar(state: state),
@@ -203,7 +225,18 @@ class _ImageCanvas extends StatelessWidget {
         title: 'No Image Open',
         description: 'Open an image to start editing',
         actionLabel: 'Open Image',
-        onAction: () {},
+        onAction: () async {
+          final result = await FilePicker.platform.pickFiles(
+            type: FileType.image,
+            allowMultiple: false,
+          );
+          if (result != null && result.files.isNotEmpty) {
+            final path = result.files.single.path;
+            if (path != null && context.mounted) {
+              context.read<ImageEditorBloc>().add(LoadImage(path));
+            }
+          }
+        },
       );
     }
 
@@ -552,6 +585,74 @@ class _StatusBar extends StatelessWidget {
                 height: 16,
                 child: CircularProgressIndicator(strokeWidth: 2)),
         ],
+      ),
+    );
+  }
+}
+
+/// Horizontal tool bar for mobile layout.
+class _MobileToolBar extends StatelessWidget {
+  final String activeTool;
+  final ValueChanged<String> onSelectTool;
+
+  const _MobileToolBar({required this.activeTool, required this.onSelectTool});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    final tools = [
+      ('adjust', Icons.tune, 'Adjust'),
+      ('crop', Icons.crop, 'Crop'),
+      ('rotate', Icons.rotate_right, 'Rotate'),
+      ('resize', Icons.photo_size_select_large, 'Resize'),
+    ];
+
+    return Container(
+      height: 48,
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(color: theme.colorScheme.outlineVariant, width: 0.5),
+          bottom:
+              BorderSide(color: theme.colorScheme.outlineVariant, width: 0.5),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: tools.map((tool) {
+          final isActive = activeTool == tool.$1;
+          return GestureDetector(
+            onTap: () => onSelectTool(tool.$1),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: isActive ? theme.colorScheme.primaryContainer : null,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    tool.$2,
+                    size: 18,
+                    color: isActive
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    tool.$3,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: isActive
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }
