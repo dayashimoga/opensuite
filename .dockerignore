@@ -1,0 +1,17 @@
+.git/
+.github/
+.idea/
+**/.dart_tool/
+**/build/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/pubspec.lock
+**/*.iml
+**/hprof
+**/.packages
+**/coverage/
+**/ephemeral/
+**/.plugin_symlinks/
+**/linux/flutter/
+**/windows/flutter/
+**/macos/flutter/

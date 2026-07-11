@@ -81,6 +81,17 @@ class SetPageRange extends PdfViewerEvent {
   List<Object?> get props => [startPage, endPage];
 }
 
+class SetTotalPages extends PdfViewerEvent {
+  final int totalPages;
+  const SetTotalPages(this.totalPages);
+  @override
+  List<Object?> get props => [totalPages];
+}
+
+class ClosePdf extends PdfViewerEvent {
+  const ClosePdf();
+}
+
 // --- Models ---
 
 class PdfAnnotation extends Equatable {
@@ -181,7 +192,7 @@ class PdfViewerState extends Equatable {
         showThumbnails,
         searchQuery,
         annotations,
-        pageRotations
+        pageRotations,
       ];
 }
 
@@ -200,27 +211,31 @@ class PdfViewerBloc extends Bloc<PdfViewerEvent, PdfViewerState> {
     on<RemoveAnnotation>(_onRemoveAnnotation);
     on<RotatePage>(_onRotatePage);
     on<SetPageRange>(_onSetPageRange);
+    on<SetTotalPages>(_onSetTotalPages);
+    on<ClosePdf>(_onClose);
   }
 
   Future<void> _onLoad(LoadPdf event, Emitter<PdfViewerState> emit) async {
     emit(state.copyWith(
-        status: PdfViewerStatus.loading, filePath: event.filePath));
-    try {
-      // In a real implementation, we'd use pdfrx/pdf_render to load the PDF.
-      // For now, we set up the viewer state. The actual rendering is done
-      // by the PdfViewer widget in the page layer.
-      emit(state.copyWith(
-        status: PdfViewerStatus.loaded,
-        currentPage: 1,
-        totalPages: 1, // Will be set by the viewer widget
-      ));
-    } catch (e) {
-      emit(state.copyWith(status: PdfViewerStatus.error, errorMessage: '$e'));
-    }
+      status: PdfViewerStatus.loading,
+      filePath: event.filePath,
+    ));
+    // The actual PDF loading is done by pdfrx PdfViewer widget.
+    // We transition to loaded state — totalPages will be set by
+    // SetTotalPages event from the widget's onDocumentLoaded callback.
+    emit(state.copyWith(
+      status: PdfViewerStatus.loaded,
+      currentPage: 1,
+    ));
+  }
+
+  void _onSetTotalPages(SetTotalPages event, Emitter<PdfViewerState> emit) {
+    emit(state.copyWith(totalPages: event.totalPages));
   }
 
   void _onGoToPage(GoToPage event, Emitter<PdfViewerState> emit) {
-    if (event.page >= 1 && event.page <= state.totalPages) {
+    final maxPage = state.totalPages > 0 ? state.totalPages : 1;
+    if (event.page >= 1 && event.page <= maxPage) {
       emit(state.copyWith(currentPage: event.page));
     }
   }
@@ -248,7 +263,6 @@ class PdfViewerBloc extends Bloc<PdfViewerEvent, PdfViewerState> {
 
   void _onSearch(SearchInPdf event, Emitter<PdfViewerState> emit) {
     emit(state.copyWith(searchQuery: event.query));
-    // Actual text search would be performed via the PDF rendering engine
   }
 
   void _onAddAnnotation(AddAnnotation event, Emitter<PdfViewerState> emit) {
@@ -273,7 +287,10 @@ class PdfViewerBloc extends Bloc<PdfViewerEvent, PdfViewerState> {
   }
 
   void _onSetPageRange(SetPageRange event, Emitter<PdfViewerState> emit) {
-    // Used for split/extract operations — stores the selected range
-    // The actual extraction is done via the page layer
+    // Used for split/extract operations
+  }
+
+  void _onClose(ClosePdf event, Emitter<PdfViewerState> emit) {
+    emit(const PdfViewerState());
   }
 }

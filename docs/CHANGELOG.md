@@ -5,6 +5,66 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0+3] - 2026-07-11
+
+### Added
+- **Premium UI/UX Design**:
+  - Staggered entrance animations (fade-in & slide-up) for module cards
+  - Elevation & hover zoom transformations (1.02x scale) on desktop
+  - Left accent border gradient stripes custom-themed by module
+  - Vector navigation arrows appearing dynamically on hover
+  - Full modular Grid layouts support for all 8 application modules
+  - Navigation page switching transitions using `AnimatedSwitcher` inside navigation shell
+- **Comprehensive BLoC Test Coverage**:
+  - Added `spreadsheet_bloc_test.dart` (20+ tests covering Load, Search, Create, Open, Cell editing, Formula calculation, Sheets, Save/Delete, FrozenPanes)
+  - Added `document_editor_bloc_test.dart` (15+ tests covering Load, Search, Create, Open, Content updates, Save, Delete, Toolbar, Undo/Redo)
+  - Added `presentation_bloc_test.dart` (18+ tests covering Load, Create, Open, Slide operations, Canvas element CRUD, Save/Delete)
+  - Added `pdf_viewer_bloc_test.dart` (12+ tests covering Load, Navigation range bounds, Zoom clamping, Sidebar toggle, Annotations CRUD, Rotation accumulation)
+  - Added `text_editor_bloc_test.dart` (10+ tests covering Load, Create, Updates, Save, Search matches, Single/Global replace actions)
+  - All 134 test suites pass successfully on local system and inside Docker context
+- **CI/CD Hardening**:
+  - Dependency caching via `actions/cache` across ubuntu and windows GitHub runners
+  - Coverage-enabled package-level unit tests for foundational core libraries
+  - New Native Windows target compilation check jobs
+
+### Fixed
+- **Deselection State Clearance**: Corrected copyWith null-coalescing issue in BLoC state; Presentation elements and highlights can now be fully deselected to null when clicking off-canvas
+
+### Changed
+- **Autosave & Search Performance**: Debounced search events via `restartable()` event transformers in BLoCs to reduce database queries while typing
+- **Default Spreadsheet Row Limit**: Reduced default worksheet size from 100 to 50 rows for much faster creation and document loading performance
+- Version bumped to 1.3.0+3
+
+### Dependencies
+- Added `bloc_concurrency: ^0.3.0` for stream transformers
+
+## [1.2.0+2] - 2026-07-11
+
+### Added
+- **PDF real rendering**: Replaced placeholder gray box with pdfrx PdfViewer widget for actual PDF page rendering across all platforms
+- **CSV export**: Spreadsheet data can now be exported as CSV via share_plus
+- **Share across all modules**: Notes, Documents, Spreadsheets, Presentations, and PDF all have Share buttons
+- **Open File in all list pages**: Documents, Spreadsheets, and Presentations list pages now have "Open File" button via file_picker for browsing existing files
+- **Save feedback**: All editors (Notes, Documents, Spreadsheets, Presentations) now show "Saved ✓" SnackBar on successful save
+
+### Fixed
+- **Spreadsheet double-creation**: Added `_isCreating` debounce guard to prevent creating multiple spreadsheets when clicking FAB rapidly
+- **Document double-creation**: Added `_isCreating` debounce guard to prevent creating multiple documents
+- **Navigation after create**: Spreadsheet and Document creation now navigates directly to the editor after creation via BlocListener
+- **PDF viewer blank page**: PdfViewerBloc no longer hardcodes `totalPages: 1`; uses pdfrx callback to set real page count
+
+### Changed
+- Version bumped to 1.2.0+2
+- PdfViewerBloc: added SetTotalPages and ClosePdf events, uses pdfrx for rendering
+- SpreadsheetListPage: converted to StatefulWidget with creation guard
+- DocumentListPage: converted to StatefulWidget with creation guard
+- PresentationEditorPage: BlocBuilder → BlocConsumer for save feedback
+- DocumentEditorPage: BlocConsumer listener enhanced for save feedback
+
+### Dependencies
+- Added `pdfrx: ^1.0.0` — cross-platform PDF rendering
+- Added `csv: ^6.0.0` — CSV serialization/deserialization
+
 ## [1.1.0] - 2026-07-11
 
 ### Fixed

@@ -1,16 +1,31 @@
 import 'package:fileutility_core/fileutility_core.dart';
-import 'package:test/test.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  late FormulaEngine engine;
-
-  setUp(() {
-    engine = FormulaEngine();
-  });
-
   // Helper to evaluate a formula with optional cell data
   dynamic eval(String formula, [Map<String, dynamic>? cells]) {
-    return engine.evaluate(formula, cells ?? {});
+    final Map<String, dynamic> activeCells = cells ?? {};
+    final engine = FormulaEngine(
+      cellResolver: (ref) {
+        final val = activeCells[ref];
+        if (val is num) return val.toDouble();
+        if (val is String) return double.tryParse(val);
+        return null;
+      },
+      textResolver: (ref) {
+        final val = activeCells[ref];
+        return val?.toString() ?? '';
+      },
+    );
+    final result = engine.evaluate(formula);
+    if (result.isError) {
+      return result.errorMessage ?? '#ERROR!';
+    }
+    final val = result.value;
+    if (val is bool) {
+      return val ? 1.0 : 0.0;
+    }
+    return val;
   }
 
   group('FormulaEngine — Arithmetic', () {

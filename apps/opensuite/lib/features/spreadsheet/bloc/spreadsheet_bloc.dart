@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:bloc_concurrency/bloc_concurrency.dart';
+
 import 'package:equatable/equatable.dart';
 import 'package:fileutility_core/fileutility_core.dart';
 import 'package:fileutility_storage/fileutility_storage.dart';
@@ -238,7 +240,7 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
     );
 
     on<LoadSpreadsheets>(_onLoad);
-    on<SearchSpreadsheets>(_onSearch);
+    on<SearchSpreadsheets>(_onSearch, transformer: restartable());
     on<CreateSpreadsheet>(_onCreate);
     on<OpenSpreadsheet>(_onOpen);
     on<UpdateCell>(_onUpdateCell);
@@ -310,7 +312,7 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
     const defaultSheet = SheetData(
       id: '1',
       name: 'Sheet1',
-      rowCount: 100,
+      rowCount: 50,
       colCount: 26,
     );
 
@@ -461,7 +463,7 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
     final newSheet = SheetData(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
       name: 'Sheet${state.sheets.length + 1}',
-      rowCount: 100,
+      rowCount: 50,
       colCount: 26,
     );
     final newSheets = [...state.sheets, newSheet];

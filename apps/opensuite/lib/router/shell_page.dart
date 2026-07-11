@@ -196,7 +196,15 @@ class ShellPage extends StatelessWidget {
       selectedIndex: selectedIndex,
       onDestinationSelected: (index) =>
           _onMobileDestinationSelected(context, index),
-      body: child,
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 250),
+        switchInCurve: Curves.easeOut,
+        switchOutCurve: Curves.easeIn,
+        child: KeyedSubtree(
+          key: ValueKey(selectedIndex),
+          child: child,
+        ),
+      ),
     );
   }
 
@@ -208,7 +216,15 @@ class ShellPage extends StatelessWidget {
       selectedIndex: selectedIndex,
       onDestinationSelected: (index) =>
           _onDesktopDestinationSelected(context, index),
-      body: child,
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 250),
+        switchInCurve: Curves.easeOut,
+        switchOutCurve: Curves.easeIn,
+        child: KeyedSubtree(
+          key: ValueKey(selectedIndex),
+          child: child,
+        ),
+      ),
     );
   }
 }

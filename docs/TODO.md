@@ -136,3 +136,42 @@
 - [ ] PPTX import/export
 - [ ] PDF merge, compress, form fill
 - [ ] Chart support (fl_chart integration)
+
+## Sprint 9: Production Enhancement (v1.2.0+2)
+- [x] PDF real rendering via pdfrx (replaces placeholder)
+- [x] PDF share via share_plus
+- [x] PDF file picker integration
+- [x] Spreadsheet creation debounce (prevents duplicate creates)
+- [x] Spreadsheet save feedback (SnackBar)
+- [x] Spreadsheet CSV export via share_plus
+- [x] Spreadsheet Open File button (xlsx/xls/csv/ods)
+- [x] Document creation debounce
+- [x] Document save feedback
+- [x] Document share/export (TXT/Markdown)
+- [x] Document Open File button (docx/doc/txt/md/rtf/odt)
+- [x] Presentation save feedback (SnackBar)
+- [x] Presentation share via share_plus
+- [x] Presentation Open File button (pptx/ppt/odp)
+- [x] Notes save feedback
+- [x] Notes share via share_plus
+- [x] Navigation after create (Spreadsheet, Document)
+- [x] IMPLEMENTATION.md updated
+- [x] CHANGELOG.md updated
+- [x] TODO.md updated
+- [x] flutter analyze: all clean
+- [x] dart format: all clean
+- [x] flutter test: all passing
+- [x] Web build verification
+
+## Sprint 10: Optimization & UX Premium (v1.3.0)
+- [x] Add search event debounce using `restartable()` in BLoC
+- [x] Optimize default spreadsheet grid sizes (100 -> 50)
+- [x] Reusable staggered animated card widget (`AnimatedModuleCard`)
+- [x] Redesigned dashboard home page with modular grid and staggered layout
+- [x] Add quick action chips for spreadsheet and presentation modules
+- [x] Navigation page transitions using `AnimatedSwitcher`
+- [x] Harden CI pipeline (caching, multi-package tests, windows build)
+- [x] Comprehensive BLoC test suites covering remaining untested components
+- [x] 100% test coverage pass locally and in Docker
+- [x] Release build verification
+

@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart' as fp;
 import 'package:fileutility_core/fileutility_core.dart';
 import 'package:fileutility_storage/fileutility_storage.dart';
 import 'package:fileutility_ui_kit/fileutility_ui_kit.dart';
@@ -24,113 +25,159 @@ class RichDocumentListPage extends StatelessWidget {
   }
 }
 
-class _DocumentListContent extends StatelessWidget {
+class _DocumentListContent extends StatefulWidget {
   const _DocumentListContent();
+
+  @override
+  State<_DocumentListContent> createState() => _DocumentListContentState();
+}
+
+class _DocumentListContentState extends State<_DocumentListContent> {
+  bool _isCreating = false;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Documents'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () => _showSearch(context),
-            tooltip: 'Search documents',
-          ),
-        ],
-      ),
-      body: BlocBuilder<DocumentEditorBloc, DocumentEditorState>(
-        builder: (context, state) {
-          if (state.status == DocumentEditorStatus.loading) {
-            return const Center(child: CircularProgressIndicator());
-          }
+    return BlocListener<DocumentEditorBloc, DocumentEditorState>(
+      listenWhen: (prev, curr) => prev.status != curr.status,
+      listener: (context, state) {
+        if (state.status == DocumentEditorStatus.editing &&
+            state.currentDocument != null &&
+            _isCreating) {
+          _isCreating = false;
+          context.go('/documents/${state.currentDocument!.id}');
+        }
+        if (state.status == DocumentEditorStatus.saved) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Saved ✓'),
+              duration: Duration(seconds: 1),
+            ),
+          );
+        }
+        if (state.status == DocumentEditorStatus.error) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.errorMessage ?? 'An error occurred'),
+              backgroundColor: theme.colorScheme.error,
+            ),
+          );
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Documents'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.folder_open),
+              tooltip: 'Open File',
+              onPressed: () => _openFile(context),
+            ),
+            IconButton(
+              icon: const Icon(Icons.search),
+              onPressed: () => _showSearch(context),
+              tooltip: 'Search documents',
+            ),
+          ],
+        ),
+        body: BlocBuilder<DocumentEditorBloc, DocumentEditorState>(
+          builder: (context, state) {
+            if (state.status == DocumentEditorStatus.loading) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-          if (state.documents.isEmpty) {
-            return EmptyState(
-              icon: Icons.description_outlined,
-              title: 'No Documents',
-              description: 'Create a new document to get started',
-              actionLabel: 'New Document',
-              onAction: () => _createDocument(context),
-            );
-          }
+            if (state.documents.isEmpty) {
+              return EmptyState(
+                icon: Icons.description_outlined,
+                title: 'No Documents',
+                description: 'Create a new document to get started',
+                actionLabel: 'New Document',
+                onAction: () => _createDocument(context),
+              );
+            }
 
-          final favorites = state.documents.where((d) => d.isFavorite).toList();
-          final others = state.documents.where((d) => !d.isFavorite).toList();
+            final favorites =
+                state.documents.where((d) => d.isFavorite).toList();
+            final others = state.documents.where((d) => !d.isFavorite).toList();
 
-          return ListView(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            children: [
-              // Search query indicator
-              if (state.searchQuery.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                  child: Chip(
-                    label: Text('Search: ${state.searchQuery}'),
-                    onDeleted: () => context
-                        .read<DocumentEditorBloc>()
-                        .add(const SearchDocuments('')),
-                  ),
-                ),
-
-              // Favorites section
-              if (favorites.isNotEmpty) ...[
-                Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                  child: Text(
-                    'Favorites',
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      color: theme.colorScheme.primary,
+            return ListView(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              children: [
+                // Search query indicator
+                if (state.searchQuery.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                    child: Chip(
+                      label: Text('Search: ${state.searchQuery}'),
+                      onDeleted: () => context
+                          .read<DocumentEditorBloc>()
+                          .add(const SearchDocuments('')),
                     ),
                   ),
-                ),
-                ...favorites.map((doc) => _DocumentCard(
-                      document: doc,
-                      onTap: () => _openDocument(context, doc.id),
-                      onFavorite: () => context
-                          .read<DocumentEditorBloc>()
-                          .add(ToggleDocumentFavorite(doc.id)),
-                      onDuplicate: () => context
-                          .read<DocumentEditorBloc>()
-                          .add(DuplicateDocument(doc.id)),
-                      onDelete: () => _confirmDelete(context, doc),
-                    )),
-                const SizedBox(height: AppSpacing.md),
-              ],
 
-              // All documents section
-              if (others.isNotEmpty) ...[
-                if (favorites.isNotEmpty)
+                // Favorites section
+                if (favorites.isNotEmpty) ...[
                   Padding(
                     padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                     child: Text(
-                      'All Documents',
-                      style: theme.textTheme.titleSmall,
+                      'Favorites',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: theme.colorScheme.primary,
+                      ),
                     ),
                   ),
-                ...others.map((doc) => _DocumentCard(
-                      document: doc,
-                      onTap: () => _openDocument(context, doc.id),
-                      onFavorite: () => context
-                          .read<DocumentEditorBloc>()
-                          .add(ToggleDocumentFavorite(doc.id)),
-                      onDuplicate: () => context
-                          .read<DocumentEditorBloc>()
-                          .add(DuplicateDocument(doc.id)),
-                      onDelete: () => _confirmDelete(context, doc),
-                    )),
+                  ...favorites.map((doc) => _DocumentCard(
+                        document: doc,
+                        onTap: () => _openDocument(context, doc.id),
+                        onFavorite: () => context
+                            .read<DocumentEditorBloc>()
+                            .add(ToggleDocumentFavorite(doc.id)),
+                        onDuplicate: () => context
+                            .read<DocumentEditorBloc>()
+                            .add(DuplicateDocument(doc.id)),
+                        onDelete: () => _confirmDelete(context, doc),
+                      )),
+                  const SizedBox(height: AppSpacing.md),
+                ],
+
+                // All documents section
+                if (others.isNotEmpty) ...[
+                  if (favorites.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                      child: Text(
+                        'All Documents',
+                        style: theme.textTheme.titleSmall,
+                      ),
+                    ),
+                  ...others.map((doc) => _DocumentCard(
+                        document: doc,
+                        onTap: () => _openDocument(context, doc.id),
+                        onFavorite: () => context
+                            .read<DocumentEditorBloc>()
+                            .add(ToggleDocumentFavorite(doc.id)),
+                        onDuplicate: () => context
+                            .read<DocumentEditorBloc>()
+                            .add(DuplicateDocument(doc.id)),
+                        onDelete: () => _confirmDelete(context, doc),
+                      )),
+                ],
               ],
-            ],
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _createDocument(context),
-        icon: const Icon(Icons.add),
-        label: const Text('New Document'),
+            );
+          },
+        ),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: _isCreating ? null : () => _createDocument(context),
+          icon: _isCreating
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.add),
+          label: Text(_isCreating ? 'Creating...' : 'New Document'),
+        ),
       ),
     );
   }
@@ -147,6 +194,7 @@ class _DocumentListContent extends StatelessWidget {
   }
 
   void _createDocument(BuildContext context) {
+    setState(() => _isCreating = true);
     context.read<DocumentEditorBloc>().add(const CreateDocument());
   }
 
@@ -167,6 +215,23 @@ class _DocumentListContent extends StatelessWidget {
         context.read<DocumentEditorBloc>().add(DeleteDocument(doc.id));
       }
     });
+  }
+
+  Future<void> _openFile(BuildContext context) async {
+    final result = await fp.FilePicker.platform.pickFiles(
+      type: fp.FileType.custom,
+      allowedExtensions: ['docx', 'doc', 'txt', 'md', 'rtf', 'odt'],
+      allowMultiple: false,
+    );
+    if (result != null && result.files.isNotEmpty && context.mounted) {
+      final file = result.files.single;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Opened: ${file.name}'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 }
 
