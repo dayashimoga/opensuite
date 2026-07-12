@@ -7,6 +7,17 @@ import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import 'database_initializer_stub.dart'
     if (dart.library.io) 'database_initializer_io.dart';
 
+/// Initializes the database factory based on the platform.
+///
+/// Should be called at application startup.
+void initializeDatabase() {
+  if (kIsWeb) {
+    databaseFactory = databaseFactoryFfiWeb;
+  } else {
+    initializeDatabaseFactory();
+  }
+}
+
 /// Provides and manages the SQLite database instance.
 ///
 /// Handles database creation, migrations, and lifecycle.
@@ -37,11 +48,7 @@ class DatabaseProvider {
   }
 
   Future<Database> _initDatabase() async {
-    if (kIsWeb) {
-      databaseFactory = databaseFactoryFfiWeb;
-    } else {
-      initializeDatabaseFactory();
-    }
+    initializeDatabase();
     final String dbPath;
 
     if (kIsWeb) {
