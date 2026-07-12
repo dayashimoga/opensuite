@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'dart:typed_data';
+import 'package:cross_file/cross_file.dart';
+
 // --- Events ---
 
 sealed class ImageEditorEvent extends Equatable {
@@ -12,10 +15,11 @@ sealed class ImageEditorEvent extends Equatable {
 }
 
 class LoadImage extends ImageEditorEvent {
-  final String filePath;
-  const LoadImage(this.filePath);
+  final String? filePath;
+  final Uint8List? imageBytes;
+  const LoadImage({this.filePath, this.imageBytes});
   @override
-  List<Object?> get props => [filePath];
+  List<Object?> get props => [filePath, imageBytes];
 }
 
 class RotateImage extends ImageEditorEvent {
@@ -169,6 +173,7 @@ class ImageAdjustments extends Equatable {
 class ImageEditorState extends Equatable {
   final ImageEditorStatus status;
   final String? filePath;
+  final Uint8List? imageBytes;
   final int imageWidth;
   final int imageHeight;
   final String activeTool;
@@ -181,6 +186,7 @@ class ImageEditorState extends Equatable {
   const ImageEditorState({
     this.status = ImageEditorStatus.initial,
     this.filePath,
+    this.imageBytes,
     this.imageWidth = 0,
     this.imageHeight = 0,
     this.activeTool = 'adjust',
@@ -197,6 +203,7 @@ class ImageEditorState extends Equatable {
   ImageEditorState copyWith({
     ImageEditorStatus? status,
     String? filePath,
+    Uint8List? imageBytes,
     int? imageWidth,
     int? imageHeight,
     String? activeTool,
@@ -209,6 +216,7 @@ class ImageEditorState extends Equatable {
     return ImageEditorState(
       status: status ?? this.status,
       filePath: filePath ?? this.filePath,
+      imageBytes: imageBytes ?? this.imageBytes,
       imageWidth: imageWidth ?? this.imageWidth,
       imageHeight: imageHeight ?? this.imageHeight,
       activeTool: activeTool ?? this.activeTool,
@@ -224,6 +232,7 @@ class ImageEditorState extends Equatable {
   List<Object?> get props => [
         status,
         filePath,
+        imageBytes,
         imageWidth,
         imageHeight,
         activeTool,
@@ -257,9 +266,19 @@ class ImageEditorBloc extends Bloc<ImageEditorEvent, ImageEditorState> {
       filePath: event.filePath,
     ));
     try {
-      // In production, decode image to get dimensions
+      Uint8List? bytes = event.imageBytes;
+      if (bytes == null && event.filePath != null) {
+        bytes = await XFile(event.filePath!).readAsBytes();
+      }
+
+      if (bytes == null) {
+        throw Exception(
+            'Failed to load image bytes: filePath and imageBytes are both null');
+      }
+
       emit(state.copyWith(
         status: ImageEditorStatus.loaded,
+        imageBytes: bytes,
         imageWidth: 1920,
         imageHeight: 1080,
       ));

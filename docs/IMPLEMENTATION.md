@@ -313,3 +313,28 @@
 - [x] Added `text_editor_bloc_test.dart` (Load, Create, Updates, Save to storage, Search matches, Single/All replace operations)
 - [x] 100% test coverage pass for all 134 suite test cases
 
+---
+
+## Sprint 11 — Cross-Platform Production Hardening & Full-Fidelity UI (v1.3.1) ✅
+
+### Web & Desktop SQLite Factory Support
+- [x] Added `sqflite_common_ffi` and `sqflite_common_ffi_web` dependencies to `fileutility_storage`.
+- [x] Implemented a conditionally imported `initializeDatabaseFactory()` configuration to seamlessly bootstrap the correct database factory:
+  - `databaseFactoryFfiWeb` on Web browsers (IndexedDB persistent layer).
+  - `sqfliteFfiInit` and `databaseFactoryFfi` on Desktop (Windows, Linux, macOS).
+  - Standard native handler fallback on Mobile platforms.
+- [x] Rebuilt Docker build environments to align test/lint/run dependencies.
+
+### Full-Fidelity Image Canvas
+- [x] Extended `ImageEditorBloc` to receive and store `imageBytes` (Uint8List).
+- [x] Leveraged `XFile` from `cross_file` to read files asynchronously in a platform-independent way.
+- [x] Updated canvas UI to load real images via `Image.memory()` inside the `ColorFiltered` matrix pipeline, allowing brightness, contrast, and saturation tweaks to apply in real-time.
+- [x] Configured `FilePicker` inside editor to request `withData: true` so image bytes are read correctly on Web browsers.
+- [x] Corrected `image_editor_bloc_test.dart` to supply mock bytes, keeping the unit tests fully offline-first.
+
+### End-To-End Document Import Workflows
+- [x] Replaced list page Snackbars with complete, automated creation and redirect workflows.
+- [x] Converted `PresentationListPage` to a `StatefulWidget` with a transition listener.
+- [x] Wired file pickers in `SpreadsheetListPage`, `DocumentListPage`, and `PresentationListPage` to import files into SQLite database records and redirect users directly to the editor.
+
+

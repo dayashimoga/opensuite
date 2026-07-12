@@ -48,6 +48,7 @@ dependencies:
   # File handling
   file_picker: ^9.2.1
   share_plus: ^10.1.4
+  cross_file: any
   csv: ^6.0.0
   pdfrx: ^1.0.0
 

@@ -22,82 +22,131 @@ class PresentationListPage extends StatelessWidget {
   }
 }
 
-class _ListContent extends StatelessWidget {
+class _ListContent extends StatefulWidget {
   const _ListContent();
 
   @override
+  State<_ListContent> createState() => _ListContentState();
+}
+
+class _ListContentState extends State<_ListContent> {
+  bool _isCreating = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Presentations'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.folder_open),
-            tooltip: 'Open File',
-            onPressed: () => _openFile(context),
-          ),
-        ],
-      ),
-      body: BlocBuilder<PresentationBloc, PresentationState>(
-        builder: (context, state) {
-          if (state.status == PresentationStatus.loading) {
-            return const Center(child: CircularProgressIndicator());
-          }
+    final theme = Theme.of(context);
 
-          if (state.presentations.isEmpty) {
-            return EmptyState(
-              icon: Icons.slideshow_outlined,
-              title: 'No Presentations',
-              description: 'Create a new presentation to get started',
-              actionLabel: 'New Presentation',
-              onAction: () => context.go('/presentations/new'),
-            );
-          }
-
-          return GridView.builder(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 280,
-              mainAxisSpacing: AppSpacing.md,
-              crossAxisSpacing: AppSpacing.md,
-              childAspectRatio: 16 / 11,
+    return BlocListener<PresentationBloc, PresentationState>(
+      listenWhen: (prev, curr) => prev.status != curr.status,
+      listener: (context, state) {
+        if (state.status == PresentationStatus.editing &&
+            state.currentPresentation != null &&
+            _isCreating) {
+          setState(() => _isCreating = false);
+          context.go('/presentations/${state.currentPresentation!.id}');
+        }
+        if (state.status == PresentationStatus.saved) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Saved ✓'),
+              duration: Duration(seconds: 1),
             ),
-            itemCount: state.presentations.length,
-            itemBuilder: (context, index) {
-              final pres = state.presentations[index];
-              return _PresentationCard(
-                presentation: pres,
-                onTap: () => context.go('/presentations/${pres.id}'),
-                onFavorite: () => context
-                    .read<PresentationBloc>()
-                    .add(TogglePresentationFavorite(pres.id)),
-                onDuplicate: () => context
-                    .read<PresentationBloc>()
-                    .add(DuplicatePresentationEntry(pres.id)),
-                onDelete: () {
-                  ConfirmationDialog.show(
-                    context,
-                    title: 'Delete Presentation',
-                    message: 'Delete "${pres.title}"?',
-                  ).then((confirmed) {
-                    if (confirmed && context.mounted) {
-                      context
-                          .read<PresentationBloc>()
-                          .add(DeletePresentationEntry(pres.id));
-                    }
-                  });
-                },
-              );
-            },
           );
-        },
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.go('/presentations/new'),
-        icon: const Icon(Icons.add),
-        label: const Text('New Presentation'),
+        }
+        if (state.status == PresentationStatus.error) {
+          setState(() => _isCreating = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.errorMessage ?? 'An error occurred'),
+              backgroundColor: theme.colorScheme.error,
+            ),
+          );
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Presentations'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.folder_open),
+              tooltip: 'Open File',
+              onPressed: _isCreating ? null : () => _openFile(context),
+            ),
+          ],
+        ),
+        body: BlocBuilder<PresentationBloc, PresentationState>(
+          builder: (context, state) {
+            if (state.status == PresentationStatus.loading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (state.presentations.isEmpty) {
+              return EmptyState(
+                icon: Icons.slideshow_outlined,
+                title: 'No Presentations',
+                description: 'Create a new presentation to get started',
+                actionLabel: 'New Presentation',
+                onAction:
+                    _isCreating ? null : () => _createPresentation(context),
+              );
+            }
+
+            return GridView.builder(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 280,
+                mainAxisSpacing: AppSpacing.md,
+                crossAxisSpacing: AppSpacing.md,
+                childAspectRatio: 16 / 11,
+              ),
+              itemCount: state.presentations.length,
+              itemBuilder: (context, index) {
+                final pres = state.presentations[index];
+                return _PresentationCard(
+                  presentation: pres,
+                  onTap: () => context.go('/presentations/${pres.id}'),
+                  onFavorite: () => context
+                      .read<PresentationBloc>()
+                      .add(TogglePresentationFavorite(pres.id)),
+                  onDuplicate: () => context
+                      .read<PresentationBloc>()
+                      .add(DuplicatePresentationEntry(pres.id)),
+                  onDelete: () {
+                    ConfirmationDialog.show(
+                      context,
+                      title: 'Delete Presentation',
+                      message: 'Delete "${pres.title}"?',
+                    ).then((confirmed) {
+                      if (confirmed && context.mounted) {
+                        context
+                            .read<PresentationBloc>()
+                            .add(DeletePresentationEntry(pres.id));
+                      }
+                    });
+                  },
+                );
+              },
+            );
+          },
+        ),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: _isCreating ? null : () => _createPresentation(context),
+          icon: _isCreating
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.add),
+          label: Text(_isCreating ? 'Creating...' : 'New Presentation'),
+        ),
       ),
     );
+  }
+
+  void _createPresentation(BuildContext context) {
+    setState(() => _isCreating = true);
+    context.read<PresentationBloc>().add(const CreatePresentation());
   }
 
   Future<void> _openFile(BuildContext context) async {
@@ -108,12 +157,9 @@ class _ListContent extends StatelessWidget {
     );
     if (result != null && result.files.isNotEmpty && context.mounted) {
       final file = result.files.single;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Opened: ${file.name}'),
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      final title = file.name.replaceAll(RegExp(r'\.(pptx|ppt|odp)$'), '');
+      setState(() => _isCreating = true);
+      context.read<PresentationBloc>().add(CreatePresentation(title: title));
     }
   }
 }

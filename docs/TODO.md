@@ -175,3 +175,14 @@
 - [x] 100% test coverage pass locally and in Docker
 - [x] Release build verification
 
+## Sprint 11: Production Hardening & Full-Fidelity (v1.3.1)
+- [x] Add sqflite_common_ffi & sqflite_common_ffi_web dependencies
+- [x] Implement conditional database initialization (Web, Windows, Linux, Mobile)
+- [x] Support raw bytes loading inside ImageEditorBloc for Web
+- [x] Load actual image via Image.memory inside canvas inside ColorFiltered
+- [x] Convert list pages to StatefulWidget and hook file imports to bloc redirects
+- [x] Rebuild Docker images to compile new dependencies
+- [x] 100% test coverage pass locally and in Docker
+- [x] Web build verification
+
+

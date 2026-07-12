@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.1+4] - 2026-07-12
+
+### Added
+- **Conditional Database Initialization**: Added `sqflite_common_ffi` and `sqflite_common_ffi_web` to support running the SQLite layer on the Web (via IndexedDB persistent Wasm factory) and Desktop (via FFI). This resolves the `databaseFactory not initialized` error.
+- **Full-Fidelity Canvas Rendering**: Enabled the image editor to load, display, and tweak real image files (via `Image.memory` and raw bytes extraction) in a cross-platform way, replacing the placeholder gray boxes.
+- **End-To-End Document Import**: Connected the file pickers in the Spreadsheet, Document, and Presentation list pages to automatically parse the files, insert records into SQLite database tables, and redirect the user directly to the workspace editors.
+
+### Changed
+- Version bumped to 1.3.1+4
+- PresentationListPage converted to StatefulWidget to manage creation and redirection states.
+
 ## [1.3.0+3] - 2026-07-11
 
 ### Added

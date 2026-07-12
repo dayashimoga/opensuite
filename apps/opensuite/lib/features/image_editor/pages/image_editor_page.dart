@@ -19,7 +19,7 @@ class ImageEditorPage extends StatelessWidget {
       create: (_) {
         final bloc = ImageEditorBloc();
         if (filePath != null) {
-          bloc.add(LoadImage(filePath!));
+          bloc.add(LoadImage(filePath: filePath));
         }
         return bloc;
       },
@@ -229,11 +229,15 @@ class _ImageCanvas extends StatelessWidget {
           final result = await FilePicker.platform.pickFiles(
             type: FileType.image,
             allowMultiple: false,
+            withData: true,
           );
           if (result != null && result.files.isNotEmpty) {
-            final path = result.files.single.path;
-            if (path != null && context.mounted) {
-              context.read<ImageEditorBloc>().add(LoadImage(path));
+            final file = result.files.single;
+            if (context.mounted) {
+              context.read<ImageEditorBloc>().add(LoadImage(
+                    filePath: file.path ?? file.name,
+                    imageBytes: file.bytes,
+                  ));
             }
           }
         },
@@ -270,32 +274,39 @@ class _ImageCanvas extends StatelessWidget {
               child: ColorFiltered(
                 colorFilter:
                     ColorFilter.matrix(_buildColorMatrix(state.adjustments)),
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.image,
-                          size: 80,
-                          color:
-                              theme.colorScheme.primary.withValues(alpha: 0.3)),
-                      const SizedBox(height: 8),
-                      Text(
-                        state.filePath?.split('/').last ?? '',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.5),
+                child: state.imageBytes != null
+                    ? Image.memory(
+                        state.imageBytes!,
+                        fit: BoxFit.contain,
+                        width: double.infinity,
+                        height: double.infinity,
+                      )
+                    : Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.image,
+                                size: 80,
+                                color: theme.colorScheme.primary
+                                    .withValues(alpha: 0.3)),
+                            const SizedBox(height: 8),
+                            Text(
+                              state.filePath?.split('/').last ?? '',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.5),
+                              ),
+                            ),
+                            Text(
+                              '${state.imageWidth} × ${state.imageHeight}',
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.3),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      Text(
-                        '${state.imageWidth} × ${state.imageHeight}',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.3),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               ),
             ),
           ),

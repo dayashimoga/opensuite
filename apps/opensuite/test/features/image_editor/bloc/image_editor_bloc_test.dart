@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:opensuite/features/image_editor/bloc/image_editor_bloc.dart';
@@ -27,7 +28,10 @@ void main() {
       blocTest<ImageEditorBloc, ImageEditorState>(
         'emits [loading, loaded] with dimensions',
         build: () => bloc,
-        act: (bloc) => bloc.add(const LoadImage('/test/image.png')),
+        act: (bloc) => bloc.add(LoadImage(
+          filePath: '/test/image.png',
+          imageBytes: Uint8List.fromList([1, 2, 3]),
+        )),
         expect: () => [
           isA<ImageEditorState>()
               .having((s) => s.status, 'status', ImageEditorStatus.loading)

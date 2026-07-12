@@ -3,6 +3,10 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
+import 'database_initializer_stub.dart'
+    if (dart.library.html) 'database_initializer_web.dart'
+    if (dart.library.io) 'database_initializer_io.dart';
+
 /// Provides and manages the SQLite database instance.
 ///
 /// Handles database creation, migrations, and lifecycle.
@@ -33,6 +37,7 @@ class DatabaseProvider {
   }
 
   Future<Database> _initDatabase() async {
+    initializeDatabaseFactory();
     final String dbPath;
 
     if (kIsWeb) {

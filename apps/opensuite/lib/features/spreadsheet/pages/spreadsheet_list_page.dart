@@ -218,12 +218,9 @@ class _ListContentState extends State<_ListContent> {
     );
     if (result != null && result.files.isNotEmpty && context.mounted) {
       final file = result.files.single;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Opened: ${file.name}'),
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      final title = file.name.replaceAll(RegExp(r'\.(xlsx|xls|csv|ods)$'), '');
+      setState(() => _isCreating = true);
+      context.read<SpreadsheetBloc>().add(CreateSpreadsheet(title: title));
     }
   }
 }
