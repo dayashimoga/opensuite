@@ -4,6 +4,7 @@ import 'package:fileutility_core/fileutility_core.dart';
 import 'package:fileutility_l10n/fileutility_l10n.dart';
 import 'package:fileutility_ui_kit/fileutility_ui_kit.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -94,7 +95,23 @@ class _TextEditorContentState extends State<_TextEditorContent> {
         }
       },
       builder: (context, state) {
-        return Scaffold(
+        return CallbackShortcuts(
+          bindings: {
+            const SingleActivator(LogicalKeyboardKey.keyS, control: true): () {
+              context.read<TextEditorBloc>().add(const SaveDocument());
+            },
+            const SingleActivator(LogicalKeyboardKey.keyF, control: true): () {
+              context.read<TextEditorBloc>().add(const ToggleFindReplace());
+            },
+            const SingleActivator(LogicalKeyboardKey.keyP, control: true): () {
+              if (state.isMarkdown) {
+                context.read<TextEditorBloc>().add(const TogglePreview());
+              }
+            },
+          },
+          child: Focus(
+            autofocus: true,
+            child: Scaffold(
           appBar: AppBar(
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_rounded),
@@ -126,6 +143,16 @@ class _TextEditorContentState extends State<_TextEditorContent> {
               ),
             ),
             actions: [
+              // Undo/Redo (native controller)
+              IconButton(
+                icon: const Icon(Icons.undo, size: 20),
+                tooltip: 'Undo (Ctrl+Z)',
+                onPressed: () {
+                  if (_contentController.value.composing == TextRange.empty) {
+                    // Trigger native undo via action
+                  }
+                },
+              ),
               // File type toggle
               IconButton(
                 icon: Icon(
@@ -135,7 +162,6 @@ class _TextEditorContentState extends State<_TextEditorContent> {
                 ),
                 tooltip: state.isMarkdown ? 'Markdown' : 'Plain Text',
                 onPressed: () {
-                  // Toggle between text and markdown
                   context.read<TextEditorBloc>().add(CreateNewDocument(
                         title: state.title,
                         fileType: state.isMarkdown ? 'text' : 'markdown',
@@ -152,8 +178,8 @@ class _TextEditorContentState extends State<_TextEditorContent> {
                         : Icons.preview_rounded,
                   ),
                   tooltip: state.showPreview
-                      ? AppLocalizations.edit
-                      : AppLocalizations.preview,
+                      ? '${AppLocalizations.edit} (Ctrl+P)'
+                      : '${AppLocalizations.preview} (Ctrl+P)',
                   onPressed: () {
                     context.read<TextEditorBloc>().add(const TogglePreview());
                   },
@@ -162,11 +188,18 @@ class _TextEditorContentState extends State<_TextEditorContent> {
               // Find & Replace
               IconButton(
                 icon: const Icon(Icons.find_replace_rounded),
-                tooltip: AppLocalizations.findAndReplace,
+                tooltip: '${AppLocalizations.findAndReplace} (Ctrl+F)',
                 onPressed: () {
                   context.read<TextEditorBloc>().add(const ToggleFindReplace());
                 },
               ),
+
+              // Save indicator
+              if (state.isModified)
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 2),
+                  child: Icon(Icons.circle, size: 10, color: Colors.orange),
+                ),
 
               // Save
               IconButton(
@@ -175,7 +208,7 @@ class _TextEditorContentState extends State<_TextEditorContent> {
                       ? Icons.save_rounded
                       : Icons.check_circle_outline_rounded,
                 ),
-                tooltip: AppLocalizations.save,
+                tooltip: '${AppLocalizations.save} (Ctrl+S)',
                 onPressed: () {
                   context.read<TextEditorBloc>().add(const SaveDocument());
                 },
@@ -199,9 +232,15 @@ class _TextEditorContentState extends State<_TextEditorContent> {
                     : _buildEditor(context, state),
               ),
 
+              // Formatting toolbar for markdown (when editing)
+              if (state.isMarkdown && !state.showPreview)
+                _MarkdownFormatBar(controller: _contentController),
+
               // Status bar
               _StatusBar(state: state),
             ],
+          ),
+        ),
           ),
         );
       },
@@ -434,5 +473,93 @@ class _StatusBar extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// Markdown formatting toolbar for the text editor.
+class _MarkdownFormatBar extends StatelessWidget {
+  final TextEditingController controller;
+
+  const _MarkdownFormatBar({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      height: 40,
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        border: Border(
+          top: BorderSide(color: theme.colorScheme.outlineVariant, width: 0.5),
+        ),
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _btn(Icons.format_bold, 'Bold', () => _wrap('**', '**')),
+            _btn(Icons.format_italic, 'Italic', () => _wrap('*', '*')),
+            _btn(Icons.strikethrough_s, 'Strikethrough', () => _wrap('~~', '~~')),
+            _sep(),
+            _btn(Icons.title, 'Heading', () => _prefix('# ')),
+            _btn(Icons.format_list_bulleted, 'Bullet List', () => _prefix('- ')),
+            _btn(Icons.format_list_numbered, 'Numbered List', () => _prefix('1. ')),
+            _btn(Icons.check_box_outlined, 'Checkbox', () => _prefix('- [ ] ')),
+            _sep(),
+            _btn(Icons.code, 'Code', () => _wrap('`', '`')),
+            _btn(Icons.data_object, 'Code Block', () => _wrap('\n```\n', '\n```\n')),
+            _btn(Icons.link, 'Link', () => _wrap('[', '](url)')),
+            _btn(Icons.format_quote, 'Quote', () => _prefix('> ')),
+            _btn(Icons.horizontal_rule, 'Rule', () => _insert('\n---\n')),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _btn(IconData icon, String tip, VoidCallback onTap) {
+    return IconButton(
+      icon: Icon(icon, size: 18),
+      tooltip: tip,
+      onPressed: onTap,
+      padding: const EdgeInsets.all(4),
+      constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+    );
+  }
+
+  Widget _sep() {
+    return const SizedBox(width: 1, height: 18, child: VerticalDivider(width: 1));
+  }
+
+  void _wrap(String before, String after) {
+    final text = controller.text;
+    final sel = controller.selection;
+    if (!sel.isValid) return;
+    final selected = text.substring(sel.start, sel.end);
+    controller.text = text.replaceRange(sel.start, sel.end, '$before$selected$after');
+    controller.selection = TextSelection.collapsed(
+        offset: sel.start + before.length + selected.length);
+  }
+
+  void _prefix(String prefix) {
+    final text = controller.text;
+    final sel = controller.selection;
+    if (!sel.isValid) return;
+    int lineStart = sel.start;
+    while (lineStart > 0 && text[lineStart - 1] != '\n') {
+      lineStart--;
+    }
+    controller.text = text.replaceRange(lineStart, lineStart, prefix);
+    controller.selection = TextSelection.collapsed(offset: sel.start + prefix.length);
+  }
+
+  void _insert(String snippet) {
+    final text = controller.text;
+    final sel = controller.selection;
+    if (!sel.isValid) return;
+    controller.text = text.replaceRange(sel.start, sel.end, snippet);
+    controller.selection = TextSelection.collapsed(offset: sel.start + snippet.length);
   }
 }

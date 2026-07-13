@@ -74,7 +74,20 @@ class _ListContentState extends State<_ListContent> {
             ),
           ],
         ),
-        body: BlocBuilder<PresentationBloc, PresentationState>(
+        body: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md, AppSpacing.sm, AppSpacing.md, 0),
+              child: AppSearchBar(
+                hintText: 'Search presentations...',
+                onChanged: (query) => context
+                    .read<PresentationBloc>()
+                    .add(SearchPresentations(query)),
+              ),
+            ),
+            Expanded(
+              child: BlocBuilder<PresentationBloc, PresentationState>(
           builder: (context, state) {
             if (state.status == PresentationStatus.loading) {
               return const Center(child: CircularProgressIndicator());
@@ -128,6 +141,9 @@ class _ListContentState extends State<_ListContent> {
               },
             );
           },
+        ),
+            ),
+          ],
         ),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: _isCreating ? null : () => _createPresentation(context),

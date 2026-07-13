@@ -43,6 +43,12 @@ jobs:
       - name: Analyze
         run: cd apps/opensuite && flutter analyze
 
+      - name: Security audit
+        run: |
+          cd packages/core && dart pub audit || true
+          cd ../storage && dart pub audit || true
+          cd ../../apps/opensuite && dart pub audit || true
+
   test:
     name: Test
     runs-on: ubuntu-latest
@@ -75,6 +81,20 @@ jobs:
 
       - name: Run app tests with coverage
         run: cd apps/opensuite && flutter test --coverage
+
+      - name: Check coverage threshold
+        run: |
+          if [ -f apps/opensuite/coverage/lcov.info ]; then
+            LINES_FOUND=$(grep -c "^DA:" apps/opensuite/coverage/lcov.info || echo "0")
+            LINES_HIT=$(grep "^DA:" apps/opensuite/coverage/lcov.info | grep -cv ",0$" || echo "0")
+            if [ "$LINES_FOUND" -gt 0 ]; then
+              COVERAGE=$(( LINES_HIT * 100 / LINES_FOUND ))
+              echo "Coverage: ${COVERAGE}%"
+              if [ "$COVERAGE" -lt 70 ]; then
+                echo "::warning::Coverage ${COVERAGE}% is below 70% threshold"
+              fi
+            fi
+          fi
 
       - name: Upload core coverage
         uses: actions/upload-artifact@v4
@@ -179,7 +199,7 @@ jobs:
       - name: Install Linux dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libsqlite3-dev
 
       - name: Cache pub dependencies
         uses: actions/cache@v4
@@ -246,6 +266,37 @@ jobs:
         with:
           name: windows-build
           path: apps/opensuite/build/windows/x64/runner/Release/
+
+  build-ios:
+    name: Build iOS
+    runs-on: macos-latest
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.27.4'
+          channel: 'stable'
+          cache: true
+
+      - name: Cache pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
+
+      - name: Get dependencies
+        run: |
+          for pkg in packages/core packages/l10n packages/storage packages/ui_kit apps/opensuite; do
+            (cd "$pkg" && flutter pub get)
+          done
+
+      - name: Build iOS (no codesign)
+        run: cd apps/opensuite && flutter build ios --release --no-codesign
 
   deploy-cloudflare:
     name: Deploy to Cloudflare Pages

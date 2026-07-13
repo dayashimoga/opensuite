@@ -1,6 +1,8 @@
 import 'package:csv/csv.dart';
 import 'package:fileutility_core/fileutility_core.dart';
+import 'package:fileutility_ui_kit/fileutility_ui_kit.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
@@ -10,8 +12,8 @@ import '../bloc/spreadsheet_bloc.dart';
 
 /// Spreadsheet grid editor page.
 ///
-/// Provides a virtual-scrolling grid, formula bar, formatting toolbar,
-/// sheet tabs, and cell editing with formula evaluation.
+/// Provides a virtual-scrolling grid, ribbon toolbar, formula bar,
+/// context menus, sheet tabs, and full cell editing with formula evaluation.
 class SpreadsheetEditorPage extends StatelessWidget {
   final String? spreadsheetId;
   const SpreadsheetEditorPage({super.key, this.spreadsheetId});
@@ -43,16 +45,23 @@ class _EditorContent extends StatefulWidget {
 class _EditorContentState extends State<_EditorContent> {
   final _formulaController = TextEditingController();
   final _cellEditController = TextEditingController();
-  final _scrollController = ScrollController();
-  final _horizontalScrollController = ScrollController();
-  final bool _isEditing = false;
+  final _verticalController = ScrollController();
+  final _horizontalController = ScrollController();
+  final _findController = TextEditingController();
+  final _replaceController = TextEditingController();
+  bool _showFindBar = false;
+
+  String _selectedFont = 'Inter';
+  double _selectedFontSize = 12.0;
 
   @override
   void dispose() {
     _formulaController.dispose();
     _cellEditController.dispose();
-    _scrollController.dispose();
-    _horizontalScrollController.dispose();
+    _verticalController.dispose();
+    _horizontalController.dispose();
+    _findController.dispose();
+    _replaceController.dispose();
     super.dispose();
   }
 
@@ -67,14 +76,29 @@ class _EditorContentState extends State<_EditorContent> {
           prev.status != curr.status,
       listener: (context, state) {
         _formulaController.text = state.formulaBarValue;
-        if (!_isEditing) {
-          _cellEditController.text = state.cellEditValue;
+        _cellEditController.text = state.cellEditValue;
+
+        // Update font info from selected cell
+        if (state.selectedCell != null && state.activeSheet != null) {
+          final cell = state.activeSheet!.getCell(state.selectedCell!);
+          _selectedFont = cell.fontFamily;
+          _selectedFontSize = cell.fontSize;
         }
+
         if (state.status == SpreadsheetStatus.saved) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Saved ✓'),
               duration: Duration(seconds: 1),
+            ),
+          );
+        }
+        if (state.status == SpreadsheetStatus.error &&
+            state.errorMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.errorMessage!),
+              backgroundColor: theme.colorScheme.error,
             ),
           );
         }
@@ -90,142 +114,979 @@ class _EditorContentState extends State<_EditorContent> {
           return const Scaffold(body: Center(child: Text('No sheet data')));
         }
 
-        return Scaffold(
-          appBar: AppBar(
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () {
-                if (state.hasUnsavedChanges) {
-                  context.read<SpreadsheetBloc>().add(const SaveSpreadsheet());
-                }
-                context.go('/spreadsheets');
-              },
-            ),
-            title: Text(state.currentSpreadsheet?.title ?? 'Spreadsheet'),
-            actions: [
-              // Formatting buttons
-              IconButton(
-                icon: const Icon(Icons.format_bold, size: 20),
-                onPressed: () => context
-                    .read<SpreadsheetBloc>()
-                    .add(const FormatCells('bold')),
-                tooltip: 'Bold',
-              ),
-              IconButton(
-                icon: const Icon(Icons.format_italic, size: 20),
-                onPressed: () => context
-                    .read<SpreadsheetBloc>()
-                    .add(const FormatCells('italic')),
-                tooltip: 'Italic',
-              ),
-              const SizedBox(width: 4),
-              // Save indicator
-              if (state.status == SpreadsheetStatus.saving)
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8),
-                  child: SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2)),
-                )
-              else if (state.hasUnsavedChanges)
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8),
-                  child: Icon(Icons.circle, size: 12, color: Colors.orange),
-                )
-              else
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Icon(Icons.cloud_done,
-                      size: 18,
-                      color: theme.colorScheme.primary.withValues(alpha: 0.6)),
-                ),
-              // Save button
-              IconButton(
-                icon: const Icon(Icons.save_outlined),
-                onPressed: () => context
-                    .read<SpreadsheetBloc>()
-                    .add(const SaveSpreadsheet()),
-                tooltip: 'Save',
-              ),
-              // Overflow menu with Share and Export
-              PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert),
-                itemBuilder: (_) => [
-                  const PopupMenuItem(
-                    value: 'export_csv',
-                    child: Row(children: [
-                      Icon(Icons.download, size: 20),
-                      SizedBox(width: 8),
-                      Text('Export as CSV'),
-                    ]),
+        return CallbackShortcuts(
+          bindings: _buildShortcuts(context, state),
+          child: Focus(
+            autofocus: true,
+            child: Scaffold(
+              appBar: _buildAppBar(context, state, theme),
+              body: Column(
+                children: [
+                  // Ribbon toolbar
+                  _buildRibbon(context, state, theme),
+
+                  // Formula bar
+                  _FormulaBar(
+                    controller: _formulaController,
+                    cellRef: state.selectedCell?.reference ?? 'A1',
+                    onSubmitted: (value) {
+                      if (state.selectedCell != null) {
+                        context
+                            .read<SpreadsheetBloc>()
+                            .add(UpdateCell(state.selectedCell!, value));
+                      }
+                    },
                   ),
-                  const PopupMenuItem(
-                    value: 'share',
-                    child: Row(children: [
-                      Icon(Icons.share, size: 20),
-                      SizedBox(width: 8),
-                      Text('Share'),
-                    ]),
+
+                  // Find & Replace bar
+                  if (_showFindBar) _buildFindBar(context, state, theme),
+
+                  // Grid
+                  Expanded(
+                    child: _VirtualSpreadsheetGrid(
+                      sheet: activeSheet,
+                      selectedCell: state.selectedCell,
+                      selectedRange: state.selectedRange,
+                      findMatches: state.findMatches,
+                      verticalController: _verticalController,
+                      horizontalController: _horizontalController,
+                      onCellTap: (pos) {
+                        context
+                            .read<SpreadsheetBloc>()
+                            .add(SelectCell(pos));
+                      },
+                      onCellEdit: (pos, value) {
+                        context
+                            .read<SpreadsheetBloc>()
+                            .add(UpdateCell(pos, value));
+                      },
+                      onRangeSelect: (range) {
+                        context
+                            .read<SpreadsheetBloc>()
+                            .add(SetCellRange(range));
+                      },
+                      onContextMenu: (pos, offset) {
+                        _showCellContextMenu(context, pos, offset);
+                      },
+                      onColumnResize: (col, width) {
+                        context
+                            .read<SpreadsheetBloc>()
+                            .add(ResizeColumn(col, width));
+                      },
+                    ),
+                  ),
+
+                  // Status bar
+                  _StatusBar(state: state),
+
+                  // Sheet tabs
+                  _SheetTabs(
+                    sheets: state.sheets,
+                    activeIndex: state.activeSheetIndex,
+                    onSelect: (i) => context
+                        .read<SpreadsheetBloc>()
+                        .add(SelectSheet(i)),
+                    onAdd: () => context
+                        .read<SpreadsheetBloc>()
+                        .add(const AddSheet()),
+                    onRename: (i, name) => context
+                        .read<SpreadsheetBloc>()
+                        .add(RenameSheet(i, name)),
+                    onDelete: (i) => context
+                        .read<SpreadsheetBloc>()
+                        .add(DeleteSheet(i)),
+                    onDuplicate: (i) => context
+                        .read<SpreadsheetBloc>()
+                        .add(DuplicateSheet(i)),
                   ),
                 ],
-                onSelected: (value) {
-                  switch (value) {
-                    case 'export_csv':
-                      _exportCsv(context, state);
-                    case 'share':
-                      _shareSpreadsheet(context, state);
-                  }
-                },
               ),
-            ],
-          ),
-          body: Column(
-            children: [
-              // Formula bar
-              _FormulaBar(
-                controller: _formulaController,
-                cellRef: state.selectedCell?.reference ?? 'A1',
-                onSubmitted: (value) {
-                  if (state.selectedCell != null) {
-                    context
-                        .read<SpreadsheetBloc>()
-                        .add(UpdateCell(state.selectedCell!, value));
-                  }
-                },
-              ),
-
-              // Grid
-              Expanded(
-                child: _SpreadsheetGrid(
-                  sheet: activeSheet,
-                  selectedCell: state.selectedCell,
-                  onCellTap: (pos) {
-                    context.read<SpreadsheetBloc>().add(SelectCell(pos));
-                  },
-                  onCellEdit: (pos, value) {
-                    context.read<SpreadsheetBloc>().add(UpdateCell(pos, value));
-                  },
-                ),
-              ),
-
-              // Sheet tabs
-              _SheetTabs(
-                sheets: state.sheets,
-                activeIndex: state.activeSheetIndex,
-                onSelect: (i) =>
-                    context.read<SpreadsheetBloc>().add(SelectSheet(i)),
-                onAdd: () =>
-                    context.read<SpreadsheetBloc>().add(const AddSheet()),
-                onRename: (i, name) =>
-                    context.read<SpreadsheetBloc>().add(RenameSheet(i, name)),
-                onDelete: (i) =>
-                    context.read<SpreadsheetBloc>().add(DeleteSheet(i)),
-              ),
-            ],
+            ),
           ),
         );
       },
+    );
+  }
+
+  AppBar _buildAppBar(
+      BuildContext context, SpreadsheetState state, ThemeData theme) {
+    return AppBar(
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back),
+        onPressed: () {
+          if (state.hasUnsavedChanges) {
+            context.read<SpreadsheetBloc>().add(const SaveSpreadsheet());
+          }
+          context.go('/spreadsheets');
+        },
+      ),
+      title: Text(state.currentSpreadsheet?.title ?? 'Spreadsheet'),
+      actions: [
+        // Undo/Redo
+        IconButton(
+          icon: const Icon(Icons.undo, size: 20),
+          onPressed: state.canUndo
+              ? () => context
+                  .read<SpreadsheetBloc>()
+                  .add(const UndoSpreadsheet())
+              : null,
+          tooltip: 'Undo (Ctrl+Z)',
+        ),
+        IconButton(
+          icon: const Icon(Icons.redo, size: 20),
+          onPressed: state.canRedo
+              ? () => context
+                  .read<SpreadsheetBloc>()
+                  .add(const RedoSpreadsheet())
+              : null,
+          tooltip: 'Redo (Ctrl+Y)',
+        ),
+        const SizedBox(width: 4),
+
+        // Save indicator
+        if (state.status == SpreadsheetStatus.saving)
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8),
+            child: SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2)),
+          )
+        else if (state.hasUnsavedChanges)
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8),
+            child: Icon(Icons.circle, size: 12, color: Colors.orange),
+          )
+        else
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Icon(Icons.cloud_done,
+                size: 18,
+                color: theme.colorScheme.primary.withValues(alpha: 0.6)),
+          ),
+        // Save button
+        IconButton(
+          icon: const Icon(Icons.save_outlined),
+          onPressed: () => context
+              .read<SpreadsheetBloc>()
+              .add(const SaveSpreadsheet()),
+          tooltip: 'Save (Ctrl+S)',
+        ),
+        // Overflow menu
+        PopupMenuButton<String>(
+          icon: const Icon(Icons.more_vert),
+          itemBuilder: (_) => [
+            const PopupMenuItem(
+              value: 'export_csv',
+              child: Row(children: [
+                Icon(Icons.download, size: 20),
+                SizedBox(width: 8),
+                Text('Export as CSV'),
+              ]),
+            ),
+            const PopupMenuItem(
+              value: 'share',
+              child: Row(children: [
+                Icon(Icons.share, size: 20),
+                SizedBox(width: 8),
+                Text('Share'),
+              ]),
+            ),
+          ],
+          onSelected: (value) {
+            switch (value) {
+              case 'export_csv':
+                _exportCsv(context, state);
+              case 'share':
+                _shareSpreadsheet(context, state);
+            }
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRibbon(
+      BuildContext context, SpreadsheetState state, ThemeData theme) {
+    return ToolbarRibbon(
+      tabs: [
+        RibbonTab(label: 'Home', groups: [
+          // Font group
+          RibbonGroup(label: 'Font', children: [
+            SizedBox(
+              width: 100,
+              height: 28,
+              child: DropdownButtonFormField<String>(
+                value: _selectedFont,
+                isDense: true,
+                isExpanded: true,
+                decoration: InputDecoration(
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 6, vertical: 0),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(4),
+                    borderSide: BorderSide(
+                        color: theme.colorScheme.outlineVariant, width: 0.5),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(4),
+                    borderSide: BorderSide(
+                        color: theme.colorScheme.outlineVariant, width: 0.5),
+                  ),
+                ),
+                style: theme.textTheme.bodySmall,
+                items: const [
+                  DropdownMenuItem(value: 'Inter', child: Text('Inter')),
+                  DropdownMenuItem(value: 'Roboto', child: Text('Roboto')),
+                  DropdownMenuItem(
+                      value: 'monospace', child: Text('Monospace')),
+                  DropdownMenuItem(value: 'serif', child: Text('Serif')),
+                ],
+                onChanged: (v) {
+                  if (v != null) {
+                    setState(() => _selectedFont = v);
+                    context.read<SpreadsheetBloc>().add(SetFontFamily(v));
+                  }
+                },
+              ),
+            ),
+            const SizedBox(width: 4),
+            SizedBox(
+              width: 56,
+              height: 28,
+              child: DropdownButtonFormField<double>(
+                value: _selectedFontSize,
+                isDense: true,
+                isExpanded: true,
+                decoration: InputDecoration(
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 6, vertical: 0),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(4),
+                    borderSide: BorderSide(
+                        color: theme.colorScheme.outlineVariant, width: 0.5),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(4),
+                    borderSide: BorderSide(
+                        color: theme.colorScheme.outlineVariant, width: 0.5),
+                  ),
+                ),
+                style: theme.textTheme.bodySmall,
+                items: const [
+                  DropdownMenuItem(value: 8.0, child: Text('8')),
+                  DropdownMenuItem(value: 10.0, child: Text('10')),
+                  DropdownMenuItem(value: 11.0, child: Text('11')),
+                  DropdownMenuItem(value: 12.0, child: Text('12')),
+                  DropdownMenuItem(value: 14.0, child: Text('14')),
+                  DropdownMenuItem(value: 16.0, child: Text('16')),
+                  DropdownMenuItem(value: 18.0, child: Text('18')),
+                  DropdownMenuItem(value: 20.0, child: Text('20')),
+                  DropdownMenuItem(value: 24.0, child: Text('24')),
+                ],
+                onChanged: (v) {
+                  if (v != null) {
+                    setState(() => _selectedFontSize = v);
+                    context.read<SpreadsheetBloc>().add(SetFontSize(v));
+                  }
+                },
+              ),
+            ),
+            const SizedBox(width: 4),
+            RibbonButton(
+              icon: Icons.format_bold,
+              tooltip: 'Bold (Ctrl+B)',
+              isActive: _isCellBold(state),
+              onPressed: () => context
+                  .read<SpreadsheetBloc>()
+                  .add(const FormatCells('bold')),
+            ),
+            RibbonButton(
+              icon: Icons.format_italic,
+              tooltip: 'Italic (Ctrl+I)',
+              isActive: _isCellItalic(state),
+              onPressed: () => context
+                  .read<SpreadsheetBloc>()
+                  .add(const FormatCells('italic')),
+            ),
+            RibbonButton(
+              icon: Icons.format_underlined,
+              tooltip: 'Underline (Ctrl+U)',
+              isActive: _isCellUnderline(state),
+              onPressed: () => context
+                  .read<SpreadsheetBloc>()
+                  .add(const FormatCells('underline')),
+            ),
+            RibbonButton(
+              icon: Icons.strikethrough_s,
+              tooltip: 'Strikethrough',
+              isActive: _isCellStrikethrough(state),
+              onPressed: () => context
+                  .read<SpreadsheetBloc>()
+                  .add(const FormatCells('strikethrough')),
+            ),
+          ]),
+          // Color group
+          RibbonGroup(label: 'Colors', children: [
+            _ColorPickerButton(
+              icon: Icons.format_color_text,
+              tooltip: 'Text Color',
+              currentColor: _getCellTextColor(state),
+              onColorSelected: (color) => context
+                  .read<SpreadsheetBloc>()
+                  .add(SetTextColor(color)),
+            ),
+            _ColorPickerButton(
+              icon: Icons.format_color_fill,
+              tooltip: 'Fill Color',
+              currentColor: _getCellBgColor(state),
+              onColorSelected: (color) => context
+                  .read<SpreadsheetBloc>()
+                  .add(SetBackgroundColor(color)),
+            ),
+          ]),
+          // Alignment group
+          RibbonGroup(label: 'Alignment', children: [
+            RibbonButton(
+              icon: Icons.format_align_left,
+              tooltip: 'Align Left',
+              isActive: _getCellAlignment(state) == 'left',
+              onPressed: () => context
+                  .read<SpreadsheetBloc>()
+                  .add(const FormatCells('alignLeft')),
+            ),
+            RibbonButton(
+              icon: Icons.format_align_center,
+              tooltip: 'Align Center',
+              isActive: _getCellAlignment(state) == 'center',
+              onPressed: () => context
+                  .read<SpreadsheetBloc>()
+                  .add(const FormatCells('alignCenter')),
+            ),
+            RibbonButton(
+              icon: Icons.format_align_right,
+              tooltip: 'Align Right',
+              isActive: _getCellAlignment(state) == 'right',
+              onPressed: () => context
+                  .read<SpreadsheetBloc>()
+                  .add(const FormatCells('alignRight')),
+            ),
+            RibbonButton(
+              icon: Icons.wrap_text,
+              tooltip: 'Wrap Text',
+              isActive: _isCellWrapText(state),
+              onPressed: () => context
+                  .read<SpreadsheetBloc>()
+                  .add(const FormatCells('wrapText')),
+            ),
+          ]),
+          // Number format group
+          RibbonGroup(label: 'Number', children: [
+            SizedBox(
+              width: 100,
+              height: 28,
+              child: DropdownButtonFormField<NumberFormatType>(
+                value: _getCellNumberFormat(state),
+                isDense: true,
+                isExpanded: true,
+                decoration: InputDecoration(
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 6, vertical: 0),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(4),
+                    borderSide: BorderSide(
+                        color: theme.colorScheme.outlineVariant, width: 0.5),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(4),
+                    borderSide: BorderSide(
+                        color: theme.colorScheme.outlineVariant, width: 0.5),
+                  ),
+                ),
+                style: theme.textTheme.bodySmall,
+                items: const [
+                  DropdownMenuItem(
+                      value: NumberFormatType.general,
+                      child: Text('General')),
+                  DropdownMenuItem(
+                      value: NumberFormatType.number,
+                      child: Text('Number')),
+                  DropdownMenuItem(
+                      value: NumberFormatType.decimal,
+                      child: Text('Decimal')),
+                  DropdownMenuItem(
+                      value: NumberFormatType.currency,
+                      child: Text('Currency')),
+                  DropdownMenuItem(
+                      value: NumberFormatType.percentage,
+                      child: Text('Percent')),
+                  DropdownMenuItem(
+                      value: NumberFormatType.scientific,
+                      child: Text('Scientific')),
+                ],
+                onChanged: (v) {
+                  if (v != null) {
+                    context
+                        .read<SpreadsheetBloc>()
+                        .add(SetNumberFormat(v));
+                  }
+                },
+              ),
+            ),
+          ]),
+          // Cell operations group
+          RibbonGroup(label: 'Cells', children: [
+            RibbonButton(
+              icon: Icons.merge_type,
+              tooltip: 'Merge Cells',
+              onPressed: state.selectedRange != null &&
+                      !state.selectedRange!.isSingleCell
+                  ? () => context
+                      .read<SpreadsheetBloc>()
+                      .add(MergeCells(state.selectedRange!))
+                  : null,
+            ),
+            RibbonButton(
+              icon: Icons.border_all,
+              tooltip: 'Borders',
+              onPressed: () => context.read<SpreadsheetBloc>().add(
+                    SetBorders(CellBorders.all('#000000')),
+                  ),
+            ),
+          ]),
+        ]),
+        RibbonTab(label: 'Insert', groups: [
+          RibbonGroup(label: 'Rows & Columns', children: [
+            RibbonButton(
+              icon: Icons.table_rows,
+              tooltip: 'Insert Row Below',
+              onPressed: () {
+                final row = state.selectedCell?.row ?? 0;
+                context.read<SpreadsheetBloc>().add(InsertRow(row));
+              },
+            ),
+            RibbonButton(
+              icon: Icons.view_column,
+              tooltip: 'Insert Column Right',
+              onPressed: () {
+                final col = state.selectedCell?.col ?? 0;
+                context.read<SpreadsheetBloc>().add(InsertColumn(col));
+              },
+            ),
+            RibbonButton(
+              icon: Icons.delete_sweep,
+              tooltip: 'Delete Row',
+              onPressed: () {
+                final row = state.selectedCell?.row ?? 0;
+                context.read<SpreadsheetBloc>().add(DeleteRow(row));
+              },
+            ),
+            RibbonButton(
+              icon: Icons.remove_circle_outline,
+              tooltip: 'Delete Column',
+              onPressed: () {
+                final col = state.selectedCell?.col ?? 0;
+                context.read<SpreadsheetBloc>().add(DeleteColumn(col));
+              },
+            ),
+          ]),
+          RibbonGroup(label: 'Content', children: [
+            RibbonButton(
+              icon: Icons.comment,
+              tooltip: 'Add Comment',
+              onPressed: () => _showAddCommentDialog(context, state),
+            ),
+            RibbonButton(
+              icon: Icons.link,
+              tooltip: 'Add Hyperlink',
+              onPressed: () => _showAddHyperlinkDialog(context, state),
+            ),
+          ]),
+        ]),
+        RibbonTab(label: 'Data', groups: [
+          RibbonGroup(label: 'Sort', children: [
+            RibbonButton(
+              icon: Icons.arrow_upward,
+              tooltip: 'Sort A→Z',
+              onPressed: () {
+                if (state.selectedCell != null) {
+                  context.read<SpreadsheetBloc>().add(
+                      SortColumn(state.selectedCell!.col, ascending: true));
+                }
+              },
+            ),
+            RibbonButton(
+              icon: Icons.arrow_downward,
+              tooltip: 'Sort Z→A',
+              onPressed: () {
+                if (state.selectedCell != null) {
+                  context.read<SpreadsheetBloc>().add(
+                      SortColumn(state.selectedCell!.col, ascending: false));
+                }
+              },
+            ),
+          ]),
+          RibbonGroup(label: 'Find', children: [
+            RibbonButton(
+              icon: Icons.search,
+              tooltip: 'Find & Replace (Ctrl+F)',
+              onPressed: () =>
+                  setState(() => _showFindBar = !_showFindBar),
+            ),
+          ]),
+        ]),
+        RibbonTab(label: 'View', groups: [
+          RibbonGroup(label: 'Freeze', children: [
+            RibbonButton(
+              icon: Icons.push_pin_outlined,
+              tooltip: 'Freeze Panes',
+              onPressed: () => _showFreezeDialog(context, state),
+            ),
+          ]),
+          RibbonGroup(label: 'Visibility', children: [
+            RibbonButton(
+              icon: Icons.visibility_off,
+              tooltip: 'Hide Selected Rows',
+              onPressed: state.selectedCell != null
+                  ? () => context.read<SpreadsheetBloc>().add(
+                      HideRows([state.selectedCell!.row]))
+                  : null,
+            ),
+            RibbonButton(
+              icon: Icons.visibility,
+              tooltip: 'Unhide All Rows',
+              onPressed: () => context
+                  .read<SpreadsheetBloc>()
+                  .add(const UnhideRows()),
+            ),
+          ]),
+        ]),
+      ],
+    );
+  }
+
+  Widget _buildFindBar(
+      BuildContext context, SpreadsheetState state, ThemeData theme) {
+    return Container(
+      height: 40,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        border: Border(
+          bottom: BorderSide(
+              color: theme.colorScheme.outlineVariant, width: 0.5),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _findController,
+              decoration: const InputDecoration(
+                hintText: 'Find...',
+                border: InputBorder.none,
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                isDense: true,
+              ),
+              style: theme.textTheme.bodySmall,
+              onChanged: (query) => context
+                  .read<SpreadsheetBloc>()
+                  .add(FindInSheet(query)),
+            ),
+          ),
+          if (state.findMatches.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Text(
+                '${state.findMatchIndex + 1}/${state.findMatches.length}',
+                style: theme.textTheme.labelSmall,
+              ),
+            ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: TextField(
+              controller: _replaceController,
+              decoration: const InputDecoration(
+                hintText: 'Replace...',
+                border: InputBorder.none,
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                isDense: true,
+              ),
+              style: theme.textTheme.bodySmall,
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.find_replace, size: 18),
+            tooltip: 'Replace',
+            onPressed: () => context.read<SpreadsheetBloc>().add(
+                ReplaceInSheet(_findController.text, _replaceController.text)),
+            iconSize: 18,
+            padding: const EdgeInsets.all(4),
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          ),
+          IconButton(
+            icon: const Icon(Icons.find_replace_outlined, size: 18),
+            tooltip: 'Replace All',
+            onPressed: () => context.read<SpreadsheetBloc>().add(
+                ReplaceInSheet(
+                    _findController.text, _replaceController.text,
+                    replaceAll: true)),
+            iconSize: 18,
+            padding: const EdgeInsets.all(4),
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          ),
+          IconButton(
+            icon: const Icon(Icons.close, size: 18),
+            onPressed: () {
+              setState(() => _showFindBar = false);
+              context.read<SpreadsheetBloc>().add(const ClearFind());
+            },
+            iconSize: 18,
+            padding: const EdgeInsets.all(4),
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- Cell state helpers ---
+
+  bool _isCellBold(SpreadsheetState state) {
+    if (state.selectedCell == null || state.activeSheet == null) return false;
+    return state.activeSheet!.getCell(state.selectedCell!).isBold;
+  }
+
+  bool _isCellItalic(SpreadsheetState state) {
+    if (state.selectedCell == null || state.activeSheet == null) return false;
+    return state.activeSheet!.getCell(state.selectedCell!).isItalic;
+  }
+
+  bool _isCellUnderline(SpreadsheetState state) {
+    if (state.selectedCell == null || state.activeSheet == null) return false;
+    return state.activeSheet!.getCell(state.selectedCell!).isUnderline;
+  }
+
+  bool _isCellStrikethrough(SpreadsheetState state) {
+    if (state.selectedCell == null || state.activeSheet == null) return false;
+    return state.activeSheet!.getCell(state.selectedCell!).isStrikethrough;
+  }
+
+  bool _isCellWrapText(SpreadsheetState state) {
+    if (state.selectedCell == null || state.activeSheet == null) return false;
+    return state.activeSheet!.getCell(state.selectedCell!).wrapText;
+  }
+
+  String _getCellAlignment(SpreadsheetState state) {
+    if (state.selectedCell == null || state.activeSheet == null) return 'left';
+    return state.activeSheet!.getCell(state.selectedCell!).alignment;
+  }
+
+  String? _getCellTextColor(SpreadsheetState state) {
+    if (state.selectedCell == null || state.activeSheet == null) return null;
+    return state.activeSheet!.getCell(state.selectedCell!).textColor;
+  }
+
+  String? _getCellBgColor(SpreadsheetState state) {
+    if (state.selectedCell == null || state.activeSheet == null) return null;
+    return state.activeSheet!.getCell(state.selectedCell!).backgroundColor;
+  }
+
+  NumberFormatType _getCellNumberFormat(SpreadsheetState state) {
+    if (state.selectedCell == null || state.activeSheet == null) {
+      return NumberFormatType.general;
+    }
+    return state.activeSheet!.getCell(state.selectedCell!).numberFormat;
+  }
+
+  // --- Shortcuts ---
+
+  Map<ShortcutActivator, VoidCallback> _buildShortcuts(
+      BuildContext context, SpreadsheetState state) {
+    return {
+      const SingleActivator(LogicalKeyboardKey.keyS, control: true): () {
+        context.read<SpreadsheetBloc>().add(const SaveSpreadsheet());
+      },
+      const SingleActivator(LogicalKeyboardKey.keyB, control: true): () {
+        context.read<SpreadsheetBloc>().add(const FormatCells('bold'));
+      },
+      const SingleActivator(LogicalKeyboardKey.keyI, control: true): () {
+        context.read<SpreadsheetBloc>().add(const FormatCells('italic'));
+      },
+      const SingleActivator(LogicalKeyboardKey.keyU, control: true): () {
+        context
+            .read<SpreadsheetBloc>()
+            .add(const FormatCells('underline'));
+      },
+      const SingleActivator(LogicalKeyboardKey.keyZ, control: true): () {
+        context.read<SpreadsheetBloc>().add(const UndoSpreadsheet());
+      },
+      const SingleActivator(LogicalKeyboardKey.keyY, control: true): () {
+        context.read<SpreadsheetBloc>().add(const RedoSpreadsheet());
+      },
+      const SingleActivator(LogicalKeyboardKey.keyC, control: true): () {
+        context.read<SpreadsheetBloc>().add(const CopySelection());
+      },
+      const SingleActivator(LogicalKeyboardKey.keyX, control: true): () {
+        context.read<SpreadsheetBloc>().add(const CutSelection());
+      },
+      const SingleActivator(LogicalKeyboardKey.keyV, control: true): () {
+        context.read<SpreadsheetBloc>().add(const PasteSelection());
+      },
+      const SingleActivator(LogicalKeyboardKey.keyF, control: true): () {
+        setState(() => _showFindBar = !_showFindBar);
+      },
+      const SingleActivator(LogicalKeyboardKey.delete): () {
+        context.read<SpreadsheetBloc>().add(const ClearSelection());
+      },
+      // Arrow key navigation
+      const SingleActivator(LogicalKeyboardKey.arrowDown): () {
+        _navigateCell(context, state, 1, 0);
+      },
+      const SingleActivator(LogicalKeyboardKey.arrowUp): () {
+        _navigateCell(context, state, -1, 0);
+      },
+      const SingleActivator(LogicalKeyboardKey.arrowRight): () {
+        _navigateCell(context, state, 0, 1);
+      },
+      const SingleActivator(LogicalKeyboardKey.arrowLeft): () {
+        _navigateCell(context, state, 0, -1);
+      },
+      const SingleActivator(LogicalKeyboardKey.tab): () {
+        _navigateCell(context, state, 0, 1);
+      },
+      const SingleActivator(LogicalKeyboardKey.enter): () {
+        _navigateCell(context, state, 1, 0);
+      },
+    };
+  }
+
+  void _navigateCell(
+      BuildContext context, SpreadsheetState state, int dRow, int dCol) {
+    if (state.selectedCell == null || state.activeSheet == null) return;
+    final newRow =
+        (state.selectedCell!.row + dRow).clamp(0, state.activeSheet!.rowCount - 1);
+    final newCol =
+        (state.selectedCell!.col + dCol).clamp(0, state.activeSheet!.colCount - 1);
+    context
+        .read<SpreadsheetBloc>()
+        .add(SelectCell(CellPosition(newRow, newCol)));
+  }
+
+  // --- Context Menu ---
+
+  void _showCellContextMenu(
+      BuildContext context, CellPosition pos, Offset globalPosition) {
+    final bloc = context.read<SpreadsheetBloc>();
+    final theme = Theme.of(context);
+    final overlay =
+        Overlay.of(context).context.findRenderObject() as RenderBox;
+
+    showMenu<String>(
+      context: context,
+      position: RelativeRect.fromRect(
+        Rect.fromLTWH(globalPosition.dx, globalPosition.dy, 0, 0),
+        Offset.zero & overlay.size,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      elevation: 8,
+      color: theme.colorScheme.surfaceContainer,
+      items: [
+        _contextItem(Icons.content_cut, 'Cut', 'Ctrl+X', 'cut'),
+        _contextItem(Icons.content_copy, 'Copy', 'Ctrl+C', 'copy'),
+        _contextItem(Icons.content_paste, 'Paste', 'Ctrl+V', 'paste'),
+        const PopupMenuItem<String>(
+          enabled: false,
+          height: 9,
+          padding: EdgeInsets.zero,
+          child: Divider(height: 1),
+        ),
+        _contextItem(Icons.table_rows, 'Insert Row Below', null, 'insertRow'),
+        _contextItem(
+            Icons.view_column, 'Insert Column Right', null, 'insertCol'),
+        _contextItem(
+            Icons.delete_sweep, 'Delete Row', null, 'deleteRow'),
+        _contextItem(
+            Icons.remove_circle_outline, 'Delete Column', null, 'deleteCol'),
+        const PopupMenuItem<String>(
+          enabled: false,
+          height: 9,
+          padding: EdgeInsets.zero,
+          child: Divider(height: 1),
+        ),
+        _contextItem(Icons.comment, 'Add Comment', null, 'comment'),
+        _contextItem(Icons.link, 'Add Hyperlink', null, 'hyperlink'),
+        _contextItem(Icons.sort, 'Sort A→Z', null, 'sortAsc'),
+        _contextItem(Icons.sort, 'Sort Z→A', null, 'sortDesc'),
+      ],
+    ).then((value) {
+      if (value == null) return;
+      switch (value) {
+        case 'cut':
+          bloc.add(const CutSelection());
+        case 'copy':
+          bloc.add(const CopySelection());
+        case 'paste':
+          bloc.add(const PasteSelection());
+        case 'insertRow':
+          bloc.add(InsertRow(pos.row));
+        case 'insertCol':
+          bloc.add(InsertColumn(pos.col));
+        case 'deleteRow':
+          bloc.add(DeleteRow(pos.row));
+        case 'deleteCol':
+          bloc.add(DeleteColumn(pos.col));
+        case 'comment':
+          if (context.mounted) _showAddCommentDialog(context, bloc.state);
+        case 'hyperlink':
+          if (context.mounted) _showAddHyperlinkDialog(context, bloc.state);
+        case 'sortAsc':
+          bloc.add(SortColumn(pos.col, ascending: true));
+        case 'sortDesc':
+          bloc.add(SortColumn(pos.col, ascending: false));
+      }
+    });
+  }
+
+  PopupMenuItem<String> _contextItem(
+      IconData icon, String label, String? shortcut, String value) {
+    return PopupMenuItem<String>(
+      value: value,
+      height: 36,
+      child: Row(
+        children: [
+          Icon(icon, size: 18),
+          const SizedBox(width: 12),
+          Expanded(child: Text(label, style: const TextStyle(fontSize: 13))),
+          if (shortcut != null) ...[
+            const SizedBox(width: 16),
+            Text(shortcut,
+                style: TextStyle(
+                    fontSize: 11, color: Colors.grey.shade600)),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // --- Dialogs ---
+
+  void _showFreezeDialog(BuildContext context, SpreadsheetState state) {
+    final rowController = TextEditingController(
+        text: state.activeSheet?.frozenRows.toString() ?? '0');
+    final colController = TextEditingController(
+        text: state.activeSheet?.frozenCols.toString() ?? '0');
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Freeze Panes'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: rowController,
+              decoration: const InputDecoration(labelText: 'Frozen rows'),
+              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: colController,
+              decoration: const InputDecoration(labelText: 'Frozen columns'),
+              keyboardType: TextInputType.number,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () {
+              final rows = int.tryParse(rowController.text) ?? 0;
+              final cols = int.tryParse(colController.text) ?? 0;
+              context
+                  .read<SpreadsheetBloc>()
+                  .add(SetFrozenPanes(rows, cols));
+              Navigator.pop(context);
+            },
+            child: const Text('Apply'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddCommentDialog(BuildContext context, SpreadsheetState state) {
+    if (state.selectedCell == null) return;
+    final controller = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Add Comment'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLines: 3,
+          decoration: const InputDecoration(
+            hintText: 'Enter comment...',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () {
+              if (controller.text.isNotEmpty) {
+                context.read<SpreadsheetBloc>().add(
+                    AddComment(state.selectedCell!, controller.text));
+              }
+              Navigator.pop(context);
+            },
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddHyperlinkDialog(BuildContext context, SpreadsheetState state) {
+    if (state.selectedCell == null) return;
+    final controller = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Add Hyperlink'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: 'https://...',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () {
+              if (controller.text.isNotEmpty) {
+                context.read<SpreadsheetBloc>().add(
+                    AddHyperlink(state.selectedCell!, controller.text));
+              }
+              Navigator.pop(context);
+            },
+            child: const Text('Add'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -233,10 +1094,20 @@ class _EditorContentState extends State<_EditorContent> {
     final sheet = state.activeSheet;
     if (sheet == null) return;
 
+    int maxRow = 0;
+    int maxCol = 0;
+    for (final key in sheet.cells.keys) {
+      final parts = key.split(',');
+      final r = int.parse(parts[0]);
+      final c = int.parse(parts[1]);
+      if (r > maxRow) maxRow = r;
+      if (c > maxCol) maxCol = c;
+    }
+
     final rows = <List<String>>[];
-    for (int r = 0; r < sheet.rowCount; r++) {
+    for (int r = 0; r <= maxRow; r++) {
       final row = <String>[];
-      for (int c = 0; c < sheet.colCount; c++) {
+      for (int c = 0; c <= maxCol; c++) {
         final cell = sheet.getCell(CellPosition(r, c));
         row.add(cell.displayValue);
       }
@@ -245,25 +1116,108 @@ class _EditorContentState extends State<_EditorContent> {
 
     final csv = const ListToCsvConverter().convert(rows);
     final title = state.currentSpreadsheet?.title ?? 'spreadsheet';
-
-    Share.share(
-      csv,
-      subject: '$title.csv',
-    );
+    Share.share(csv, subject: '$title.csv');
   }
 
   void _shareSpreadsheet(BuildContext context, SpreadsheetState state) {
     final title = state.currentSpreadsheet?.title ?? 'Spreadsheet';
     final sheetInfo =
         '${state.sheets.length} sheet${state.sheets.length > 1 ? "s" : ""}';
+    int cellCount = 0;
+    for (final sheet in state.sheets) {
+      cellCount += sheet.cells.length;
+    }
     Share.share(
-      '$title - $sheetInfo',
+      '$title\n$sheetInfo, $cellCount cells with data',
       subject: title,
     );
   }
 }
 
-/// Formula bar showing cell reference and formula/value input.
+// --- Color Picker Button ---
+
+class _ColorPickerButton extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final String? currentColor;
+  final ValueChanged<String> onColorSelected;
+
+  const _ColorPickerButton({
+    required this.icon,
+    required this.tooltip,
+    required this.currentColor,
+    required this.onColorSelected,
+  });
+
+  static const _colors = [
+    '#000000', '#434343', '#666666', '#999999', '#CCCCCC', '#FFFFFF',
+    '#FF0000', '#FF6600', '#FFCC00', '#33CC33', '#3399FF', '#6633CC',
+    '#CC0066', '#FF3399', '#FF9933', '#99CC00', '#00CCCC', '#3366FF',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<String>(
+      tooltip: tooltip,
+      onSelected: onColorSelected,
+      itemBuilder: (_) => [
+        PopupMenuItem<String>(
+          enabled: false,
+          child: Wrap(
+            spacing: 4,
+            runSpacing: 4,
+            children: _colors
+                .map((c) => GestureDetector(
+                      onTap: () {
+                        Navigator.pop(context, c);
+                        onColorSelected(c);
+                      },
+                      child: Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: _parseColor(c),
+                          border: Border.all(
+                              color: Colors.grey.shade400, width: 0.5),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ))
+                .toList(),
+          ),
+        ),
+      ],
+      child: SizedBox(
+        width: 32,
+        height: 32,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 18),
+            Container(
+              width: 16,
+              height: 3,
+              color: currentColor != null
+                  ? _parseColor(currentColor!)
+                  : Colors.black,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Color _parseColor(String hex) {
+    try {
+      return Color(int.parse(hex.replaceFirst('#', '0xFF')));
+    } catch (_) {
+      return Colors.black;
+    }
+  }
+}
+
+// --- Formula Bar ---
+
 class _FormulaBar extends StatelessWidget {
   final TextEditingController controller;
   final String cellRef;
@@ -289,7 +1243,6 @@ class _FormulaBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Cell reference
           Container(
             width: 60,
             alignment: Alignment.center,
@@ -305,13 +1258,11 @@ class _FormulaBar extends StatelessWidget {
                   ?.copyWith(fontWeight: FontWeight.w600),
             ),
           ),
-          // Formula icon
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Icon(Icons.functions,
                 size: 18, color: theme.colorScheme.onSurfaceVariant),
           ),
-          // Formula input
           Expanded(
             child: TextField(
               controller: controller,
@@ -331,18 +1282,33 @@ class _FormulaBar extends StatelessWidget {
   }
 }
 
-/// Virtual-scrolling spreadsheet grid widget.
-class _SpreadsheetGrid extends StatelessWidget {
+// --- Virtual Spreadsheet Grid ---
+
+class _VirtualSpreadsheetGrid extends StatelessWidget {
   final SheetData sheet;
   final CellPosition? selectedCell;
+  final CellRange? selectedRange;
+  final List<CellPosition> findMatches;
+  final ScrollController verticalController;
+  final ScrollController horizontalController;
   final ValueChanged<CellPosition> onCellTap;
   final void Function(CellPosition, String) onCellEdit;
+  final ValueChanged<CellRange> onRangeSelect;
+  final void Function(CellPosition, Offset) onContextMenu;
+  final void Function(int col, double width) onColumnResize;
 
-  const _SpreadsheetGrid({
+  const _VirtualSpreadsheetGrid({
     required this.sheet,
     required this.selectedCell,
+    required this.selectedRange,
+    required this.findMatches,
+    required this.verticalController,
+    required this.horizontalController,
     required this.onCellTap,
     required this.onCellEdit,
+    required this.onRangeSelect,
+    required this.onContextMenu,
+    required this.onColumnResize,
   });
 
   static const double _defaultColWidth = 100;
@@ -353,114 +1319,162 @@ class _SpreadsheetGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    // Show a reasonable viewport
-    const visibleRows = 50;
     final visibleCols = sheet.colCount;
+
+    double totalWidth = _headerWidth;
+    for (int c = 0; c < visibleCols; c++) {
+      if (!sheet.hiddenCols.contains(c)) {
+        totalWidth += sheet.columnWidths[c] ?? _defaultColWidth;
+      }
+    }
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      child: SingleChildScrollView(
+      controller: horizontalController,
+      child: SizedBox(
+        width: totalWidth,
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Column headers
-            Row(
-              children: [
-                // Top-left corner
-                Container(
-                  width: _headerWidth,
-                  height: _headerHeight,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest,
-                    border: Border.all(
-                        color: theme.colorScheme.outlineVariant, width: 0.5),
-                  ),
-                ),
-                // Column letters
-                for (var col = 0; col < visibleCols; col++)
-                  Container(
-                    width: sheet.columnWidths[col] ?? _defaultColWidth,
-                    height: _headerHeight,
-                    decoration: BoxDecoration(
-                      color: selectedCell?.col == col
-                          ? theme.colorScheme.primaryContainer
-                          : theme.colorScheme.surfaceContainerHighest,
-                      border: Border.all(
-                          color: theme.colorScheme.outlineVariant, width: 0.5),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      CellPosition.columnToLetter(col),
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            // Data rows
-            for (var row = 0; row < visibleRows; row++)
-              Row(
-                children: [
-                  // Row number header
-                  Container(
-                    width: _headerWidth,
-                    height: sheet.rowHeights[row] ?? _defaultRowHeight,
-                    decoration: BoxDecoration(
-                      color: selectedCell?.row == row
-                          ? theme.colorScheme.primaryContainer
-                          : theme.colorScheme.surfaceContainerHighest,
-                      border: Border.all(
-                          color: theme.colorScheme.outlineVariant, width: 0.5),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      '${row + 1}',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  // Data cells
-                  for (var col = 0; col < visibleCols; col++)
-                    _GridCell(
-                      position: CellPosition(row, col),
-                      cell: sheet.getCell(CellPosition(row, col)),
-                      isSelected:
-                          selectedCell?.row == row && selectedCell?.col == col,
-                      width: sheet.columnWidths[col] ?? _defaultColWidth,
-                      height: sheet.rowHeights[row] ?? _defaultRowHeight,
-                      onTap: () => onCellTap(CellPosition(row, col)),
-                      onEdit: (value) =>
-                          onCellEdit(CellPosition(row, col), value),
-                    ),
-                ],
+            _buildColumnHeaders(theme, visibleCols),
+            Expanded(
+              child: ListView.builder(
+                controller: verticalController,
+                itemCount: sheet.rowCount,
+                itemExtent: _defaultRowHeight,
+                itemBuilder: (context, row) {
+                  if (sheet.hiddenRows.contains(row)) {
+                    return const SizedBox.shrink();
+                  }
+                  return _buildDataRow(theme, row, visibleCols);
+                },
               ),
+            ),
           ],
         ),
       ),
     );
   }
+
+  Widget _buildColumnHeaders(ThemeData theme, int visibleCols) {
+    return SizedBox(
+      height: _headerHeight,
+      child: Row(
+        children: [
+          Container(
+            width: _headerWidth,
+            height: _headerHeight,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest,
+              border: Border.all(
+                  color: theme.colorScheme.outlineVariant, width: 0.5),
+            ),
+          ),
+          for (var col = 0; col < visibleCols; col++)
+            if (!sheet.hiddenCols.contains(col))
+              GestureDetector(
+                onHorizontalDragUpdate: (details) {
+                  final currentWidth =
+                      sheet.columnWidths[col] ?? _defaultColWidth;
+                  final newWidth =
+                      (currentWidth + details.delta.dx).clamp(40.0, 400.0);
+                  onColumnResize(col, newWidth);
+                },
+                child: Container(
+                  width: sheet.columnWidths[col] ?? _defaultColWidth,
+                  height: _headerHeight,
+                  decoration: BoxDecoration(
+                    color: selectedCell?.col == col
+                        ? theme.colorScheme.primaryContainer
+                        : theme.colorScheme.surfaceContainerHighest,
+                    border: Border.all(
+                        color: theme.colorScheme.outlineVariant, width: 0.5),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    CellPosition.columnToLetter(col),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDataRow(ThemeData theme, int row, int visibleCols) {
+    final rowHeight = sheet.rowHeights[row] ?? _defaultRowHeight;
+    return SizedBox(
+      height: rowHeight,
+      child: Row(
+        children: [
+          Container(
+            width: _headerWidth,
+            height: rowHeight,
+            decoration: BoxDecoration(
+              color: selectedCell?.row == row
+                  ? theme.colorScheme.primaryContainer
+                  : theme.colorScheme.surfaceContainerHighest,
+              border: Border.all(
+                  color: theme.colorScheme.outlineVariant, width: 0.5),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              '${row + 1}',
+              style: theme.textTheme.labelSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          for (var col = 0; col < visibleCols; col++)
+            if (!sheet.hiddenCols.contains(col))
+              _GridCell(
+                position: CellPosition(row, col),
+                cell: sheet.getCell(CellPosition(row, col)),
+                isSelected:
+                    selectedCell?.row == row && selectedCell?.col == col,
+                isInRange: selectedRange?.contains(CellPosition(row, col)) ??
+                    false,
+                isSearchMatch: findMatches.contains(CellPosition(row, col)),
+                width: sheet.columnWidths[col] ?? _defaultColWidth,
+                height: rowHeight,
+                onTap: () => onCellTap(CellPosition(row, col)),
+                onEdit: (value) => onCellEdit(CellPosition(row, col), value),
+                onContextMenu: (offset) =>
+                    onContextMenu(CellPosition(row, col), offset),
+              ),
+        ],
+      ),
+    );
+  }
 }
 
-/// Individual grid cell widget with tap-to-select and double-tap-to-edit.
+// --- Grid Cell ---
+
 class _GridCell extends StatefulWidget {
   final CellPosition position;
   final CellData cell;
   final bool isSelected;
+  final bool isInRange;
+  final bool isSearchMatch;
   final double width;
   final double height;
   final VoidCallback onTap;
   final ValueChanged<String> onEdit;
+  final ValueChanged<Offset> onContextMenu;
 
   const _GridCell({
     required this.position,
     required this.cell,
     required this.isSelected,
+    required this.isInRange,
+    required this.isSearchMatch,
     required this.width,
     required this.height,
     required this.onTap,
     required this.onEdit,
+    required this.onContextMenu,
   });
 
   @override
@@ -498,6 +1512,17 @@ class _GridCellState extends State<_GridCell> {
         ? _parseColor(widget.cell.backgroundColor!)
         : null;
 
+    Color? bgColor;
+    if (widget.isSearchMatch) {
+      bgColor = Colors.amber.withValues(alpha: 0.3);
+    } else if (widget.isSelected) {
+      bgColor = theme.colorScheme.primaryContainer.withValues(alpha: 0.3);
+    } else if (widget.isInRange) {
+      bgColor = theme.colorScheme.primaryContainer.withValues(alpha: 0.15);
+    } else {
+      bgColor = cellBgColor;
+    }
+
     return GestureDetector(
       onTap: () {
         widget.onTap();
@@ -507,18 +1532,24 @@ class _GridCellState extends State<_GridCell> {
         setState(() => _isEditing = true);
         _controller.text = widget.cell.rawValue;
       },
+      onSecondaryTapDown: (details) {
+        widget.onTap();
+        widget.onContextMenu(details.globalPosition);
+      },
+      onLongPressStart: (details) {
+        widget.onTap();
+        widget.onContextMenu(details.globalPosition);
+      },
       child: Container(
         width: widget.width,
         height: widget.height,
         decoration: BoxDecoration(
-          color: widget.isSelected
-              ? theme.colorScheme.primaryContainer.withValues(alpha: 0.3)
-              : cellBgColor,
+          color: bgColor,
           border: Border.all(
             color: widget.isSelected
                 ? theme.colorScheme.primary
                 : theme.colorScheme.outlineVariant,
-            width: widget.isSelected ? 1.5 : 0.5,
+            width: widget.isSelected ? 2.0 : 0.5,
           ),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -542,17 +1573,57 @@ class _GridCellState extends State<_GridCell> {
                   setState(() => _isEditing = false);
                 },
               )
-            : Text(
-                widget.cell.hasError
-                    ? widget.cell.errorMessage ?? '#ERROR!'
-                    : widget.cell.displayValue,
-                style: _getCellTextStyle(theme).copyWith(
-                  color: widget.cell.hasError ? Colors.red : null,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+            : _buildCellContent(theme),
       ),
+    );
+  }
+
+  Widget _buildCellContent(ThemeData theme) {
+    final displayText = widget.cell.hasError
+        ? widget.cell.errorMessage ?? '#ERROR!'
+        : widget.cell.displayValue;
+
+    // Show comment indicator
+    final hasComment = widget.cell.comment != null;
+    // Show hyperlink indicator
+    final hasLink = widget.cell.hyperlink != null;
+
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: Align(
+            alignment: _getAlignment(widget.cell.alignment),
+            child: Text(
+              displayText,
+              style: _getCellTextStyle(theme).copyWith(
+                color: widget.cell.hasError
+                    ? Colors.red
+                    : hasLink
+                        ? Colors.blue
+                        : null,
+                decoration: hasLink
+                    ? TextDecoration.underline
+                    : widget.cell.isStrikethrough
+                        ? TextDecoration.lineThrough
+                        : widget.cell.isUnderline
+                            ? TextDecoration.underline
+                            : null,
+              ),
+              maxLines: widget.cell.wrapText ? null : 1,
+              overflow: widget.cell.wrapText ? null : TextOverflow.ellipsis,
+            ),
+          ),
+        ),
+        if (hasComment)
+          Positioned(
+            top: 0,
+            right: 0,
+            child: CustomPaint(
+              size: const Size(8, 8),
+              painter: _CommentIndicatorPainter(),
+            ),
+          ),
+      ],
     );
   }
 
@@ -561,6 +1632,7 @@ class _GridCellState extends State<_GridCell> {
       fontWeight: widget.cell.isBold ? FontWeight.bold : FontWeight.normal,
       fontStyle: widget.cell.isItalic ? FontStyle.italic : FontStyle.normal,
       fontSize: widget.cell.fontSize,
+      fontFamily: widget.cell.fontFamily,
       color: widget.cell.textColor != null
           ? _parseColor(widget.cell.textColor!)
           : null,
@@ -587,7 +1659,101 @@ class _GridCellState extends State<_GridCell> {
   }
 }
 
-/// Sheet tabs at the bottom of the spreadsheet.
+class _CommentIndicatorPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = Colors.orange;
+    canvas.drawPath(
+      Path()
+        ..moveTo(size.width, 0)
+        ..lineTo(size.width, size.height)
+        ..lineTo(0, 0)
+        ..close(),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// --- Status Bar ---
+
+class _StatusBar extends StatelessWidget {
+  final SpreadsheetState state;
+
+  const _StatusBar({required this.state});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final sheet = state.activeSheet;
+    if (sheet == null) return const SizedBox.shrink();
+
+    // Calculate selection statistics
+    String stats = '';
+    if (state.selectedRange != null && !state.selectedRange!.isSingleCell) {
+      double sum = 0;
+      int count = 0;
+      int numCount = 0;
+
+      for (final pos in state.selectedRange!.positions) {
+        final cell = sheet.getCell(pos);
+        if (!cell.isEmpty) {
+          count++;
+          final num = double.tryParse(cell.displayValue);
+          if (num != null) {
+            sum += num;
+            numCount++;
+          }
+        }
+      }
+
+      if (numCount > 0) {
+        final avg = sum / numCount;
+        stats =
+            'SUM: ${sum.toStringAsFixed(2)}  |  AVG: ${avg.toStringAsFixed(2)}  |  COUNT: $count';
+      } else {
+        stats = 'COUNT: $count';
+      }
+    }
+
+    return Container(
+      height: 24,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color:
+            theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        border: Border(
+          top: BorderSide(
+              color: theme.colorScheme.outlineVariant, width: 0.5),
+        ),
+      ),
+      child: Row(
+        children: [
+          Text(
+            '${sheet.cells.length} cells',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const Spacer(),
+          if (stats.isNotEmpty)
+            Text(
+              stats,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.primary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// --- Sheet Tabs ---
+
 class _SheetTabs extends StatelessWidget {
   final List<SheetData> sheets;
   final int activeIndex;
@@ -595,6 +1761,7 @@ class _SheetTabs extends StatelessWidget {
   final VoidCallback onAdd;
   final void Function(int, String) onRename;
   final ValueChanged<int> onDelete;
+  final ValueChanged<int> onDuplicate;
 
   const _SheetTabs({
     required this.sheets,
@@ -603,6 +1770,7 @@ class _SheetTabs extends StatelessWidget {
     required this.onAdd,
     required this.onRename,
     required this.onDelete,
+    required this.onDuplicate,
   });
 
   @override
@@ -612,14 +1780,15 @@ class _SheetTabs extends StatelessWidget {
     return Container(
       height: 36,
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        color:
+            theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
         border: Border(
-          top: BorderSide(color: theme.colorScheme.outlineVariant, width: 0.5),
+          top: BorderSide(
+              color: theme.colorScheme.outlineVariant, width: 0.5),
         ),
       ),
       child: Row(
         children: [
-          // Add sheet button
           IconButton(
             icon: const Icon(Icons.add, size: 18),
             onPressed: onAdd,
@@ -628,7 +1797,6 @@ class _SheetTabs extends StatelessWidget {
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
           ),
           const SizedBox(width: 4),
-          // Sheet tabs
           Expanded(
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
@@ -638,9 +1806,10 @@ class _SheetTabs extends StatelessWidget {
                 return GestureDetector(
                   onTap: () => onSelect(index),
                   onLongPress: () => _showSheetMenu(context, index),
+                  onSecondaryTap: () => _showSheetMenu(context, index),
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 6),
                     margin: const EdgeInsets.only(right: 2),
                     decoration: BoxDecoration(
                       color: isActive
@@ -689,10 +1858,19 @@ class _SheetTabs extends StatelessWidget {
               _showRenameDialog(context, index);
             },
           ),
+          ListTile(
+            leading: const Icon(Icons.copy),
+            title: const Text('Duplicate'),
+            onTap: () {
+              Navigator.pop(context);
+              onDuplicate(index);
+            },
+          ),
           if (sheets.length > 1)
             ListTile(
               leading: const Icon(Icons.delete, color: Colors.red),
-              title: const Text('Delete', style: TextStyle(color: Colors.red)),
+              title:
+                  const Text('Delete', style: TextStyle(color: Colors.red)),
               onTap: () {
                 Navigator.pop(context);
                 onDelete(index);

@@ -12,6 +12,7 @@ import 'database_initializer_stub.dart'
 /// Should be called at application startup.
 void initializeDatabase() {
   if (kIsWeb) {
+    sqfliteFfiWebInit();
     databaseFactory = databaseFactoryFfiWeb;
   } else {
     initializeDatabaseFactory();
@@ -36,7 +37,7 @@ class DatabaseProvider {
   }
 
   /// Database version for migration tracking.
-  static const int _version = 5;
+  static const int _version = 6;
 
   /// Database file name.
   static const String _dbName = 'fileutility.db';
@@ -48,7 +49,7 @@ class DatabaseProvider {
   }
 
   Future<Database> _initDatabase() async {
-    initializeDatabase();
+    // Note: initializeDatabase() is called once in main.dart at startup.
     final String dbPath;
 
     if (kIsWeb) {
@@ -151,6 +152,9 @@ class DatabaseProvider {
 
     // Version history table (Sprint 7)
     await _createVersionsTable(db);
+
+    // PDF annotations table (Sprint 12)
+    await _createPdfAnnotationsTable(db);
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -165,6 +169,9 @@ class DatabaseProvider {
     }
     if (oldVersion < 5) {
       await _createVersionsTable(db);
+    }
+    if (oldVersion < 6) {
+      await _createPdfAnnotationsTable(db);
     }
   }
 
@@ -255,6 +262,30 @@ class DatabaseProvider {
     );
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_versions_type ON document_versions(document_type)',
+    );
+  }
+
+  /// Creates the pdf_annotations table and its indexes.
+  static Future<void> _createPdfAnnotationsTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS pdf_annotations (
+        id TEXT PRIMARY KEY NOT NULL,
+        file_path TEXT NOT NULL,
+        page_number INTEGER NOT NULL,
+        type TEXT NOT NULL DEFAULT 'highlight',
+        content TEXT NOT NULL DEFAULT '',
+        x REAL NOT NULL DEFAULT 0,
+        y REAL NOT NULL DEFAULT 0,
+        width REAL NOT NULL DEFAULT 0,
+        height REAL NOT NULL DEFAULT 0,
+        color TEXT,
+        stroke_points TEXT,
+        created_at TEXT NOT NULL,
+        modified_at TEXT NOT NULL
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_pdf_annotations_file ON pdf_annotations(file_path, page_number)',
     );
   }
 

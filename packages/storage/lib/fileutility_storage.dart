@@ -10,6 +10,7 @@ library fileutility_storage;
 export 'src/database/database_provider.dart';
 export 'src/database/document_dao.dart';
 export 'src/database/note_dao.dart';
+export 'src/database/pdf_annotation_dao.dart';
 export 'src/database/presentation_dao.dart';
 export 'src/database/recent_file_dao.dart';
 export 'src/database/spreadsheet_dao.dart';
@@ -24,6 +25,7 @@ export 'src/file_storage/file_storage_service.dart';
 // Models
 export 'src/models/document_entity.dart';
 export 'src/models/note_entity.dart';
+export 'src/models/pdf_annotation_entity.dart';
 export 'src/models/presentation_entity.dart';
 export 'src/models/recent_file_entity.dart';
 export 'src/models/spreadsheet_entity.dart';

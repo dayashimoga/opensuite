@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:file_picker/file_picker.dart';
 import 'package:fileutility_ui_kit/fileutility_ui_kit.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../bloc/image_editor_bloc.dart';
@@ -35,7 +36,24 @@ class _EditorContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<ImageEditorBloc, ImageEditorState>(
       builder: (context, state) {
-        return Scaffold(
+        return CallbackShortcuts(
+          bindings: {
+            const SingleActivator(LogicalKeyboardKey.keyZ, control: true): () {
+              context.read<ImageEditorBloc>().add(const UndoEdit());
+            },
+            const SingleActivator(LogicalKeyboardKey.keyY, control: true): () {
+              context.read<ImageEditorBloc>().add(const RedoEdit());
+            },
+            const SingleActivator(LogicalKeyboardKey.keyS, control: true): () {
+              context.read<ImageEditorBloc>().add(const ExportImage(format: 'png'));
+            },
+            const SingleActivator(LogicalKeyboardKey.delete): () {
+              context.read<ImageEditorBloc>().add(const ResetEdits());
+            },
+          },
+          child: Focus(
+            autofocus: true,
+            child: Scaffold(
           appBar: AppBar(
             title: Text(state.filePath?.split('/').last ?? 'Image Editor'),
             actions: [
@@ -46,7 +64,7 @@ class _EditorContent extends StatelessWidget {
                     ? () =>
                         context.read<ImageEditorBloc>().add(const UndoEdit())
                     : null,
-                tooltip: 'Undo',
+                tooltip: 'Undo (Ctrl+Z)',
               ),
               IconButton(
                 icon: const Icon(Icons.redo, size: 20),
@@ -54,7 +72,7 @@ class _EditorContent extends StatelessWidget {
                     ? () =>
                         context.read<ImageEditorBloc>().add(const RedoEdit())
                     : null,
-                tooltip: 'Redo',
+                tooltip: 'Redo (Ctrl+Y)',
               ),
               const SizedBox(width: 8),
               // Reset
@@ -121,6 +139,8 @@ class _EditorContent extends StatelessWidget {
           ),
           // Status bar
           bottomNavigationBar: _StatusBar(state: state),
+        ),
+          ),
         );
       },
     );

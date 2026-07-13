@@ -25,6 +25,7 @@ class AppModule {
     sl.registerLazySingleton<SpreadsheetDao>(() => SpreadsheetDao());
     sl.registerLazySingleton<PresentationDao>(() => PresentationDao());
     sl.registerLazySingleton<VersionDao>(() => VersionDao());
+    sl.registerLazySingleton<PdfAnnotationDao>(() => PdfAnnotationDao());
     sl.registerLazySingleton<PreferencesService>(() => PreferencesService());
     sl.registerLazySingleton<FileStorageService>(
       () => FileStorageService.instance,

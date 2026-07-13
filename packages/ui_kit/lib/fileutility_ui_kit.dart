@@ -21,3 +21,5 @@ export 'src/widgets/empty_state.dart';
 export 'src/widgets/search_bar.dart';
 export 'src/widgets/loading_indicator.dart';
 export 'src/widgets/confirmation_dialog.dart';
+export 'src/widgets/context_menu_builder.dart';
+export 'src/widgets/toolbar_ribbon.dart';

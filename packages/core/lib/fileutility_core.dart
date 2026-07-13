@@ -20,4 +20,6 @@ export 'src/shortcuts/keyboard_shortcut_service.dart';
 export 'src/utils/date_utils.dart';
 export 'src/utils/file_utils.dart';
 export 'src/utils/input_sanitizer.dart';
+export 'src/utils/clipboard_service.dart';
 export 'src/utils/string_utils.dart';
+export 'src/utils/undo_redo_manager.dart';
