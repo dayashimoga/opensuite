@@ -455,7 +455,8 @@ class _ElementFormatBarState extends State<_ElementFormatBar> {
                   decoration: InputDecoration(
                     hintText: 'Edit text...',
                     isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(4),
                     ),
@@ -475,7 +476,8 @@ class _ElementFormatBarState extends State<_ElementFormatBar> {
           ] else if (element.type == 'image') ...[
             Text(
               'Image Element',
-              style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold),
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(width: 8),
             IconButton(
@@ -525,8 +527,9 @@ class _ElementFormatBarState extends State<_ElementFormatBar> {
           IconButton(
             icon: const Icon(Icons.flip_to_front, size: 18),
             tooltip: 'Bring to Front',
-            onPressed: () =>
-                context.read<PresentationBloc>().add(BringToFront(widget.elementId)),
+            onPressed: () => context
+                .read<PresentationBloc>()
+                .add(BringToFront(widget.elementId)),
             iconSize: 18,
             padding: const EdgeInsets.all(4),
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -534,8 +537,9 @@ class _ElementFormatBarState extends State<_ElementFormatBar> {
           IconButton(
             icon: const Icon(Icons.flip_to_back, size: 18),
             tooltip: 'Send to Back',
-            onPressed: () =>
-                context.read<PresentationBloc>().add(SendToBack(widget.elementId)),
+            onPressed: () => context
+                .read<PresentationBloc>()
+                .add(SendToBack(widget.elementId)),
             iconSize: 18,
             padding: const EdgeInsets.all(4),
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -545,8 +549,9 @@ class _ElementFormatBarState extends State<_ElementFormatBar> {
           IconButton(
             icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
             tooltip: 'Delete Element',
-            onPressed: () =>
-                context.read<PresentationBloc>().add(DeleteElement(widget.elementId)),
+            onPressed: () => context
+                .read<PresentationBloc>()
+                .add(DeleteElement(widget.elementId)),
             iconSize: 18,
             padding: const EdgeInsets.all(4),
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),

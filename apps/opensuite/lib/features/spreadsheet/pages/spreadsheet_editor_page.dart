@@ -148,65 +148,61 @@ class _EditorContentState extends State<_EditorContent> {
                   },
                 ),
 
-                  // Find & Replace bar
-                  if (_showFindBar) _buildFindBar(context, state, theme),
+                // Find & Replace bar
+                if (_showFindBar) _buildFindBar(context, state, theme),
 
-                  // Grid
-                  Expanded(
-                    child: _VirtualSpreadsheetGrid(
-                      sheet: activeSheet,
-                      selectedCell: state.selectedCell,
-                      selectedRange: state.selectedRange,
-                      findMatches: state.findMatches,
-                      verticalController: _verticalController,
-                      horizontalController: _horizontalController,
-                      onCellTap: (pos) {
-                        context.read<SpreadsheetBloc>().add(SelectCell(pos));
-                      },
-                      onCellEdit: (pos, value) {
-                        context
-                            .read<SpreadsheetBloc>()
-                            .add(UpdateCell(pos, value));
-                      },
-                      onRangeSelect: (range) {
-                        context
-                            .read<SpreadsheetBloc>()
-                            .add(SetCellRange(range));
-                      },
-                      onContextMenu: (pos, offset) {
-                        _showCellContextMenu(context, pos, offset);
-                      },
-                      onColumnResize: (col, width) {
-                        context
-                            .read<SpreadsheetBloc>()
-                            .add(ResizeColumn(col, width));
-                      },
-                    ),
+                // Grid
+                Expanded(
+                  child: _VirtualSpreadsheetGrid(
+                    sheet: activeSheet,
+                    selectedCell: state.selectedCell,
+                    selectedRange: state.selectedRange,
+                    findMatches: state.findMatches,
+                    verticalController: _verticalController,
+                    horizontalController: _horizontalController,
+                    onCellTap: (pos) {
+                      context.read<SpreadsheetBloc>().add(SelectCell(pos));
+                    },
+                    onCellEdit: (pos, value) {
+                      context
+                          .read<SpreadsheetBloc>()
+                          .add(UpdateCell(pos, value));
+                    },
+                    onRangeSelect: (range) {
+                      context.read<SpreadsheetBloc>().add(SetCellRange(range));
+                    },
+                    onContextMenu: (pos, offset) {
+                      _showCellContextMenu(context, pos, offset);
+                    },
+                    onColumnResize: (col, width) {
+                      context
+                          .read<SpreadsheetBloc>()
+                          .add(ResizeColumn(col, width));
+                    },
                   ),
+                ),
 
-                  // Status bar
-                  _StatusBar(state: state),
+                // Status bar
+                _StatusBar(state: state),
 
-                  // Sheet tabs
-                  _SheetTabs(
-                    sheets: state.sheets,
-                    activeIndex: state.activeSheetIndex,
-                    onSelect: (i) =>
-                        context.read<SpreadsheetBloc>().add(SelectSheet(i)),
-                    onAdd: () =>
-                        context.read<SpreadsheetBloc>().add(const AddSheet()),
-                    onRename: (i, name) => context
-                        .read<SpreadsheetBloc>()
-                        .add(RenameSheet(i, name)),
-                    onDelete: (i) =>
-                        context.read<SpreadsheetBloc>().add(DeleteSheet(i)),
-                    onDuplicate: (i) =>
-                        context.read<SpreadsheetBloc>().add(DuplicateSheet(i)),
-                  ),
-                ],
-              ),
+                // Sheet tabs
+                _SheetTabs(
+                  sheets: state.sheets,
+                  activeIndex: state.activeSheetIndex,
+                  onSelect: (i) =>
+                      context.read<SpreadsheetBloc>().add(SelectSheet(i)),
+                  onAdd: () =>
+                      context.read<SpreadsheetBloc>().add(const AddSheet()),
+                  onRename: (i, name) =>
+                      context.read<SpreadsheetBloc>().add(RenameSheet(i, name)),
+                  onDelete: (i) =>
+                      context.read<SpreadsheetBloc>().add(DeleteSheet(i)),
+                  onDuplicate: (i) =>
+                      context.read<SpreadsheetBloc>().add(DuplicateSheet(i)),
+                ),
+              ],
             ),
-
+          ),
         );
       },
     );

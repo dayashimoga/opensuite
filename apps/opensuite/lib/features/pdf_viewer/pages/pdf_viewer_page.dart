@@ -132,7 +132,8 @@ class _ViewerContentState extends State<_ViewerContent> {
                       _showSearchBar = !_showSearchBar;
                       if (!_showSearchBar) {
                         _searchController.clear();
-                        _pdfTextSearcher.startTextSearch('', caseInsensitive: true);
+                        _pdfTextSearcher.startTextSearch('',
+                            caseInsensitive: true);
                       }
                     });
                   },
@@ -205,8 +206,11 @@ class _ViewerContentState extends State<_ViewerContent> {
                           final isCurrent = state.currentPage == pageNum;
                           return InkWell(
                             onTap: () {
-                              context.read<PdfViewerBloc>().add(GoToPage(pageNum));
-                              _pdfViewerController.goToPage(pageNumber: pageNum);
+                              context
+                                  .read<PdfViewerBloc>()
+                                  .add(GoToPage(pageNum));
+                              _pdfViewerController.goToPage(
+                                  pageNumber: pageNum);
                             },
                             child: Container(
                               margin: const EdgeInsets.symmetric(vertical: 6),
@@ -282,7 +286,8 @@ class _ViewerContentState extends State<_ViewerContent> {
                                 style: theme.textTheme.labelMedium,
                               ),
                               IconButton(
-                                icon: const Icon(Icons.navigate_before, size: 20),
+                                icon:
+                                    const Icon(Icons.navigate_before, size: 20),
                                 onPressed: () {
                                   _pdfTextSearcher.goToPrevMatch();
                                 },
@@ -325,13 +330,16 @@ class _ViewerContentState extends State<_ViewerContent> {
                   onPrevious: () {
                     context.read<PdfViewerBloc>().add(const PreviousPage());
                     if (_pdfViewerController.isReady && state.currentPage > 1) {
-                      _pdfViewerController.goToPage(pageNumber: state.currentPage - 1);
+                      _pdfViewerController.goToPage(
+                          pageNumber: state.currentPage - 1);
                     }
                   },
                   onNext: () {
                     context.read<PdfViewerBloc>().add(const NextPage());
-                    if (_pdfViewerController.isReady && state.currentPage < state.totalPages) {
-                      _pdfViewerController.goToPage(pageNumber: state.currentPage + 1);
+                    if (_pdfViewerController.isReady &&
+                        state.currentPage < state.totalPages) {
+                      _pdfViewerController.goToPage(
+                          pageNumber: state.currentPage + 1);
                     }
                   },
                   onGoTo: (page) {
