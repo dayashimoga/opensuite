@@ -3,6 +3,5 @@ import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 
 /// Initializes the database factory for Web platform.
 void initializeDatabaseFactory() {
-  sqfliteFfiWebInit();
   databaseFactory = databaseFactoryFfiWeb;
 }
