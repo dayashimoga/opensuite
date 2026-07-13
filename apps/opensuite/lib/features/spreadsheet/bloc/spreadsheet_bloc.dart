@@ -823,12 +823,17 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
     }
 
     final updatedSheet = state.activeSheet!.setCell(event.position, cellData);
-    _emitWithUndo(emit, sheets: _replaceActiveSheet(updatedSheet));
+    final sheets = _replaceActiveSheet(updatedSheet);
 
     emit(state.copyWith(
+      sheets: sheets,
+      hasUnsavedChanges: true,
+      canUndo: _undoManager.canUndo,
+      canRedo: _undoManager.canRedo,
       cellEditValue: event.value,
       formulaBarValue: event.value,
     ));
+    _scheduleAutoSave();
   }
 
   void _onSelectCell(SelectCell event, Emitter<SpreadsheetState> emit) {
@@ -1383,8 +1388,14 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
       colCount: 26,
     );
     final newSheets = [...state.sheets, newSheet];
-    _emitWithUndo(emit, sheets: newSheets);
-    emit(state.copyWith(activeSheetIndex: newSheets.length - 1));
+    emit(state.copyWith(
+      sheets: newSheets,
+      activeSheetIndex: newSheets.length - 1,
+      hasUnsavedChanges: true,
+      canUndo: _undoManager.canUndo,
+      canRedo: _undoManager.canRedo,
+    ));
+    _scheduleAutoSave();
   }
 
   void _onSelectSheet(SelectSheet event, Emitter<SpreadsheetState> emit) {

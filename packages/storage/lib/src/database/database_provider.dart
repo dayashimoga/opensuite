@@ -2,21 +2,16 @@ import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 
 import 'database_initializer_stub.dart'
-    if (dart.library.io) 'database_initializer_io.dart';
+    if (dart.library.io) 'database_initializer_io.dart'
+    if (dart.library.js_interop) 'database_initializer_web.dart';
 
 /// Initializes the database factory based on the platform.
 ///
 /// Should be called at application startup.
 void initializeDatabase() {
-  if (kIsWeb) {
-    sqfliteFfiWebInit();
-    databaseFactory = databaseFactoryFfiWeb;
-  } else {
-    initializeDatabaseFactory();
-  }
+  initializeDatabaseFactory();
 }
 
 /// Provides and manages the SQLite database instance.
