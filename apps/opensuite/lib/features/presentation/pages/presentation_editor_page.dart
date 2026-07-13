@@ -1,3 +1,7 @@
+import 'dart:convert';
+import 'dart:io' as io;
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:file_picker/file_picker.dart' as fp;
 import 'package:fileutility_core/fileutility_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -297,7 +301,7 @@ class _EditorContentState extends State<_EditorContent> {
 }
 
 /// Element formatting bar shown when an element is selected.
-class _ElementFormatBar extends StatelessWidget {
+class _ElementFormatBar extends StatefulWidget {
   final String elementId;
   final SlideData? slide;
 
@@ -307,11 +311,44 @@ class _ElementFormatBar extends StatelessWidget {
   });
 
   @override
+  State<_ElementFormatBar> createState() => _ElementFormatBarState();
+}
+
+class _ElementFormatBarState extends State<_ElementFormatBar> {
+  late TextEditingController _textController;
+
+  @override
+  void initState() {
+    super.initState();
+    final element = widget.slide?.elements
+        .cast<SlideElement?>()
+        .firstWhere((e) => e?.id == widget.elementId, orElse: () => null);
+    _textController = TextEditingController(text: element?.content ?? '');
+  }
+
+  @override
+  void didUpdateWidget(_ElementFormatBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.elementId != widget.elementId) {
+      final element = widget.slide?.elements
+          .cast<SlideElement?>()
+          .firstWhere((e) => e?.id == widget.elementId, orElse: () => null);
+      _textController.text = element?.content ?? '';
+    }
+  }
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final element = slide?.elements
+    final element = widget.slide?.elements
         .cast<SlideElement?>()
-        .firstWhere((e) => e?.id == elementId, orElse: () => null);
+        .firstWhere((e) => e?.id == widget.elementId, orElse: () => null);
     if (element == null) return const SizedBox.shrink();
 
     return Container(
@@ -333,7 +370,7 @@ class _ElementFormatBar extends StatelessWidget {
               isSelected: element.fontWeight == 'bold',
               onPressed: () {
                 context.read<PresentationBloc>().add(FormatElement(
-                      elementId,
+                      widget.elementId,
                       fontWeight:
                           element.fontWeight == 'bold' ? 'normal' : 'bold',
                     ));
@@ -348,7 +385,7 @@ class _ElementFormatBar extends StatelessWidget {
               isSelected: element.textAlign == 'left',
               onPressed: () => context
                   .read<PresentationBloc>()
-                  .add(FormatElement(elementId, textAlign: 'left')),
+                  .add(FormatElement(widget.elementId, textAlign: 'left')),
               iconSize: 18,
               padding: const EdgeInsets.all(4),
               constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -358,7 +395,7 @@ class _ElementFormatBar extends StatelessWidget {
               isSelected: element.textAlign == 'center',
               onPressed: () => context
                   .read<PresentationBloc>()
-                  .add(FormatElement(elementId, textAlign: 'center')),
+                  .add(FormatElement(widget.elementId, textAlign: 'center')),
               iconSize: 18,
               padding: const EdgeInsets.all(4),
               constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -368,7 +405,7 @@ class _ElementFormatBar extends StatelessWidget {
               isSelected: element.textAlign == 'right',
               onPressed: () => context
                   .read<PresentationBloc>()
-                  .add(FormatElement(elementId, textAlign: 'right')),
+                  .add(FormatElement(widget.elementId, textAlign: 'right')),
               iconSize: 18,
               padding: const EdgeInsets.all(4),
               constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -403,9 +440,83 @@ class _ElementFormatBar extends StatelessWidget {
                   if (v != null) {
                     context
                         .read<PresentationBloc>()
-                        .add(FormatElement(elementId, fontSize: v));
+                        .add(FormatElement(widget.elementId, fontSize: v));
                   }
                 },
+              ),
+            ),
+            const SizedBox(width: 8),
+            // Content editing TextField
+            Expanded(
+              child: SizedBox(
+                height: 28,
+                child: TextField(
+                  controller: _textController,
+                  decoration: InputDecoration(
+                    hintText: 'Edit text...',
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  style: theme.textTheme.bodySmall,
+                  onChanged: (value) {
+                    context.read<PresentationBloc>().add(
+                          UpdateElement(
+                            widget.elementId,
+                            element.copyWith(content: value),
+                          ),
+                        );
+                  },
+                ),
+              ),
+            ),
+          ] else if (element.type == 'image') ...[
+            Text(
+              'Image Element',
+              style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(width: 8),
+            IconButton(
+              icon: const Icon(Icons.photo_library, size: 18),
+              tooltip: 'Choose Image File',
+              onPressed: () async {
+                final result = await fp.FilePicker.platform.pickFiles(
+                  type: fp.FileType.image,
+                  allowMultiple: false,
+                  withData: true,
+                );
+                if (result != null && result.files.isNotEmpty) {
+                  final file = result.files.single;
+                  String imgData = '';
+                  if (file.bytes != null) {
+                    final base64String = base64Encode(file.bytes!);
+                    final extension = file.extension ?? 'png';
+                    imgData = 'data:image/$extension;base64,$base64String';
+                  } else if (file.path != null) {
+                    imgData = file.path!;
+                  }
+                  if (context.mounted && imgData.isNotEmpty) {
+                    final updatedElement = element.copyWith(content: imgData);
+                    context.read<PresentationBloc>().add(
+                          UpdateElement(widget.elementId, updatedElement),
+                        );
+                  }
+                }
+              },
+              iconSize: 18,
+              padding: const EdgeInsets.all(4),
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                element.content.length > 50
+                    ? '${element.content.substring(0, 50)}...'
+                    : element.content,
+                style: theme.textTheme.labelSmall?.copyWith(color: Colors.grey),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
@@ -415,7 +526,7 @@ class _ElementFormatBar extends StatelessWidget {
             icon: const Icon(Icons.flip_to_front, size: 18),
             tooltip: 'Bring to Front',
             onPressed: () =>
-                context.read<PresentationBloc>().add(BringToFront(elementId)),
+                context.read<PresentationBloc>().add(BringToFront(widget.elementId)),
             iconSize: 18,
             padding: const EdgeInsets.all(4),
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -424,7 +535,7 @@ class _ElementFormatBar extends StatelessWidget {
             icon: const Icon(Icons.flip_to_back, size: 18),
             tooltip: 'Send to Back',
             onPressed: () =>
-                context.read<PresentationBloc>().add(SendToBack(elementId)),
+                context.read<PresentationBloc>().add(SendToBack(widget.elementId)),
             iconSize: 18,
             padding: const EdgeInsets.all(4),
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -435,7 +546,7 @@ class _ElementFormatBar extends StatelessWidget {
             icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
             tooltip: 'Delete Element',
             onPressed: () =>
-                context.read<PresentationBloc>().add(DeleteElement(elementId)),
+                context.read<PresentationBloc>().add(DeleteElement(widget.elementId)),
             iconSize: 18,
             padding: const EdgeInsets.all(4),
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -772,6 +883,54 @@ class _CanvasElement extends StatelessWidget {
         );
       case 'shape':
         return const SizedBox.expand();
+      case 'image':
+        if (element.content.startsWith('data:image')) {
+          try {
+            final uri = Uri.parse(element.content);
+            final base64Data = uri.data?.contentAsBytes();
+            if (base64Data != null) {
+              return Image.memory(
+                base64Data,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const Center(
+                  child: Icon(Icons.broken_image, color: Colors.grey, size: 36),
+                ),
+              );
+            }
+          } catch (_) {}
+        } else if (!kIsWeb && io.File(element.content).existsSync()) {
+          return Image.file(
+            io.File(element.content),
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => const Center(
+              child: Icon(Icons.broken_image, color: Colors.grey, size: 36),
+            ),
+          );
+        } else if (element.content.startsWith('http')) {
+          return Image.network(
+            element.content,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => const Center(
+              child: Icon(Icons.broken_image, color: Colors.grey, size: 36),
+            ),
+          );
+        }
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.image, color: Colors.grey, size: 24),
+              const SizedBox(height: 4),
+              Text(
+                element.content,
+                style: const TextStyle(fontSize: 8, color: Colors.grey),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        );
       default:
         return const SizedBox.expand();
     }

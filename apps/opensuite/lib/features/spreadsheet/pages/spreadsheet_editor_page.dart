@@ -75,8 +75,12 @@ class _EditorContentState extends State<_EditorContent> {
           prev.cellEditValue != curr.cellEditValue ||
           prev.status != curr.status,
       listener: (context, state) {
-        _formulaController.text = state.formulaBarValue;
-        _cellEditController.text = state.cellEditValue;
+        if (state.formulaBarValue != _formulaController.text) {
+          _formulaController.text = state.formulaBarValue;
+        }
+        if (state.cellEditValue != _cellEditController.text) {
+          _cellEditController.text = state.cellEditValue;
+        }
 
         // Update font info from selected cell
         if (state.selectedCell != null && state.activeSheet != null) {
@@ -114,29 +118,35 @@ class _EditorContentState extends State<_EditorContent> {
           return const Scaffold(body: Center(child: Text('No sheet data')));
         }
 
-        return CallbackShortcuts(
-          bindings: _buildShortcuts(context, state),
-          child: Focus(
-            autofocus: true,
-            child: Scaffold(
-              appBar: _buildAppBar(context, state, theme),
-              body: Column(
-                children: [
-                  // Ribbon toolbar
-                  _buildRibbon(context, state, theme),
+        return Focus(
+          autofocus: true,
+          onKeyEvent: (node, event) => _handleKeyEvent(event, state),
+          child: Scaffold(
+            appBar: _buildAppBar(context, state, theme),
+            body: Column(
+              children: [
+                // Ribbon toolbar
+                _buildRibbon(context, state, theme),
 
-                  // Formula bar
-                  _FormulaBar(
-                    controller: _formulaController,
-                    cellRef: state.selectedCell?.reference ?? 'A1',
-                    onSubmitted: (value) {
-                      if (state.selectedCell != null) {
-                        context
-                            .read<SpreadsheetBloc>()
-                            .add(UpdateCell(state.selectedCell!, value));
-                      }
-                    },
-                  ),
+                // Formula bar
+                _FormulaBar(
+                  controller: _formulaController,
+                  cellRef: state.selectedCell?.reference ?? 'A1',
+                  onSubmitted: (value) {
+                    if (state.selectedCell != null) {
+                      context
+                          .read<SpreadsheetBloc>()
+                          .add(UpdateCell(state.selectedCell!, value));
+                    }
+                  },
+                  onChanged: (value) {
+                    if (state.selectedCell != null) {
+                      context
+                          .read<SpreadsheetBloc>()
+                          .add(UpdateCell(state.selectedCell!, value));
+                    }
+                  },
+                ),
 
                   // Find & Replace bar
                   if (_showFindBar) _buildFindBar(context, state, theme),
@@ -196,7 +206,7 @@ class _EditorContentState extends State<_EditorContent> {
                 ],
               ),
             ),
-          ),
+
         );
       },
     );
@@ -783,64 +793,95 @@ class _EditorContentState extends State<_EditorContent> {
     return state.activeSheet!.getCell(state.selectedCell!).numberFormat;
   }
 
-  // --- Shortcuts ---
+  // --- Shortcuts & Focus Handling ---
 
-  Map<ShortcutActivator, VoidCallback> _buildShortcuts(
-      BuildContext context, SpreadsheetState state) {
-    return {
-      const SingleActivator(LogicalKeyboardKey.keyS, control: true): () {
+  bool _isEditingActive() {
+    final focus = FocusManager.instance.primaryFocus;
+    if (focus == null) return false;
+    final widget = focus.context?.widget;
+    return widget is EditableText;
+  }
+
+  KeyEventResult _handleKeyEvent(KeyEvent event, SpreadsheetState state) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    if (_isEditingActive()) return KeyEventResult.ignored;
+
+    final key = event.logicalKey;
+    final isControlPressed = HardwareKeyboard.instance.isControlPressed;
+
+    if (isControlPressed) {
+      if (key == LogicalKeyboardKey.keyS) {
         context.read<SpreadsheetBloc>().add(const SaveSpreadsheet());
-      },
-      const SingleActivator(LogicalKeyboardKey.keyB, control: true): () {
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.keyB) {
         context.read<SpreadsheetBloc>().add(const FormatCells('bold'));
-      },
-      const SingleActivator(LogicalKeyboardKey.keyI, control: true): () {
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.keyI) {
         context.read<SpreadsheetBloc>().add(const FormatCells('italic'));
-      },
-      const SingleActivator(LogicalKeyboardKey.keyU, control: true): () {
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.keyU) {
         context.read<SpreadsheetBloc>().add(const FormatCells('underline'));
-      },
-      const SingleActivator(LogicalKeyboardKey.keyZ, control: true): () {
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.keyZ) {
         context.read<SpreadsheetBloc>().add(const UndoSpreadsheet());
-      },
-      const SingleActivator(LogicalKeyboardKey.keyY, control: true): () {
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.keyY) {
         context.read<SpreadsheetBloc>().add(const RedoSpreadsheet());
-      },
-      const SingleActivator(LogicalKeyboardKey.keyC, control: true): () {
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.keyC) {
         context.read<SpreadsheetBloc>().add(const CopySelection());
-      },
-      const SingleActivator(LogicalKeyboardKey.keyX, control: true): () {
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.keyX) {
         context.read<SpreadsheetBloc>().add(const CutSelection());
-      },
-      const SingleActivator(LogicalKeyboardKey.keyV, control: true): () {
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.keyV) {
         context.read<SpreadsheetBloc>().add(const PasteSelection());
-      },
-      const SingleActivator(LogicalKeyboardKey.keyF, control: true): () {
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.keyF) {
         setState(() => _showFindBar = !_showFindBar);
-      },
-      const SingleActivator(LogicalKeyboardKey.delete): () {
-        context.read<SpreadsheetBloc>().add(const ClearSelection());
-      },
-      // Arrow key navigation
-      const SingleActivator(LogicalKeyboardKey.arrowDown): () {
-        _navigateCell(context, state, 1, 0);
-      },
-      const SingleActivator(LogicalKeyboardKey.arrowUp): () {
-        _navigateCell(context, state, -1, 0);
-      },
-      const SingleActivator(LogicalKeyboardKey.arrowRight): () {
-        _navigateCell(context, state, 0, 1);
-      },
-      const SingleActivator(LogicalKeyboardKey.arrowLeft): () {
-        _navigateCell(context, state, 0, -1);
-      },
-      const SingleActivator(LogicalKeyboardKey.tab): () {
-        _navigateCell(context, state, 0, 1);
-      },
-      const SingleActivator(LogicalKeyboardKey.enter): () {
-        _navigateCell(context, state, 1, 0);
-      },
-    };
+        return KeyEventResult.handled;
+      }
+    }
+
+    if (key == LogicalKeyboardKey.delete) {
+      context.read<SpreadsheetBloc>().add(const ClearSelection());
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.arrowDown) {
+      _navigateCell(context, state, 1, 0);
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.arrowUp) {
+      _navigateCell(context, state, -1, 0);
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.arrowRight) {
+      _navigateCell(context, state, 0, 1);
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.arrowLeft) {
+      _navigateCell(context, state, 0, -1);
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.tab) {
+      _navigateCell(context, state, 0, 1);
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.enter) {
+      _navigateCell(context, state, 1, 0);
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
   }
 
   void _navigateCell(
@@ -1214,11 +1255,13 @@ class _FormulaBar extends StatelessWidget {
   final TextEditingController controller;
   final String cellRef;
   final ValueChanged<String> onSubmitted;
+  final ValueChanged<String>? onChanged;
 
   const _FormulaBar({
     required this.controller,
     required this.cellRef,
     required this.onSubmitted,
+    this.onChanged,
   });
 
   @override
@@ -1266,6 +1309,7 @@ class _FormulaBar extends StatelessWidget {
               style:
                   theme.textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
               onSubmitted: onSubmitted,
+              onChanged: onChanged,
             ),
           ),
         ],

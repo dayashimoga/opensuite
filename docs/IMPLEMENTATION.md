@@ -337,4 +337,31 @@
 - [x] Converted `PresentationListPage` to a `StatefulWidget` with a transition listener.
 - [x] Wired file pickers in `SpreadsheetListPage`, `DocumentListPage`, and `PresentationListPage` to import files into SQLite database records and redirect users directly to the editor.
 
+---
+
+## Sprint 12 — Critical Bug Fixes & Interaction Polish (v1.3.2) ✅
+
+### Documents
+- [x] **Actual Toolbar Formatting**: Implemented selection-based formatting wrap and prefix handlers inside `_FormattingToolbar` UI widget that modify the controller text directly and fire `UpdateDocumentContent` BLoC events in real-time.
+
+### Spreadsheet
+- [x] **Focus and Keyboard Navigation restoration**: Replaced parent CallbackShortcuts with a custom `Focus.onKeyEvent` dispatcher that bubbles keys (ignores shortcuts) when standard text fields (cells, formula bar) are focused. Restored arrow keys, delete, enter, and tab behaviors.
+- [x] **Real-time Formula Bar updates**: Added `onChanged` to formula bar field to update cell values in real-time, and added cursor jump-avoidance logic in BLoC listener to keep cursor position intact while typing.
+
+### Slides (Presentation)
+- [x] **Inline Text editing**: Converted `_ElementFormatBar` to a `StatefulWidget` with a text input field that updates slide element text content via `UpdateElement` event in real-time.
+- [x] **Image File uploading**: Connected the Slide formatting toolbar to local image selection via `FilePicker` and encoded raw bytes into base64 Data URLs.
+- [x] **Slide Canvas Image rendering**: Upgraded `_CanvasElement` to render base64 Data URLs, local file paths, and network URLs with automatic fallback.
+
+### PDF Viewer
+- [x] **PDF Zoom Synchronization**: Wired `PdfViewerController` to `PdfViewer.file` and synchronized BLoC zoom events with the controller zoom ratio dynamically.
+- [x] **Left Thumbnail Sidebar**: Integrated `PdfDocumentViewBuilder.file` and `PdfPageView` inside a collapsible sidebar row.
+- [x] **Text Search highlights**: Integrated `PdfTextSearcher` with the page paint callbacks to search and highlight text occurrences, display match index progress, and support next/prev navigation.
+
+### Quality Control
+- [x] Static analysis (lint) checks pass clean with 0 issues
+- [x] 100% test coverage pass for all 134 suite test cases in Docker
+- [x] Production web build succeeded
+
+
 

@@ -185,4 +185,17 @@
 - [x] 100% test coverage pass locally and in Docker
 - [x] Web build verification
 
+## Sprint 12: Critical Bug Fixes & Interaction Polish (v1.3.2)
+- [x] Documents: Actual inline text formatting application using wrap/prefix helpers in UI toolbar
+- [x] Spreadsheet: Customized Focus onKeyEvent handling to prevent shortcut interception during cell editing
+- [x] Spreadsheet: Real-time formula bar sync with cursor jump prevention logic
+- [x] Slides: Content editing TextField inside contextual _ElementFormatBar
+- [x] Slides: Local image upload support converting picked files to base64 Data URLs
+- [x] Slides: Render base64, file-path, and network images inside slide canvas
+- [x] PDF Viewer: Sync PdfViewerController scale/page changes with PDF BLoC zoom/current page state
+- [x] PDF Viewer: Left-side sidebar collapsible page thumbnail panel
+- [x] PDF Viewer: Real-time search highlights and index search bar navigation with PdfTextSearcher
+- [x] 100% test coverage pass locally and in Docker
+- [x] Web build verification
+
 

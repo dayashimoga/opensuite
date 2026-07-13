@@ -28,14 +28,79 @@ class PdfViewerPage extends StatelessWidget {
   }
 }
 
-class _ViewerContent extends StatelessWidget {
+class _ViewerContent extends StatefulWidget {
   const _ViewerContent();
+
+  @override
+  State<_ViewerContent> createState() => _ViewerContentState();
+}
+
+class _ViewerContentState extends State<_ViewerContent> {
+  late final PdfViewerController _pdfViewerController;
+  late final PdfTextSearcher _pdfTextSearcher;
+  final _searchController = TextEditingController();
+  bool _showSearchBar = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _pdfViewerController = PdfViewerController();
+    _pdfTextSearcher = PdfTextSearcher(_pdfViewerController)
+      ..addListener(_onSearchUpdate);
+
+    _pdfViewerController.addListener(_onViewerUpdate);
+  }
+
+  void _onSearchUpdate() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  void _onViewerUpdate() {
+    if (!mounted) return;
+    final zoom = _pdfViewerController.currentZoom;
+    final stateZoom = context.read<PdfViewerBloc>().state.zoom;
+    if ((zoom - stateZoom).abs() > 0.01) {
+      context.read<PdfViewerBloc>().add(SetZoom(zoom));
+    }
+    final page = _pdfViewerController.pageNumber;
+    final statePage = context.read<PdfViewerBloc>().state.currentPage;
+    if (page != null && page != statePage) {
+      context.read<PdfViewerBloc>().add(GoToPage(page));
+    }
+  }
+
+  @override
+  void dispose() {
+    _pdfViewerController.removeListener(_onViewerUpdate);
+
+    _pdfTextSearcher.removeListener(_onSearchUpdate);
+    _pdfTextSearcher.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return BlocBuilder<PdfViewerBloc, PdfViewerState>(
+    return BlocConsumer<PdfViewerBloc, PdfViewerState>(
+      listenWhen: (prev, curr) =>
+          prev.zoom != curr.zoom || prev.currentPage != curr.currentPage,
+      listener: (context, state) {
+        if (_pdfViewerController.isReady) {
+          if ((_pdfViewerController.currentZoom - state.zoom).abs() > 0.01) {
+            _pdfViewerController.setZoom(
+              _pdfViewerController.centerPosition,
+              state.zoom,
+            );
+          }
+          if (_pdfViewerController.pageNumber != state.currentPage) {
+            _pdfViewerController.goToPage(pageNumber: state.currentPage);
+          }
+        }
+      },
       builder: (context, state) {
         return Scaffold(
           appBar: AppBar(
@@ -46,6 +111,34 @@ class _ViewerContent extends StatelessWidget {
             ),
             actions: [
               if (state.filePath != null) ...[
+                // Sidebar thumbnails toggle
+                IconButton(
+                  icon: Icon(
+                    state.showThumbnails
+                        ? Icons.grid_on
+                        : Icons.grid_off_outlined,
+                    size: 20,
+                  ),
+                  onPressed: () => context
+                      .read<PdfViewerBloc>()
+                      .add(const ToggleThumbnails()),
+                  tooltip: 'Toggle Thumbnails',
+                ),
+                // Search button
+                IconButton(
+                  icon: const Icon(Icons.search, size: 20),
+                  onPressed: () {
+                    setState(() {
+                      _showSearchBar = !_showSearchBar;
+                      if (!_showSearchBar) {
+                        _searchController.clear();
+                        _pdfTextSearcher.startTextSearch('', caseInsensitive: true);
+                      }
+                    });
+                  },
+                  tooltip: 'Search Text',
+                ),
+                const SizedBox(width: 8),
                 // Zoom controls
                 IconButton(
                   icon: const Icon(Icons.zoom_out, size: 20),
@@ -84,17 +177,167 @@ class _ViewerContent extends StatelessWidget {
               ],
             ],
           ),
-          body: _buildBody(context, state),
+          body: Row(
+            children: [
+              if (state.showThumbnails && state.filePath != null)
+                Container(
+                  width: 130,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerLow,
+                    border: Border(
+                      right: BorderSide(
+                        color: theme.colorScheme.outlineVariant,
+                        width: 0.5,
+                      ),
+                    ),
+                  ),
+                  child: PdfDocumentViewBuilder.file(
+                    state.filePath!,
+                    builder: (context, document) {
+                      if (document == null) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      return ListView.builder(
+                        itemCount: document.pages.length,
+                        padding: const EdgeInsets.all(8),
+                        itemBuilder: (context, index) {
+                          final pageNum = index + 1;
+                          final isCurrent = state.currentPage == pageNum;
+                          return InkWell(
+                            onTap: () {
+                              context.read<PdfViewerBloc>().add(GoToPage(pageNum));
+                              _pdfViewerController.goToPage(pageNumber: pageNum);
+                            },
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(vertical: 6),
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: isCurrent
+                                      ? theme.colorScheme.primary
+                                      : theme.colorScheme.outlineVariant,
+                                  width: isCurrent ? 2 : 1,
+                                ),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(3),
+                                child: SizedBox(
+                                  height: 140,
+                                  child: PdfPageView(
+                                    document: document,
+                                    pageNumber: pageNum,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              Expanded(
+                child: Column(
+                  children: [
+                    if (_showSearchBar && state.filePath != null)
+                      Container(
+                        height: 48,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerHigh,
+                          border: Border(
+                            bottom: BorderSide(
+                              color: theme.colorScheme.outlineVariant,
+                              width: 0.5,
+                            ),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.search, size: 18),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: TextField(
+                                controller: _searchController,
+                                decoration: const InputDecoration(
+                                  hintText: 'Search text...',
+                                  border: InputBorder.none,
+                                  isDense: true,
+                                ),
+                                style: theme.textTheme.bodyMedium,
+                                onChanged: (value) {
+                                  context
+                                      .read<PdfViewerBloc>()
+                                      .add(SearchInPdf(value));
+                                  _pdfTextSearcher.startTextSearch(
+                                    value,
+                                    caseInsensitive: true,
+                                  );
+                                },
+                              ),
+                            ),
+                            if (_pdfTextSearcher.matches.isNotEmpty) ...[
+                              Text(
+                                '${(_pdfTextSearcher.currentIndex ?? 0) + 1}/${_pdfTextSearcher.matches.length}',
+                                style: theme.textTheme.labelMedium,
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.navigate_before, size: 20),
+                                onPressed: () {
+                                  _pdfTextSearcher.goToPrevMatch();
+                                },
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.navigate_next, size: 20),
+                                onPressed: () {
+                                  _pdfTextSearcher.goToNextMatch();
+                                },
+                              ),
+                            ],
+                            IconButton(
+                              icon: const Icon(Icons.close, size: 20),
+                              onPressed: () {
+                                setState(() {
+                                  _showSearchBar = false;
+                                  _searchController.clear();
+                                  _pdfTextSearcher.startTextSearch(
+                                    '',
+                                    caseInsensitive: true,
+                                  );
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    Expanded(
+                      child: _buildBody(context, state),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
           bottomNavigationBar: state.filePath != null
               ? _PageNavigationBar(
                   currentPage: state.currentPage,
                   totalPages: state.totalPages > 0 ? state.totalPages : 1,
-                  onPrevious: () =>
-                      context.read<PdfViewerBloc>().add(const PreviousPage()),
-                  onNext: () =>
-                      context.read<PdfViewerBloc>().add(const NextPage()),
-                  onGoTo: (page) =>
-                      context.read<PdfViewerBloc>().add(GoToPage(page)),
+                  onPrevious: () {
+                    context.read<PdfViewerBloc>().add(const PreviousPage());
+                    if (_pdfViewerController.isReady && state.currentPage > 1) {
+                      _pdfViewerController.goToPage(pageNumber: state.currentPage - 1);
+                    }
+                  },
+                  onNext: () {
+                    context.read<PdfViewerBloc>().add(const NextPage());
+                    if (_pdfViewerController.isReady && state.currentPage < state.totalPages) {
+                      _pdfViewerController.goToPage(pageNumber: state.currentPage + 1);
+                    }
+                  },
+                  onGoTo: (page) {
+                    context.read<PdfViewerBloc>().add(GoToPage(page));
+                    _pdfViewerController.goToPage(pageNumber: page);
+                  },
                 )
               : null,
         );
@@ -140,9 +383,11 @@ class _ViewerContent extends StatelessWidget {
     // Real PDF rendering with pdfrx
     return PdfViewer.file(
       state.filePath!,
+      controller: _pdfViewerController,
       params: PdfViewerParams(
         enableTextSelection: true,
         maxScale: 5.0,
+        pagePaintCallbacks: [_pdfTextSearcher.pageTextMatchPaintCallback],
         onDocumentChanged: (document) {
           if (document != null && context.mounted) {
             context

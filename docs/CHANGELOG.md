@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.2+5] - 2026-07-13
+
+### Added
+- **PDF Text Searcher & Highlights**: Integrated `PdfTextSearcher` with the PDF view renderer `pagePaintCallbacks` to display real-time text query matches and highlight them on pages.
+- **PDF Left Page Thumbnail Sidebar**: Added a collapsible thumbnail sidebar to PDF page viewer utilizing `PdfDocumentViewBuilder.file` and `PdfPageView` to allow page previews and direct click-to-navigation.
+- **Slides Inline Text Field**: Added a text input field inside the contextual `_ElementFormatBar` when a text box is selected in Slides editor, letting users update element content in real-time.
+- **Slides Image File Uploads**: Integrated local image selection using `FilePicker` and base64 encoding to data URLs inside Slides formatting bar, enabling users to upload and preview local image files.
+- **Slides Image Canvas Rendering**: Added canvas image support in `_CanvasElement` to load and display base64 data URLs, local files, and network URLs with a broken image fallback.
+
+### Fixed
+- **Spreadsheet Keyboard & Input Focus**: Replaced the global keyboard shortcut interception with a custom `Focus.onKeyEvent` dispatcher that bubbles key presses when a text input is focused. This restores cell and formula bar editing, cursor navigation, delete, enter, and tab behaviors.
+- **Spreadsheet Formula Bar real-time Sync**: Added an `onChanged` listener to the formula bar's `TextField` for real-time cell updates, and guarded the BLoC listener's controller assignment to prevent cursor jumping while typing.
+- **Documents Formatting Toolbar**: Passed the editing controller to the `_FormattingToolbar` widget and implemented text selection wrapper and prefix formatting helpers in the UI.
+
+### Changed
+- Version bumped to 1.3.2+5
+- PDF Page Viewer `_ViewerContent` converted to a stateful widget to maintain controller, search, and UI state.
+- Removed unused `dispose` calls on `PdfViewerController` in PDF viewer page.
+
 ## [1.3.1+4] - 2026-07-12
 
 ### Added
