@@ -183,7 +183,8 @@ class _FileManagerContentState extends State<_FileManagerContent> {
                     icon: Icons.description_rounded,
                     color: const Color(0xFF3B82F6),
                     isSelected: _filterType == 'document',
-                    onTap: () => setState(() => _filterType = _filterType == 'document' ? null : 'document'),
+                    onTap: () => setState(() => _filterType =
+                        _filterType == 'document' ? null : 'document'),
                   ),
                   const SizedBox(width: 6),
                   _FilterChip(
@@ -191,7 +192,8 @@ class _FileManagerContentState extends State<_FileManagerContent> {
                     icon: Icons.table_chart_rounded,
                     color: const Color(0xFF22C55E),
                     isSelected: _filterType == 'spreadsheet',
-                    onTap: () => setState(() => _filterType = _filterType == 'spreadsheet' ? null : 'spreadsheet'),
+                    onTap: () => setState(() => _filterType =
+                        _filterType == 'spreadsheet' ? null : 'spreadsheet'),
                   ),
                   const SizedBox(width: 6),
                   _FilterChip(
@@ -199,7 +201,8 @@ class _FileManagerContentState extends State<_FileManagerContent> {
                     icon: Icons.slideshow_rounded,
                     color: const Color(0xFFF59E0B),
                     isSelected: _filterType == 'presentation',
-                    onTap: () => setState(() => _filterType = _filterType == 'presentation' ? null : 'presentation'),
+                    onTap: () => setState(() => _filterType =
+                        _filterType == 'presentation' ? null : 'presentation'),
                   ),
                   const SizedBox(width: 6),
                   _FilterChip(
@@ -207,7 +210,8 @@ class _FileManagerContentState extends State<_FileManagerContent> {
                     icon: Icons.image_rounded,
                     color: const Color(0xFF8B5CF6),
                     isSelected: _filterType == 'image',
-                    onTap: () => setState(() => _filterType = _filterType == 'image' ? null : 'image'),
+                    onTap: () => setState(() =>
+                        _filterType = _filterType == 'image' ? null : 'image'),
                   ),
                   const SizedBox(width: 6),
                   _FilterChip(
@@ -215,7 +219,8 @@ class _FileManagerContentState extends State<_FileManagerContent> {
                     icon: Icons.picture_as_pdf_rounded,
                     color: const Color(0xFFEF4444),
                     isSelected: _filterType == 'pdf',
-                    onTap: () => setState(() => _filterType = _filterType == 'pdf' ? null : 'pdf'),
+                    onTap: () => setState(() =>
+                        _filterType = _filterType == 'pdf' ? null : 'pdf'),
                   ),
                 ],
               ),
@@ -264,20 +269,23 @@ class _FileManagerContentState extends State<_FileManagerContent> {
                 }
 
                 // Apply sort
-                filtered = List.of(filtered)..sort((a, b) {
-                  int cmp;
-                  switch (_sortBy) {
-                    case 'name':
-                      cmp = a.fileName.toLowerCase().compareTo(b.fileName.toLowerCase());
-                    case 'size':
-                      cmp = (a.sizeBytes ?? 0).compareTo(b.sizeBytes ?? 0);
-                    case 'type':
-                      cmp = a.fileType.compareTo(b.fileType);
-                    default:
-                      cmp = a.lastOpenedAt.compareTo(b.lastOpenedAt);
-                  }
-                  return _sortAsc ? cmp : -cmp;
-                });
+                filtered = List.of(filtered)
+                  ..sort((a, b) {
+                    int cmp;
+                    switch (_sortBy) {
+                      case 'name':
+                        cmp = a.fileName
+                            .toLowerCase()
+                            .compareTo(b.fileName.toLowerCase());
+                      case 'size':
+                        cmp = (a.sizeBytes ?? 0).compareTo(b.sizeBytes ?? 0);
+                      case 'type':
+                        cmp = a.fileType.compareTo(b.fileType);
+                      default:
+                        cmp = a.lastOpenedAt.compareTo(b.lastOpenedAt);
+                    }
+                    return _sortAsc ? cmp : -cmp;
+                  });
 
                 if (filtered.isEmpty) {
                   return EmptyState(
@@ -377,8 +385,7 @@ class _FileManagerContentState extends State<_FileManagerContent> {
     );
   }
 
-  PopupMenuItem<String> _sortItem(
-      String value, String label, IconData icon) {
+  PopupMenuItem<String> _sortItem(String value, String label, IconData icon) {
     return PopupMenuItem<String>(
       value: value,
       child: Row(children: [
@@ -387,8 +394,7 @@ class _FileManagerContentState extends State<_FileManagerContent> {
         Text(label),
         if (_sortBy == value) ...[
           const Spacer(),
-          Icon(_sortAsc ? Icons.arrow_upward : Icons.arrow_downward,
-              size: 14),
+          Icon(_sortAsc ? Icons.arrow_upward : Icons.arrow_downward, size: 14),
         ],
       ]),
     );

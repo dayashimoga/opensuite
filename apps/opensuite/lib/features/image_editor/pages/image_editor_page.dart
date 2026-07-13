@@ -45,7 +45,9 @@ class _EditorContent extends StatelessWidget {
               context.read<ImageEditorBloc>().add(const RedoEdit());
             },
             const SingleActivator(LogicalKeyboardKey.keyS, control: true): () {
-              context.read<ImageEditorBloc>().add(const ExportImage(format: 'png'));
+              context
+                  .read<ImageEditorBloc>()
+                  .add(const ExportImage(format: 'png'));
             },
             const SingleActivator(LogicalKeyboardKey.delete): () {
               context.read<ImageEditorBloc>().add(const ResetEdits());
@@ -54,92 +56,97 @@ class _EditorContent extends StatelessWidget {
           child: Focus(
             autofocus: true,
             child: Scaffold(
-          appBar: AppBar(
-            title: Text(state.filePath?.split('/').last ?? 'Image Editor'),
-            actions: [
-              // Undo/Redo
-              IconButton(
-                icon: const Icon(Icons.undo, size: 20),
-                onPressed: state.canUndo
-                    ? () =>
-                        context.read<ImageEditorBloc>().add(const UndoEdit())
-                    : null,
-                tooltip: 'Undo (Ctrl+Z)',
-              ),
-              IconButton(
-                icon: const Icon(Icons.redo, size: 20),
-                onPressed: state.canRedo
-                    ? () =>
-                        context.read<ImageEditorBloc>().add(const RedoEdit())
-                    : null,
-                tooltip: 'Redo (Ctrl+Y)',
-              ),
-              const SizedBox(width: 8),
-              // Reset
-              IconButton(
-                icon: const Icon(Icons.refresh, size: 20),
-                onPressed: state.hasEdits
-                    ? () =>
-                        context.read<ImageEditorBloc>().add(const ResetEdits())
-                    : null,
-                tooltip: 'Reset',
-              ),
-              const SizedBox(width: 8),
-              // Export
-              PopupMenuButton<String>(
-                icon: const Icon(Icons.save_alt, size: 20),
-                tooltip: 'Export',
-                itemBuilder: (_) => const [
-                  PopupMenuItem(value: 'png', child: Text('Export as PNG')),
-                  PopupMenuItem(value: 'jpeg', child: Text('Export as JPEG')),
-                  PopupMenuItem(value: 'webp', child: Text('Export as WebP')),
+              appBar: AppBar(
+                title: Text(state.filePath?.split('/').last ?? 'Image Editor'),
+                actions: [
+                  // Undo/Redo
+                  IconButton(
+                    icon: const Icon(Icons.undo, size: 20),
+                    onPressed: state.canUndo
+                        ? () => context
+                            .read<ImageEditorBloc>()
+                            .add(const UndoEdit())
+                        : null,
+                    tooltip: 'Undo (Ctrl+Z)',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.redo, size: 20),
+                    onPressed: state.canRedo
+                        ? () => context
+                            .read<ImageEditorBloc>()
+                            .add(const RedoEdit())
+                        : null,
+                    tooltip: 'Redo (Ctrl+Y)',
+                  ),
+                  const SizedBox(width: 8),
+                  // Reset
+                  IconButton(
+                    icon: const Icon(Icons.refresh, size: 20),
+                    onPressed: state.hasEdits
+                        ? () => context
+                            .read<ImageEditorBloc>()
+                            .add(const ResetEdits())
+                        : null,
+                    tooltip: 'Reset',
+                  ),
+                  const SizedBox(width: 8),
+                  // Export
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.save_alt, size: 20),
+                    tooltip: 'Export',
+                    itemBuilder: (_) => const [
+                      PopupMenuItem(value: 'png', child: Text('Export as PNG')),
+                      PopupMenuItem(
+                          value: 'jpeg', child: Text('Export as JPEG')),
+                      PopupMenuItem(
+                          value: 'webp', child: Text('Export as WebP')),
+                    ],
+                    onSelected: (format) => context
+                        .read<ImageEditorBloc>()
+                        .add(ExportImage(format: format)),
+                  ),
                 ],
-                onSelected: (format) => context
-                    .read<ImageEditorBloc>()
-                    .add(ExportImage(format: format)),
               ),
-            ],
-          ),
-          body: ResponsiveBuilder(
-            mobile: (context, _) => Column(
-              children: [
-                // Main canvas
-                Expanded(
-                  child: _ImageCanvas(state: state),
+              body: ResponsiveBuilder(
+                mobile: (context, _) => Column(
+                  children: [
+                    // Main canvas
+                    Expanded(
+                      child: _ImageCanvas(state: state),
+                    ),
+                    // Tool selector as horizontal chips
+                    _MobileToolBar(
+                      activeTool: state.activeTool,
+                      onSelectTool: (tool) =>
+                          context.read<ImageEditorBloc>().add(SelectTool(tool)),
+                    ),
+                    // Adjustments panel (scrollable)
+                    SizedBox(
+                      height: 160,
+                      child: _AdjustmentsPanel(state: state),
+                    ),
+                  ],
                 ),
-                // Tool selector as horizontal chips
-                _MobileToolBar(
-                  activeTool: state.activeTool,
-                  onSelectTool: (tool) =>
-                      context.read<ImageEditorBloc>().add(SelectTool(tool)),
+                desktop: (context, _) => Row(
+                  children: [
+                    // Tool sidebar
+                    _ToolSidebar(
+                      activeTool: state.activeTool,
+                      onSelectTool: (tool) =>
+                          context.read<ImageEditorBloc>().add(SelectTool(tool)),
+                    ),
+                    // Main canvas
+                    Expanded(
+                      child: _ImageCanvas(state: state),
+                    ),
+                    // Adjustments panel
+                    _AdjustmentsPanel(state: state),
+                  ],
                 ),
-                // Adjustments panel (scrollable)
-                SizedBox(
-                  height: 160,
-                  child: _AdjustmentsPanel(state: state),
-                ),
-              ],
+              ),
+              // Status bar
+              bottomNavigationBar: _StatusBar(state: state),
             ),
-            desktop: (context, _) => Row(
-              children: [
-                // Tool sidebar
-                _ToolSidebar(
-                  activeTool: state.activeTool,
-                  onSelectTool: (tool) =>
-                      context.read<ImageEditorBloc>().add(SelectTool(tool)),
-                ),
-                // Main canvas
-                Expanded(
-                  child: _ImageCanvas(state: state),
-                ),
-                // Adjustments panel
-                _AdjustmentsPanel(state: state),
-              ],
-            ),
-          ),
-          // Status bar
-          bottomNavigationBar: _StatusBar(state: state),
-        ),
           ),
         );
       },

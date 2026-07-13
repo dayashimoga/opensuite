@@ -59,8 +59,7 @@ class ContextMenuRegion extends StatelessWidget {
   void _showContextMenu(BuildContext context, Offset position) {
     onMenuOpened?.call();
 
-    final overlay =
-        Overlay.of(context).context.findRenderObject() as RenderBox;
+    final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
     final theme = Theme.of(context);
 
     showMenu<void>(
@@ -122,8 +121,8 @@ class ContextMenuRegion extends StatelessWidget {
                 Text(
                   item.shortcut!,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color:
-                        theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                    color: theme.colorScheme.onSurfaceVariant
+                        .withValues(alpha: 0.6),
                   ),
                 ),
               ],

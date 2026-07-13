@@ -98,8 +98,7 @@ class _ToolbarRibbonState extends State<ToolbarRibbon>
                   controller: _tabController,
                   isScrollable: true,
                   tabAlignment: TabAlignment.start,
-                  labelPadding:
-                      const EdgeInsets.symmetric(horizontal: 16),
+                  labelPadding: const EdgeInsets.symmetric(horizontal: 16),
                   indicatorSize: TabBarIndicatorSize.tab,
                   indicatorWeight: 2,
                   labelStyle: theme.textTheme.labelSmall?.copyWith(
@@ -118,17 +117,13 @@ class _ToolbarRibbonState extends State<ToolbarRibbon>
               // Collapse toggle
               IconButton(
                 icon: Icon(
-                  _isCollapsed
-                      ? Icons.expand_more
-                      : Icons.expand_less,
+                  _isCollapsed ? Icons.expand_more : Icons.expand_less,
                   size: 16,
                 ),
-                onPressed: () =>
-                    setState(() => _isCollapsed = !_isCollapsed),
+                onPressed: () => setState(() => _isCollapsed = !_isCollapsed),
                 tooltip: _isCollapsed ? 'Expand ribbon' : 'Collapse ribbon',
                 padding: const EdgeInsets.all(4),
-                constraints:
-                    const BoxConstraints(minWidth: 28, minHeight: 28),
+                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
               ),
             ],
           ),
@@ -155,8 +150,7 @@ class _ToolbarRibbonState extends State<ToolbarRibbon>
             children: widget.tabs.map((tab) {
               return SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 4, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: _buildGroupsWithSeparators(theme, tab.groups),
@@ -215,8 +209,8 @@ class _ToolbarRibbonState extends State<ToolbarRibbon>
               group.label,
               style: theme.textTheme.labelSmall?.copyWith(
                 fontSize: 9,
-                color: theme.colorScheme.onSurfaceVariant
-                    .withValues(alpha: 0.6),
+                color:
+                    theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
               ),
             ),
           ),

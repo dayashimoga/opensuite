@@ -221,8 +221,7 @@ class ReplaceInSheet extends SpreadsheetEvent {
   final String query;
   final String replacement;
   final bool replaceAll;
-  const ReplaceInSheet(this.query, this.replacement,
-      {this.replaceAll = false});
+  const ReplaceInSheet(this.query, this.replacement, {this.replaceAll = false});
   @override
   List<Object?> get props => [query, replacement, replaceAll];
 }
@@ -905,8 +904,7 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
   void _onSetNumberFormat(
       SetNumberFormat event, Emitter<SpreadsheetState> emit) {
     _applyFormatToSelection(emit, (cell) {
-      final newDisplay =
-          _formatDisplayValue(cell.rawValue, event.format);
+      final newDisplay = _formatDisplayValue(cell.rawValue, event.format);
       return cell.copyWith(
         numberFormat: event.format,
         displayValue: newDisplay,
@@ -1103,7 +1101,8 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
     for (var r = tl.row; r <= br.row; r++) {
       final rowCells = <String>[];
       for (var c = tl.col; c <= br.col; c++) {
-        rowCells.add(state.activeSheet!.getCell(CellPosition(r, c)).displayValue);
+        rowCells
+            .add(state.activeSheet!.getCell(CellPosition(r, c)).displayValue);
       }
       textLines.add(rowCells.join('\t'));
     }
@@ -1310,7 +1309,8 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
 
     // Ensure top-left cell has content
     if (topLeftCell.isEmpty) {
-      sheet = sheet.setCell(tl, const CellData(rawValue: ' ', displayValue: ' '));
+      sheet =
+          sheet.setCell(tl, const CellData(rawValue: ' ', displayValue: ' '));
     }
 
     _emitWithUndo(emit, sheets: _replaceActiveSheet(sheet));
@@ -1321,8 +1321,7 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
     _pushUndo();
 
     final mergedCells = List<CellRange>.from(state.activeSheet!.mergedCells);
-    mergedCells
-        .removeWhere((range) => range.contains(event.position));
+    mergedCells.removeWhere((range) => range.contains(event.position));
     final sheet = state.activeSheet!.copyWith(mergedCells: mergedCells);
 
     _emitWithUndo(emit, sheets: _replaceActiveSheet(sheet));
@@ -1342,8 +1341,7 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
     final updated = cell.isEmpty
         ? CellData(
             rawValue: cell.rawValue.isEmpty ? ' ' : cell.rawValue,
-            displayValue:
-                cell.displayValue.isEmpty ? ' ' : cell.displayValue,
+            displayValue: cell.displayValue.isEmpty ? ' ' : cell.displayValue,
             comment: comment,
           )
         : cell.copyWith(comment: comment);
@@ -1420,8 +1418,7 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
     emit(state.copyWith(activeSheetIndex: newIndex));
   }
 
-  void _onDuplicateSheet(
-      DuplicateSheet event, Emitter<SpreadsheetState> emit) {
+  void _onDuplicateSheet(DuplicateSheet event, Emitter<SpreadsheetState> emit) {
     if (event.index >= 0 && event.index < state.sheets.length) {
       _pushUndo();
       final original = state.sheets[event.index];
@@ -1538,8 +1535,7 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
     }
   }
 
-  void _onSetFrozenPanes(
-      SetFrozenPanes event, Emitter<SpreadsheetState> emit) {
+  void _onSetFrozenPanes(SetFrozenPanes event, Emitter<SpreadsheetState> emit) {
     if (state.activeSheet == null) return;
     _pushUndo();
     final updatedSheet = state.activeSheet!.copyWith(
@@ -1631,10 +1627,8 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
       'colCount': sheet.colCount,
       'frozenRows': sheet.frozenRows,
       'frozenCols': sheet.frozenCols,
-      if (sheet.hiddenRows.isNotEmpty)
-        'hiddenRows': sheet.hiddenRows.toList(),
-      if (sheet.hiddenCols.isNotEmpty)
-        'hiddenCols': sheet.hiddenCols.toList(),
+      if (sheet.hiddenRows.isNotEmpty) 'hiddenRows': sheet.hiddenRows.toList(),
+      if (sheet.hiddenCols.isNotEmpty) 'hiddenCols': sheet.hiddenCols.toList(),
       if (sheet.mergedCells.isNotEmpty)
         'mergedCells': sheet.mergedCells
             .map((r) => {
@@ -1651,8 +1645,7 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
     final cellsRaw = json['cells'] as Map<String, dynamic>? ?? {};
     final cells = <String, CellData>{};
     for (final entry in cellsRaw.entries) {
-      cells[entry.key] =
-          CellData.fromMap(entry.value as Map<String, dynamic>);
+      cells[entry.key] = CellData.fromMap(entry.value as Map<String, dynamic>);
     }
 
     final hiddenRows = <int>{};

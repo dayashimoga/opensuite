@@ -97,158 +97,159 @@ class _EditorContentState extends State<_EditorContent> {
             },
             const SingleActivator(LogicalKeyboardKey.delete): () {
               if (state.selectedElementId != null) {
-                context.read<PresentationBloc>().add(
-                    DeleteElement(state.selectedElementId!));
+                context
+                    .read<PresentationBloc>()
+                    .add(DeleteElement(state.selectedElementId!));
               }
             },
           },
           child: Focus(
             autofocus: true,
             child: Scaffold(
-          appBar: AppBar(
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () {
-                if (state.hasUnsavedChanges) {
-                  context
-                      .read<PresentationBloc>()
-                      .add(const SavePresentation());
-                }
-                context.go('/presentations');
-              },
-            ),
-            title: Text(state.currentPresentation?.title ?? 'Presentation'),
-            actions: [
-              // Undo/Redo
-              IconButton(
-                icon: const Icon(Icons.undo, size: 20),
-                onPressed: state.canUndo
-                    ? () => context
-                        .read<PresentationBloc>()
-                        .add(const UndoPresentation())
-                    : null,
-                tooltip: 'Undo (Ctrl+Z)',
-              ),
-              IconButton(
-                icon: const Icon(Icons.redo, size: 20),
-                onPressed: state.canRedo
-                    ? () => context
-                        .read<PresentationBloc>()
-                        .add(const RedoPresentation())
-                    : null,
-                tooltip: 'Redo (Ctrl+Y)',
-              ),
-              const SizedBox(width: 4),
-              // Add element buttons
-              IconButton(
-                icon: const Icon(Icons.text_fields, size: 20),
-                onPressed: () => _addTextBox(context),
-                tooltip: 'Add Text',
-              ),
-              IconButton(
-                icon: const Icon(Icons.crop_square, size: 20),
-                onPressed: () => _addShape(context),
-                tooltip: 'Add Shape',
-              ),
-              IconButton(
-                icon: const Icon(Icons.image_outlined, size: 20),
-                onPressed: () => _addImagePlaceholder(context),
-                tooltip: 'Add Image',
-              ),
-              const SizedBox(width: 8),
-              // Present button
-              FilledButton.tonalIcon(
-                onPressed: () => context
-                    .read<PresentationBloc>()
-                    .add(const TogglePresentationMode()),
-                icon: const Icon(Icons.slideshow, size: 18),
-                label: const Text('Present'),
-              ),
-              const SizedBox(width: 8),
-              // Save indicator
-              if (state.hasUnsavedChanges)
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 4),
-                  child: Icon(Icons.circle, size: 10, color: Colors.orange),
-                ),
-              // Save
-              IconButton(
-                icon: const Icon(Icons.save_outlined),
-                onPressed: () => context
-                    .read<PresentationBloc>()
-                    .add(const SavePresentation()),
-                tooltip: 'Save (Ctrl+S)',
-              ),
-              // Share
-              IconButton(
-                icon: const Icon(Icons.share),
-                tooltip: 'Share',
-                onPressed: () {
-                  final title =
-                      state.currentPresentation?.title ?? 'Presentation';
-                  Share.share(
-                    '$title - ${state.slides.length} slides',
-                    subject: title,
-                  );
-                },
-              ),
-            ],
-          ),
-          body: Row(
-            children: [
-              // Slide panel (thumbnails)
-              _SlidePanel(
-                slides: state.slides,
-                activeIndex: state.activeSlideIndex,
-                onSelect: (i) =>
-                    context.read<PresentationBloc>().add(SelectSlide(i)),
-                onAdd: () =>
-                    context.read<PresentationBloc>().add(const AddSlide()),
-                onDelete: (i) =>
-                    context.read<PresentationBloc>().add(DeleteSlide(i)),
-                onDuplicate: (i) =>
-                    context.read<PresentationBloc>().add(DuplicateSlide(i)),
-              ),
-              // Main canvas
-              Expanded(
-                child: Column(
-                  children: [
-                    // Slide canvas
-                    Expanded(
-                      flex: 3,
-                      child: _SlideCanvas(
-                        slide: state.activeSlide,
-                        selectedElementId: state.selectedElementId,
-                        onSelectElement: (id) => context
-                            .read<PresentationBloc>()
-                            .add(SelectElement(id)),
-                        onMoveElement: (id, x, y) => context
-                            .read<PresentationBloc>()
-                            .add(MoveElement(id, x, y)),
-                        onDeleteElement: (id) => context
-                            .read<PresentationBloc>()
-                            .add(DeleteElement(id)),
-                      ),
-                    ),
-              // Element formatting bar (shown when element selected)
-              if (state.selectedElementId != null)
-                _ElementFormatBar(
-                  elementId: state.selectedElementId!,
-                  slide: state.activeSlide,
-                ),
-                    // Speaker notes
-                    _SpeakerNotesPanel(
-                      notes: state.activeSlide?.speakerNotes ?? '',
-                      onChanged: (notes) => context
+              appBar: AppBar(
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () {
+                    if (state.hasUnsavedChanges) {
+                      context
                           .read<PresentationBloc>()
-                          .add(UpdateSpeakerNotes(notes)),
-                    ),
-                  ],
+                          .add(const SavePresentation());
+                    }
+                    context.go('/presentations');
+                  },
                 ),
+                title: Text(state.currentPresentation?.title ?? 'Presentation'),
+                actions: [
+                  // Undo/Redo
+                  IconButton(
+                    icon: const Icon(Icons.undo, size: 20),
+                    onPressed: state.canUndo
+                        ? () => context
+                            .read<PresentationBloc>()
+                            .add(const UndoPresentation())
+                        : null,
+                    tooltip: 'Undo (Ctrl+Z)',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.redo, size: 20),
+                    onPressed: state.canRedo
+                        ? () => context
+                            .read<PresentationBloc>()
+                            .add(const RedoPresentation())
+                        : null,
+                    tooltip: 'Redo (Ctrl+Y)',
+                  ),
+                  const SizedBox(width: 4),
+                  // Add element buttons
+                  IconButton(
+                    icon: const Icon(Icons.text_fields, size: 20),
+                    onPressed: () => _addTextBox(context),
+                    tooltip: 'Add Text',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.crop_square, size: 20),
+                    onPressed: () => _addShape(context),
+                    tooltip: 'Add Shape',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.image_outlined, size: 20),
+                    onPressed: () => _addImagePlaceholder(context),
+                    tooltip: 'Add Image',
+                  ),
+                  const SizedBox(width: 8),
+                  // Present button
+                  FilledButton.tonalIcon(
+                    onPressed: () => context
+                        .read<PresentationBloc>()
+                        .add(const TogglePresentationMode()),
+                    icon: const Icon(Icons.slideshow, size: 18),
+                    label: const Text('Present'),
+                  ),
+                  const SizedBox(width: 8),
+                  // Save indicator
+                  if (state.hasUnsavedChanges)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 4),
+                      child: Icon(Icons.circle, size: 10, color: Colors.orange),
+                    ),
+                  // Save
+                  IconButton(
+                    icon: const Icon(Icons.save_outlined),
+                    onPressed: () => context
+                        .read<PresentationBloc>()
+                        .add(const SavePresentation()),
+                    tooltip: 'Save (Ctrl+S)',
+                  ),
+                  // Share
+                  IconButton(
+                    icon: const Icon(Icons.share),
+                    tooltip: 'Share',
+                    onPressed: () {
+                      final title =
+                          state.currentPresentation?.title ?? 'Presentation';
+                      Share.share(
+                        '$title - ${state.slides.length} slides',
+                        subject: title,
+                      );
+                    },
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
+              body: Row(
+                children: [
+                  // Slide panel (thumbnails)
+                  _SlidePanel(
+                    slides: state.slides,
+                    activeIndex: state.activeSlideIndex,
+                    onSelect: (i) =>
+                        context.read<PresentationBloc>().add(SelectSlide(i)),
+                    onAdd: () =>
+                        context.read<PresentationBloc>().add(const AddSlide()),
+                    onDelete: (i) =>
+                        context.read<PresentationBloc>().add(DeleteSlide(i)),
+                    onDuplicate: (i) =>
+                        context.read<PresentationBloc>().add(DuplicateSlide(i)),
+                  ),
+                  // Main canvas
+                  Expanded(
+                    child: Column(
+                      children: [
+                        // Slide canvas
+                        Expanded(
+                          flex: 3,
+                          child: _SlideCanvas(
+                            slide: state.activeSlide,
+                            selectedElementId: state.selectedElementId,
+                            onSelectElement: (id) => context
+                                .read<PresentationBloc>()
+                                .add(SelectElement(id)),
+                            onMoveElement: (id, x, y) => context
+                                .read<PresentationBloc>()
+                                .add(MoveElement(id, x, y)),
+                            onDeleteElement: (id) => context
+                                .read<PresentationBloc>()
+                                .add(DeleteElement(id)),
+                          ),
+                        ),
+                        // Element formatting bar (shown when element selected)
+                        if (state.selectedElementId != null)
+                          _ElementFormatBar(
+                            elementId: state.selectedElementId!,
+                            slide: state.activeSlide,
+                          ),
+                        // Speaker notes
+                        _SpeakerNotesPanel(
+                          notes: state.activeSlide?.speakerNotes ?? '',
+                          onChanged: (notes) => context
+                              .read<PresentationBloc>()
+                              .add(UpdateSpeakerNotes(notes)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         );
       },
@@ -319,8 +320,8 @@ class _ElementFormatBar extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
         border: Border(
-          bottom: BorderSide(
-              color: theme.colorScheme.outlineVariant, width: 0.5),
+          bottom:
+              BorderSide(color: theme.colorScheme.outlineVariant, width: 0.5),
         ),
       ),
       child: Row(
@@ -339,39 +340,38 @@ class _ElementFormatBar extends StatelessWidget {
               },
               iconSize: 18,
               padding: const EdgeInsets.all(4),
-              constraints:
-                  const BoxConstraints(minWidth: 32, minHeight: 32),
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
             ),
             // Alignment
             IconButton(
               icon: const Icon(Icons.format_align_left, size: 18),
               isSelected: element.textAlign == 'left',
-              onPressed: () => context.read<PresentationBloc>().add(
-                  FormatElement(elementId, textAlign: 'left')),
+              onPressed: () => context
+                  .read<PresentationBloc>()
+                  .add(FormatElement(elementId, textAlign: 'left')),
               iconSize: 18,
               padding: const EdgeInsets.all(4),
-              constraints:
-                  const BoxConstraints(minWidth: 32, minHeight: 32),
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
             ),
             IconButton(
               icon: const Icon(Icons.format_align_center, size: 18),
               isSelected: element.textAlign == 'center',
-              onPressed: () => context.read<PresentationBloc>().add(
-                  FormatElement(elementId, textAlign: 'center')),
+              onPressed: () => context
+                  .read<PresentationBloc>()
+                  .add(FormatElement(elementId, textAlign: 'center')),
               iconSize: 18,
               padding: const EdgeInsets.all(4),
-              constraints:
-                  const BoxConstraints(minWidth: 32, minHeight: 32),
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
             ),
             IconButton(
               icon: const Icon(Icons.format_align_right, size: 18),
               isSelected: element.textAlign == 'right',
-              onPressed: () => context.read<PresentationBloc>().add(
-                  FormatElement(elementId, textAlign: 'right')),
+              onPressed: () => context
+                  .read<PresentationBloc>()
+                  .add(FormatElement(elementId, textAlign: 'right')),
               iconSize: 18,
               padding: const EdgeInsets.all(4),
-              constraints:
-                  const BoxConstraints(minWidth: 32, minHeight: 32),
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
             ),
             const SizedBox(width: 8),
             // Font size
@@ -383,13 +383,11 @@ class _ElementFormatBar extends StatelessWidget {
                 isDense: true,
                 isExpanded: true,
                 decoration: InputDecoration(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 6),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 6),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(4),
                     borderSide: BorderSide(
-                        color: theme.colorScheme.outlineVariant,
-                        width: 0.5),
+                        color: theme.colorScheme.outlineVariant, width: 0.5),
                   ),
                 ),
                 style: theme.textTheme.bodySmall,
@@ -403,8 +401,9 @@ class _ElementFormatBar extends StatelessWidget {
                 ],
                 onChanged: (v) {
                   if (v != null) {
-                    context.read<PresentationBloc>().add(
-                        FormatElement(elementId, fontSize: v));
+                    context
+                        .read<PresentationBloc>()
+                        .add(FormatElement(elementId, fontSize: v));
                   }
                 },
               ),
@@ -415,9 +414,8 @@ class _ElementFormatBar extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.flip_to_front, size: 18),
             tooltip: 'Bring to Front',
-            onPressed: () => context
-                .read<PresentationBloc>()
-                .add(BringToFront(elementId)),
+            onPressed: () =>
+                context.read<PresentationBloc>().add(BringToFront(elementId)),
             iconSize: 18,
             padding: const EdgeInsets.all(4),
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -425,9 +423,8 @@ class _ElementFormatBar extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.flip_to_back, size: 18),
             tooltip: 'Send to Back',
-            onPressed: () => context
-                .read<PresentationBloc>()
-                .add(SendToBack(elementId)),
+            onPressed: () =>
+                context.read<PresentationBloc>().add(SendToBack(elementId)),
             iconSize: 18,
             padding: const EdgeInsets.all(4),
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -437,9 +434,8 @@ class _ElementFormatBar extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
             tooltip: 'Delete Element',
-            onPressed: () => context
-                .read<PresentationBloc>()
-                .add(DeleteElement(elementId)),
+            onPressed: () =>
+                context.read<PresentationBloc>().add(DeleteElement(elementId)),
             iconSize: 18,
             padding: const EdgeInsets.all(4),
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),

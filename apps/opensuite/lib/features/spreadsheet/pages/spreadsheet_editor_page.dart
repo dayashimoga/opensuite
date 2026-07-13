@@ -151,9 +151,7 @@ class _EditorContentState extends State<_EditorContent> {
                       verticalController: _verticalController,
                       horizontalController: _horizontalController,
                       onCellTap: (pos) {
-                        context
-                            .read<SpreadsheetBloc>()
-                            .add(SelectCell(pos));
+                        context.read<SpreadsheetBloc>().add(SelectCell(pos));
                       },
                       onCellEdit: (pos, value) {
                         context
@@ -183,21 +181,17 @@ class _EditorContentState extends State<_EditorContent> {
                   _SheetTabs(
                     sheets: state.sheets,
                     activeIndex: state.activeSheetIndex,
-                    onSelect: (i) => context
-                        .read<SpreadsheetBloc>()
-                        .add(SelectSheet(i)),
-                    onAdd: () => context
-                        .read<SpreadsheetBloc>()
-                        .add(const AddSheet()),
+                    onSelect: (i) =>
+                        context.read<SpreadsheetBloc>().add(SelectSheet(i)),
+                    onAdd: () =>
+                        context.read<SpreadsheetBloc>().add(const AddSheet()),
                     onRename: (i, name) => context
                         .read<SpreadsheetBloc>()
                         .add(RenameSheet(i, name)),
-                    onDelete: (i) => context
-                        .read<SpreadsheetBloc>()
-                        .add(DeleteSheet(i)),
-                    onDuplicate: (i) => context
-                        .read<SpreadsheetBloc>()
-                        .add(DuplicateSheet(i)),
+                    onDelete: (i) =>
+                        context.read<SpreadsheetBloc>().add(DeleteSheet(i)),
+                    onDuplicate: (i) =>
+                        context.read<SpreadsheetBloc>().add(DuplicateSheet(i)),
                   ),
                 ],
               ),
@@ -226,18 +220,16 @@ class _EditorContentState extends State<_EditorContent> {
         IconButton(
           icon: const Icon(Icons.undo, size: 20),
           onPressed: state.canUndo
-              ? () => context
-                  .read<SpreadsheetBloc>()
-                  .add(const UndoSpreadsheet())
+              ? () =>
+                  context.read<SpreadsheetBloc>().add(const UndoSpreadsheet())
               : null,
           tooltip: 'Undo (Ctrl+Z)',
         ),
         IconButton(
           icon: const Icon(Icons.redo, size: 20),
           onPressed: state.canRedo
-              ? () => context
-                  .read<SpreadsheetBloc>()
-                  .add(const RedoSpreadsheet())
+              ? () =>
+                  context.read<SpreadsheetBloc>().add(const RedoSpreadsheet())
               : null,
           tooltip: 'Redo (Ctrl+Y)',
         ),
@@ -267,9 +259,8 @@ class _EditorContentState extends State<_EditorContent> {
         // Save button
         IconButton(
           icon: const Icon(Icons.save_outlined),
-          onPressed: () => context
-              .read<SpreadsheetBloc>()
-              .add(const SaveSpreadsheet()),
+          onPressed: () =>
+              context.read<SpreadsheetBloc>().add(const SaveSpreadsheet()),
           tooltip: 'Save (Ctrl+S)',
         ),
         // Overflow menu
@@ -321,8 +312,8 @@ class _EditorContentState extends State<_EditorContent> {
                 isDense: true,
                 isExpanded: true,
                 decoration: InputDecoration(
-                  contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 6, vertical: 0),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(4),
                     borderSide: BorderSide(
@@ -359,8 +350,8 @@ class _EditorContentState extends State<_EditorContent> {
                 isDense: true,
                 isExpanded: true,
                 decoration: InputDecoration(
-                  contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 6, vertical: 0),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(4),
                     borderSide: BorderSide(
@@ -432,9 +423,8 @@ class _EditorContentState extends State<_EditorContent> {
               icon: Icons.format_color_text,
               tooltip: 'Text Color',
               currentColor: _getCellTextColor(state),
-              onColorSelected: (color) => context
-                  .read<SpreadsheetBloc>()
-                  .add(SetTextColor(color)),
+              onColorSelected: (color) =>
+                  context.read<SpreadsheetBloc>().add(SetTextColor(color)),
             ),
             _ColorPickerButton(
               icon: Icons.format_color_fill,
@@ -490,8 +480,8 @@ class _EditorContentState extends State<_EditorContent> {
                 isDense: true,
                 isExpanded: true,
                 decoration: InputDecoration(
-                  contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 6, vertical: 0),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(4),
                     borderSide: BorderSide(
@@ -506,14 +496,11 @@ class _EditorContentState extends State<_EditorContent> {
                 style: theme.textTheme.bodySmall,
                 items: const [
                   DropdownMenuItem(
-                      value: NumberFormatType.general,
-                      child: Text('General')),
+                      value: NumberFormatType.general, child: Text('General')),
                   DropdownMenuItem(
-                      value: NumberFormatType.number,
-                      child: Text('Number')),
+                      value: NumberFormatType.number, child: Text('Number')),
                   DropdownMenuItem(
-                      value: NumberFormatType.decimal,
-                      child: Text('Decimal')),
+                      value: NumberFormatType.decimal, child: Text('Decimal')),
                   DropdownMenuItem(
                       value: NumberFormatType.currency,
                       child: Text('Currency')),
@@ -526,9 +513,7 @@ class _EditorContentState extends State<_EditorContent> {
                 ],
                 onChanged: (v) {
                   if (v != null) {
-                    context
-                        .read<SpreadsheetBloc>()
-                        .add(SetNumberFormat(v));
+                    context.read<SpreadsheetBloc>().add(SetNumberFormat(v));
                   }
                 },
               ),
@@ -630,8 +615,7 @@ class _EditorContentState extends State<_EditorContent> {
             RibbonButton(
               icon: Icons.search,
               tooltip: 'Find & Replace (Ctrl+F)',
-              onPressed: () =>
-                  setState(() => _showFindBar = !_showFindBar),
+              onPressed: () => setState(() => _showFindBar = !_showFindBar),
             ),
           ]),
         ]),
@@ -648,16 +632,16 @@ class _EditorContentState extends State<_EditorContent> {
               icon: Icons.visibility_off,
               tooltip: 'Hide Selected Rows',
               onPressed: state.selectedCell != null
-                  ? () => context.read<SpreadsheetBloc>().add(
-                      HideRows([state.selectedCell!.row]))
+                  ? () => context
+                      .read<SpreadsheetBloc>()
+                      .add(HideRows([state.selectedCell!.row]))
                   : null,
             ),
             RibbonButton(
               icon: Icons.visibility,
               tooltip: 'Unhide All Rows',
-              onPressed: () => context
-                  .read<SpreadsheetBloc>()
-                  .add(const UnhideRows()),
+              onPressed: () =>
+                  context.read<SpreadsheetBloc>().add(const UnhideRows()),
             ),
           ]),
         ]),
@@ -673,8 +657,8 @@ class _EditorContentState extends State<_EditorContent> {
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         border: Border(
-          bottom: BorderSide(
-              color: theme.colorScheme.outlineVariant, width: 0.5),
+          bottom:
+              BorderSide(color: theme.colorScheme.outlineVariant, width: 0.5),
         ),
       ),
       child: Row(
@@ -690,9 +674,8 @@ class _EditorContentState extends State<_EditorContent> {
                 isDense: true,
               ),
               style: theme.textTheme.bodySmall,
-              onChanged: (query) => context
-                  .read<SpreadsheetBloc>()
-                  .add(FindInSheet(query)),
+              onChanged: (query) =>
+                  context.read<SpreadsheetBloc>().add(FindInSheet(query)),
             ),
           ),
           if (state.findMatches.isNotEmpty)
@@ -729,10 +712,9 @@ class _EditorContentState extends State<_EditorContent> {
           IconButton(
             icon: const Icon(Icons.find_replace_outlined, size: 18),
             tooltip: 'Replace All',
-            onPressed: () => context.read<SpreadsheetBloc>().add(
-                ReplaceInSheet(
-                    _findController.text, _replaceController.text,
-                    replaceAll: true)),
+            onPressed: () => context.read<SpreadsheetBloc>().add(ReplaceInSheet(
+                _findController.text, _replaceController.text,
+                replaceAll: true)),
             iconSize: 18,
             padding: const EdgeInsets.all(4),
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -816,9 +798,7 @@ class _EditorContentState extends State<_EditorContent> {
         context.read<SpreadsheetBloc>().add(const FormatCells('italic'));
       },
       const SingleActivator(LogicalKeyboardKey.keyU, control: true): () {
-        context
-            .read<SpreadsheetBloc>()
-            .add(const FormatCells('underline'));
+        context.read<SpreadsheetBloc>().add(const FormatCells('underline'));
       },
       const SingleActivator(LogicalKeyboardKey.keyZ, control: true): () {
         context.read<SpreadsheetBloc>().add(const UndoSpreadsheet());
@@ -866,10 +846,10 @@ class _EditorContentState extends State<_EditorContent> {
   void _navigateCell(
       BuildContext context, SpreadsheetState state, int dRow, int dCol) {
     if (state.selectedCell == null || state.activeSheet == null) return;
-    final newRow =
-        (state.selectedCell!.row + dRow).clamp(0, state.activeSheet!.rowCount - 1);
-    final newCol =
-        (state.selectedCell!.col + dCol).clamp(0, state.activeSheet!.colCount - 1);
+    final newRow = (state.selectedCell!.row + dRow)
+        .clamp(0, state.activeSheet!.rowCount - 1);
+    final newCol = (state.selectedCell!.col + dCol)
+        .clamp(0, state.activeSheet!.colCount - 1);
     context
         .read<SpreadsheetBloc>()
         .add(SelectCell(CellPosition(newRow, newCol)));
@@ -881,8 +861,7 @@ class _EditorContentState extends State<_EditorContent> {
       BuildContext context, CellPosition pos, Offset globalPosition) {
     final bloc = context.read<SpreadsheetBloc>();
     final theme = Theme.of(context);
-    final overlay =
-        Overlay.of(context).context.findRenderObject() as RenderBox;
+    final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
 
     showMenu<String>(
       context: context,
@@ -906,8 +885,7 @@ class _EditorContentState extends State<_EditorContent> {
         _contextItem(Icons.table_rows, 'Insert Row Below', null, 'insertRow'),
         _contextItem(
             Icons.view_column, 'Insert Column Right', null, 'insertCol'),
-        _contextItem(
-            Icons.delete_sweep, 'Delete Row', null, 'deleteRow'),
+        _contextItem(Icons.delete_sweep, 'Delete Row', null, 'deleteRow'),
         _contextItem(
             Icons.remove_circle_outline, 'Delete Column', null, 'deleteCol'),
         const PopupMenuItem<String>(
@@ -963,8 +941,7 @@ class _EditorContentState extends State<_EditorContent> {
           if (shortcut != null) ...[
             const SizedBox(width: 16),
             Text(shortcut,
-                style: TextStyle(
-                    fontSize: 11, color: Colors.grey.shade600)),
+                style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
           ],
         ],
       ),
@@ -1007,9 +984,7 @@ class _EditorContentState extends State<_EditorContent> {
             onPressed: () {
               final rows = int.tryParse(rowController.text) ?? 0;
               final cols = int.tryParse(colController.text) ?? 0;
-              context
-                  .read<SpreadsheetBloc>()
-                  .add(SetFrozenPanes(rows, cols));
+              context.read<SpreadsheetBloc>().add(SetFrozenPanes(rows, cols));
               Navigator.pop(context);
             },
             child: const Text('Apply'),
@@ -1043,8 +1018,9 @@ class _EditorContentState extends State<_EditorContent> {
           FilledButton(
             onPressed: () {
               if (controller.text.isNotEmpty) {
-                context.read<SpreadsheetBloc>().add(
-                    AddComment(state.selectedCell!, controller.text));
+                context
+                    .read<SpreadsheetBloc>()
+                    .add(AddComment(state.selectedCell!, controller.text));
               }
               Navigator.pop(context);
             },
@@ -1078,8 +1054,9 @@ class _EditorContentState extends State<_EditorContent> {
           FilledButton(
             onPressed: () {
               if (controller.text.isNotEmpty) {
-                context.read<SpreadsheetBloc>().add(
-                    AddHyperlink(state.selectedCell!, controller.text));
+                context
+                    .read<SpreadsheetBloc>()
+                    .add(AddHyperlink(state.selectedCell!, controller.text));
               }
               Navigator.pop(context);
             },
@@ -1150,9 +1127,24 @@ class _ColorPickerButton extends StatelessWidget {
   });
 
   static const _colors = [
-    '#000000', '#434343', '#666666', '#999999', '#CCCCCC', '#FFFFFF',
-    '#FF0000', '#FF6600', '#FFCC00', '#33CC33', '#3399FF', '#6633CC',
-    '#CC0066', '#FF3399', '#FF9933', '#99CC00', '#00CCCC', '#3366FF',
+    '#000000',
+    '#434343',
+    '#666666',
+    '#999999',
+    '#CCCCCC',
+    '#FFFFFF',
+    '#FF0000',
+    '#FF6600',
+    '#FFCC00',
+    '#33CC33',
+    '#3399FF',
+    '#6633CC',
+    '#CC0066',
+    '#FF3399',
+    '#FF9933',
+    '#99CC00',
+    '#00CCCC',
+    '#3366FF',
   ];
 
   @override
@@ -1434,8 +1426,8 @@ class _VirtualSpreadsheetGrid extends StatelessWidget {
                 cell: sheet.getCell(CellPosition(row, col)),
                 isSelected:
                     selectedCell?.row == row && selectedCell?.col == col,
-                isInRange: selectedRange?.contains(CellPosition(row, col)) ??
-                    false,
+                isInRange:
+                    selectedRange?.contains(CellPosition(row, col)) ?? false,
                 isSearchMatch: findMatches.contains(CellPosition(row, col)),
                 width: sheet.columnWidths[col] ?? _defaultColWidth,
                 height: rowHeight,
@@ -1722,11 +1714,9 @@ class _StatusBar extends StatelessWidget {
       height: 24,
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color:
-            theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
         border: Border(
-          top: BorderSide(
-              color: theme.colorScheme.outlineVariant, width: 0.5),
+          top: BorderSide(color: theme.colorScheme.outlineVariant, width: 0.5),
         ),
       ),
       child: Row(
@@ -1780,11 +1770,9 @@ class _SheetTabs extends StatelessWidget {
     return Container(
       height: 36,
       decoration: BoxDecoration(
-        color:
-            theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
         border: Border(
-          top: BorderSide(
-              color: theme.colorScheme.outlineVariant, width: 0.5),
+          top: BorderSide(color: theme.colorScheme.outlineVariant, width: 0.5),
         ),
       ),
       child: Row(
@@ -1808,8 +1796,8 @@ class _SheetTabs extends StatelessWidget {
                   onLongPress: () => _showSheetMenu(context, index),
                   onSecondaryTap: () => _showSheetMenu(context, index),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                     margin: const EdgeInsets.only(right: 2),
                     decoration: BoxDecoration(
                       color: isActive
@@ -1869,8 +1857,7 @@ class _SheetTabs extends StatelessWidget {
           if (sheets.length > 1)
             ListTile(
               leading: const Icon(Icons.delete, color: Colors.red),
-              title:
-                  const Text('Delete', style: TextStyle(color: Colors.red)),
+              title: const Text('Delete', style: TextStyle(color: Colors.red)),
               onTap: () {
                 Navigator.pop(context);
                 onDelete(index);

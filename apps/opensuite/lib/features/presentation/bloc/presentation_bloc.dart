@@ -768,7 +768,8 @@ class PresentationBloc extends Bloc<PresentationEvent, PresentationState> {
     final elements = List<SlideElement>.from(state.activeSlide!.elements);
     final idx = elements.indexWhere((e) => e.id == event.elementId);
     if (idx < 0) return;
-    final maxZ = elements.fold<int>(0, (max, e) => e.zIndex > max ? e.zIndex : max);
+    final maxZ =
+        elements.fold<int>(0, (max, e) => e.zIndex > max ? e.zIndex : max);
     elements[idx] = elements[idx].copyWith(zIndex: maxZ + 1);
     _updateCurrentSlide(emit, state.activeSlide!.copyWith(elements: elements));
   }
@@ -778,13 +779,13 @@ class PresentationBloc extends Bloc<PresentationEvent, PresentationState> {
     final elements = List<SlideElement>.from(state.activeSlide!.elements);
     final idx = elements.indexWhere((e) => e.id == event.elementId);
     if (idx < 0) return;
-    final minZ = elements.fold<int>(0, (min, e) => e.zIndex < min ? e.zIndex : min);
+    final minZ =
+        elements.fold<int>(0, (min, e) => e.zIndex < min ? e.zIndex : min);
     elements[idx] = elements[idx].copyWith(zIndex: minZ - 1);
     _updateCurrentSlide(emit, state.activeSlide!.copyWith(elements: elements));
   }
 
-  void _onFormatElement(
-      FormatElement event, Emitter<PresentationState> emit) {
+  void _onFormatElement(FormatElement event, Emitter<PresentationState> emit) {
     if (state.activeSlide == null) return;
     final elements = state.activeSlide!.elements.map((e) {
       if (e.id != event.elementId) return e;
@@ -801,14 +802,12 @@ class PresentationBloc extends Bloc<PresentationEvent, PresentationState> {
     _updateCurrentSlide(emit, state.activeSlide!.copyWith(elements: elements));
   }
 
-  void _onReorderSlides(
-      ReorderSlides event, Emitter<PresentationState> emit) {
+  void _onReorderSlides(ReorderSlides event, Emitter<PresentationState> emit) {
     _undoRedo.push(state.slides);
     final slides = List<SlideData>.from(state.slides);
     final slide = slides.removeAt(event.oldIndex);
-    final newIdx = event.newIndex > event.oldIndex
-        ? event.newIndex - 1
-        : event.newIndex;
+    final newIdx =
+        event.newIndex > event.oldIndex ? event.newIndex - 1 : event.newIndex;
     slides.insert(newIdx, slide);
     emit(state.copyWith(
       slides: slides,

@@ -112,135 +112,140 @@ class _TextEditorContentState extends State<_TextEditorContent> {
           child: Focus(
             autofocus: true,
             child: Scaffold(
-          appBar: AppBar(
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back_rounded),
-              onPressed: () {
-                if (state.isModified) {
-                  context.read<TextEditorBloc>().add(const SaveDocument());
-                }
-                context.go('/editor');
-              },
-            ),
-            title: SizedBox(
-              height: 36,
-              child: TextField(
-                controller: _titleController,
-                onChanged: (value) {
-                  context
-                      .read<TextEditorBloc>()
-                      .add(UpdateDocumentTitle(value));
-                },
-                style: theme.textTheme.titleMedium,
-                decoration: const InputDecoration(
-                  hintText: AppLocalizations.untitled,
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  fillColor: Colors.transparent,
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-            ),
-            actions: [
-              // Undo/Redo (native controller)
-              IconButton(
-                icon: const Icon(Icons.undo, size: 20),
-                tooltip: 'Undo (Ctrl+Z)',
-                onPressed: () {
-                  if (_contentController.value.composing == TextRange.empty) {
-                    // Trigger native undo via action
-                  }
-                },
-              ),
-              // File type toggle
-              IconButton(
-                icon: Icon(
-                  state.isMarkdown
-                      ? Icons.code_rounded
-                      : Icons.text_snippet_rounded,
-                ),
-                tooltip: state.isMarkdown ? 'Markdown' : 'Plain Text',
-                onPressed: () {
-                  context.read<TextEditorBloc>().add(CreateNewDocument(
-                        title: state.title,
-                        fileType: state.isMarkdown ? 'text' : 'markdown',
-                      ));
-                },
-              ),
-
-              // Preview toggle (markdown only)
-              if (state.isMarkdown)
-                IconButton(
-                  icon: Icon(
-                    state.showPreview
-                        ? Icons.edit_rounded
-                        : Icons.preview_rounded,
-                  ),
-                  tooltip: state.showPreview
-                      ? '${AppLocalizations.edit} (Ctrl+P)'
-                      : '${AppLocalizations.preview} (Ctrl+P)',
+              appBar: AppBar(
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back_rounded),
                   onPressed: () {
-                    context.read<TextEditorBloc>().add(const TogglePreview());
+                    if (state.isModified) {
+                      context.read<TextEditorBloc>().add(const SaveDocument());
+                    }
+                    context.go('/editor');
                   },
                 ),
-
-              // Find & Replace
-              IconButton(
-                icon: const Icon(Icons.find_replace_rounded),
-                tooltip: '${AppLocalizations.findAndReplace} (Ctrl+F)',
-                onPressed: () {
-                  context.read<TextEditorBloc>().add(const ToggleFindReplace());
-                },
-              ),
-
-              // Save indicator
-              if (state.isModified)
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 2),
-                  child: Icon(Icons.circle, size: 10, color: Colors.orange),
+                title: SizedBox(
+                  height: 36,
+                  child: TextField(
+                    controller: _titleController,
+                    onChanged: (value) {
+                      context
+                          .read<TextEditorBloc>()
+                          .add(UpdateDocumentTitle(value));
+                    },
+                    style: theme.textTheme.titleMedium,
+                    decoration: const InputDecoration(
+                      hintText: AppLocalizations.untitled,
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      fillColor: Colors.transparent,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
                 ),
+                actions: [
+                  // Undo/Redo (native controller)
+                  IconButton(
+                    icon: const Icon(Icons.undo, size: 20),
+                    tooltip: 'Undo (Ctrl+Z)',
+                    onPressed: () {
+                      if (_contentController.value.composing ==
+                          TextRange.empty) {
+                        // Trigger native undo via action
+                      }
+                    },
+                  ),
+                  // File type toggle
+                  IconButton(
+                    icon: Icon(
+                      state.isMarkdown
+                          ? Icons.code_rounded
+                          : Icons.text_snippet_rounded,
+                    ),
+                    tooltip: state.isMarkdown ? 'Markdown' : 'Plain Text',
+                    onPressed: () {
+                      context.read<TextEditorBloc>().add(CreateNewDocument(
+                            title: state.title,
+                            fileType: state.isMarkdown ? 'text' : 'markdown',
+                          ));
+                    },
+                  ),
 
-              // Save
-              IconButton(
-                icon: Icon(
-                  state.isModified
-                      ? Icons.save_rounded
-                      : Icons.check_circle_outline_rounded,
-                ),
-                tooltip: '${AppLocalizations.save} (Ctrl+S)',
-                onPressed: () {
-                  context.read<TextEditorBloc>().add(const SaveDocument());
-                },
+                  // Preview toggle (markdown only)
+                  if (state.isMarkdown)
+                    IconButton(
+                      icon: Icon(
+                        state.showPreview
+                            ? Icons.edit_rounded
+                            : Icons.preview_rounded,
+                      ),
+                      tooltip: state.showPreview
+                          ? '${AppLocalizations.edit} (Ctrl+P)'
+                          : '${AppLocalizations.preview} (Ctrl+P)',
+                      onPressed: () {
+                        context
+                            .read<TextEditorBloc>()
+                            .add(const TogglePreview());
+                      },
+                    ),
+
+                  // Find & Replace
+                  IconButton(
+                    icon: const Icon(Icons.find_replace_rounded),
+                    tooltip: '${AppLocalizations.findAndReplace} (Ctrl+F)',
+                    onPressed: () {
+                      context
+                          .read<TextEditorBloc>()
+                          .add(const ToggleFindReplace());
+                    },
+                  ),
+
+                  // Save indicator
+                  if (state.isModified)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 2),
+                      child: Icon(Icons.circle, size: 10, color: Colors.orange),
+                    ),
+
+                  // Save
+                  IconButton(
+                    icon: Icon(
+                      state.isModified
+                          ? Icons.save_rounded
+                          : Icons.check_circle_outline_rounded,
+                    ),
+                    tooltip: '${AppLocalizations.save} (Ctrl+S)',
+                    onPressed: () {
+                      context.read<TextEditorBloc>().add(const SaveDocument());
+                    },
+                  ),
+                ],
               ),
-            ],
-          ),
-          body: Column(
-            children: [
-              // Find & Replace bar
-              if (state.showFindReplace)
-                _FindReplaceBar(
-                  findController: _findController,
-                  replaceController: _replaceController,
-                  matchCount: state.findMatches,
-                ),
+              body: Column(
+                children: [
+                  // Find & Replace bar
+                  if (state.showFindReplace)
+                    _FindReplaceBar(
+                      findController: _findController,
+                      replaceController: _replaceController,
+                      matchCount: state.findMatches,
+                    ),
 
-              // Editor content
-              Expanded(
-                child: state.showPreview && state.isMarkdown
-                    ? _buildMarkdownPreview(context, state)
-                    : _buildEditor(context, state),
+                  // Editor content
+                  Expanded(
+                    child: state.showPreview && state.isMarkdown
+                        ? _buildMarkdownPreview(context, state)
+                        : _buildEditor(context, state),
+                  ),
+
+                  // Formatting toolbar for markdown (when editing)
+                  if (state.isMarkdown && !state.showPreview)
+                    _MarkdownFormatBar(controller: _contentController),
+
+                  // Status bar
+                  _StatusBar(state: state),
+                ],
               ),
-
-              // Formatting toolbar for markdown (when editing)
-              if (state.isMarkdown && !state.showPreview)
-                _MarkdownFormatBar(controller: _contentController),
-
-              // Status bar
-              _StatusBar(state: state),
-            ],
-          ),
-        ),
+            ),
           ),
         );
       },
@@ -501,15 +506,19 @@ class _MarkdownFormatBar extends StatelessWidget {
           children: [
             _btn(Icons.format_bold, 'Bold', () => _wrap('**', '**')),
             _btn(Icons.format_italic, 'Italic', () => _wrap('*', '*')),
-            _btn(Icons.strikethrough_s, 'Strikethrough', () => _wrap('~~', '~~')),
+            _btn(Icons.strikethrough_s, 'Strikethrough',
+                () => _wrap('~~', '~~')),
             _sep(),
             _btn(Icons.title, 'Heading', () => _prefix('# ')),
-            _btn(Icons.format_list_bulleted, 'Bullet List', () => _prefix('- ')),
-            _btn(Icons.format_list_numbered, 'Numbered List', () => _prefix('1. ')),
+            _btn(
+                Icons.format_list_bulleted, 'Bullet List', () => _prefix('- ')),
+            _btn(Icons.format_list_numbered, 'Numbered List',
+                () => _prefix('1. ')),
             _btn(Icons.check_box_outlined, 'Checkbox', () => _prefix('- [ ] ')),
             _sep(),
             _btn(Icons.code, 'Code', () => _wrap('`', '`')),
-            _btn(Icons.data_object, 'Code Block', () => _wrap('\n```\n', '\n```\n')),
+            _btn(Icons.data_object, 'Code Block',
+                () => _wrap('\n```\n', '\n```\n')),
             _btn(Icons.link, 'Link', () => _wrap('[', '](url)')),
             _btn(Icons.format_quote, 'Quote', () => _prefix('> ')),
             _btn(Icons.horizontal_rule, 'Rule', () => _insert('\n---\n')),
@@ -530,7 +539,8 @@ class _MarkdownFormatBar extends StatelessWidget {
   }
 
   Widget _sep() {
-    return const SizedBox(width: 1, height: 18, child: VerticalDivider(width: 1));
+    return const SizedBox(
+        width: 1, height: 18, child: VerticalDivider(width: 1));
   }
 
   void _wrap(String before, String after) {
@@ -538,7 +548,8 @@ class _MarkdownFormatBar extends StatelessWidget {
     final sel = controller.selection;
     if (!sel.isValid) return;
     final selected = text.substring(sel.start, sel.end);
-    controller.text = text.replaceRange(sel.start, sel.end, '$before$selected$after');
+    controller.text =
+        text.replaceRange(sel.start, sel.end, '$before$selected$after');
     controller.selection = TextSelection.collapsed(
         offset: sel.start + before.length + selected.length);
   }
@@ -552,7 +563,8 @@ class _MarkdownFormatBar extends StatelessWidget {
       lineStart--;
     }
     controller.text = text.replaceRange(lineStart, lineStart, prefix);
-    controller.selection = TextSelection.collapsed(offset: sel.start + prefix.length);
+    controller.selection =
+        TextSelection.collapsed(offset: sel.start + prefix.length);
   }
 
   void _insert(String snippet) {
@@ -560,6 +572,7 @@ class _MarkdownFormatBar extends StatelessWidget {
     final sel = controller.selection;
     if (!sel.isValid) return;
     controller.text = text.replaceRange(sel.start, sel.end, snippet);
-    controller.selection = TextSelection.collapsed(offset: sel.start + snippet.length);
+    controller.selection =
+        TextSelection.collapsed(offset: sel.start + snippet.length);
   }
 }

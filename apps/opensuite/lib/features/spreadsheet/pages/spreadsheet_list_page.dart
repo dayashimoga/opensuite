@@ -146,14 +146,13 @@ class _ListContentState extends State<_ListContent> {
                 ),
                 Expanded(
                   child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.md),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                     itemCount: sorted.length,
                     itemBuilder: (context, index) {
                       final sheet = sorted[index];
                       return Card(
-                        margin:
-                            const EdgeInsets.only(bottom: AppSpacing.sm),
+                        margin: const EdgeInsets.only(bottom: AppSpacing.sm),
                         child: ListTile(
                           leading: Container(
                             width: 44,
@@ -167,8 +166,7 @@ class _ListContentState extends State<_ListContent> {
                               children: [
                                 Icon(
                                   Icons.grid_on,
-                                  color: theme
-                                      .colorScheme.onTertiaryContainer,
+                                  color: theme.colorScheme.onTertiaryContainer,
                                 ),
                                 if (sheet.isFavorite)
                                   Positioned(
@@ -213,12 +211,10 @@ class _ListContentState extends State<_ListContent> {
                               const PopupMenuItem(
                                 value: 'delete',
                                 child: Row(children: [
-                                  Icon(Icons.delete_outline,
-                                      color: Colors.red),
+                                  Icon(Icons.delete_outline, color: Colors.red),
                                   SizedBox(width: 8),
                                   Text('Delete',
-                                      style:
-                                          TextStyle(color: Colors.red)),
+                                      style: TextStyle(color: Colors.red)),
                                 ]),
                               ),
                             ],
@@ -227,26 +223,20 @@ class _ListContentState extends State<_ListContent> {
                                 case 'favorite':
                                   context
                                       .read<SpreadsheetBloc>()
-                                      .add(ToggleSpreadsheetFavorite(
-                                          sheet.id));
+                                      .add(ToggleSpreadsheetFavorite(sheet.id));
                                 case 'duplicate':
                                   context
                                       .read<SpreadsheetBloc>()
-                                      .add(DuplicateSpreadsheetEntry(
-                                          sheet.id));
+                                      .add(DuplicateSpreadsheetEntry(sheet.id));
                                 case 'delete':
                                   ConfirmationDialog.show(
                                     context,
                                     title: 'Delete Spreadsheet',
-                                    message:
-                                        'Delete "${sheet.title}"?',
+                                    message: 'Delete "${sheet.title}"?',
                                   ).then((confirmed) {
                                     if (confirmed && context.mounted) {
-                                      context
-                                          .read<SpreadsheetBloc>()
-                                          .add(
-                                              DeleteSpreadsheetEntry(
-                                                  sheet.id));
+                                      context.read<SpreadsheetBloc>().add(
+                                          DeleteSpreadsheetEntry(sheet.id));
                                     }
                                   });
                               }
@@ -265,15 +255,12 @@ class _ListContentState extends State<_ListContent> {
           },
         ),
         floatingActionButton: FloatingActionButton.extended(
-          onPressed: _isCreating
-              ? null
-              : () => _showCreateOptions(context),
+          onPressed: _isCreating ? null : () => _showCreateOptions(context),
           icon: _isCreating
               ? const SizedBox(
                   width: 18,
                   height: 18,
-                  child:
-                      CircularProgressIndicator(strokeWidth: 2),
+                  child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : const Icon(Icons.add),
           label: Text(_isCreating ? 'Creating...' : 'New Spreadsheet'),
@@ -318,8 +305,7 @@ class _ListContentState extends State<_ListContent> {
         Text(label),
         if (_sortBy == value) ...[
           const Spacer(),
-          Icon(_sortAsc ? Icons.arrow_upward : Icons.arrow_downward,
-              size: 14),
+          Icon(_sortAsc ? Icons.arrow_upward : Icons.arrow_downward, size: 14),
         ],
       ]),
     );
@@ -338,8 +324,7 @@ class _ListContentState extends State<_ListContent> {
                 style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 16),
             ListTile(
-              leading:
-                  const Icon(Icons.grid_on, color: Color(0xFF22C55E)),
+              leading: const Icon(Icons.grid_on, color: Color(0xFF22C55E)),
               title: const Text('Blank Spreadsheet'),
               subtitle: const Text('Start with an empty grid'),
               onTap: () {
@@ -348,8 +333,7 @@ class _ListContentState extends State<_ListContent> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.attach_money,
-                  color: Color(0xFF3B82F6)),
+              leading: const Icon(Icons.attach_money, color: Color(0xFF3B82F6)),
               title: const Text('Budget'),
               subtitle: const Text('Monthly budget tracker'),
               onTap: () {
@@ -358,8 +342,8 @@ class _ListContentState extends State<_ListContent> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.calendar_month,
-                  color: Color(0xFFF59E0B)),
+              leading:
+                  const Icon(Icons.calendar_month, color: Color(0xFFF59E0B)),
               title: const Text('Calendar'),
               subtitle: const Text('Annual calendar planner'),
               onTap: () {
@@ -368,8 +352,7 @@ class _ListContentState extends State<_ListContent> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.school,
-                  color: Color(0xFF8B5CF6)),
+              leading: const Icon(Icons.school, color: Color(0xFF8B5CF6)),
               title: const Text('Gradebook'),
               subtitle: const Text('Student grade tracker'),
               onTap: () {
@@ -378,8 +361,7 @@ class _ListContentState extends State<_ListContent> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.inventory_2,
-                  color: Color(0xFFEF4444)),
+              leading: const Icon(Icons.inventory_2, color: Color(0xFFEF4444)),
               title: const Text('Inventory'),
               subtitle: const Text('Product inventory tracker'),
               onTap: () {
@@ -485,14 +467,14 @@ class _TemplateSection extends StatelessWidget {
             runSpacing: 8,
             alignment: WrapAlignment.center,
             children: [
-              _templateChip(
-                  context, 'Budget', Icons.attach_money, const Color(0xFF3B82F6)),
-              _templateChip(
-                  context, 'Calendar', Icons.calendar_month, const Color(0xFFF59E0B)),
+              _templateChip(context, 'Budget', Icons.attach_money,
+                  const Color(0xFF3B82F6)),
+              _templateChip(context, 'Calendar', Icons.calendar_month,
+                  const Color(0xFFF59E0B)),
               _templateChip(
                   context, 'Gradebook', Icons.school, const Color(0xFF8B5CF6)),
-              _templateChip(
-                  context, 'Inventory', Icons.inventory_2, const Color(0xFFEF4444)),
+              _templateChip(context, 'Inventory', Icons.inventory_2,
+                  const Color(0xFFEF4444)),
             ],
           ),
         ],

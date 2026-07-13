@@ -88,60 +88,62 @@ class _ListContentState extends State<_ListContent> {
             ),
             Expanded(
               child: BlocBuilder<PresentationBloc, PresentationState>(
-          builder: (context, state) {
-            if (state.status == PresentationStatus.loading) {
-              return const Center(child: CircularProgressIndicator());
-            }
+                builder: (context, state) {
+                  if (state.status == PresentationStatus.loading) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-            if (state.presentations.isEmpty) {
-              return EmptyState(
-                icon: Icons.slideshow_outlined,
-                title: 'No Presentations',
-                description: 'Create a new presentation to get started',
-                actionLabel: 'New Presentation',
-                onAction:
-                    _isCreating ? null : () => _createPresentation(context),
-              );
-            }
+                  if (state.presentations.isEmpty) {
+                    return EmptyState(
+                      icon: Icons.slideshow_outlined,
+                      title: 'No Presentations',
+                      description: 'Create a new presentation to get started',
+                      actionLabel: 'New Presentation',
+                      onAction: _isCreating
+                          ? null
+                          : () => _createPresentation(context),
+                    );
+                  }
 
-            return GridView.builder(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 280,
-                mainAxisSpacing: AppSpacing.md,
-                crossAxisSpacing: AppSpacing.md,
-                childAspectRatio: 16 / 11,
-              ),
-              itemCount: state.presentations.length,
-              itemBuilder: (context, index) {
-                final pres = state.presentations[index];
-                return _PresentationCard(
-                  presentation: pres,
-                  onTap: () => context.go('/presentations/${pres.id}'),
-                  onFavorite: () => context
-                      .read<PresentationBloc>()
-                      .add(TogglePresentationFavorite(pres.id)),
-                  onDuplicate: () => context
-                      .read<PresentationBloc>()
-                      .add(DuplicatePresentationEntry(pres.id)),
-                  onDelete: () {
-                    ConfirmationDialog.show(
-                      context,
-                      title: 'Delete Presentation',
-                      message: 'Delete "${pres.title}"?',
-                    ).then((confirmed) {
-                      if (confirmed && context.mounted) {
-                        context
+                  return GridView.builder(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    gridDelegate:
+                        const SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: 280,
+                      mainAxisSpacing: AppSpacing.md,
+                      crossAxisSpacing: AppSpacing.md,
+                      childAspectRatio: 16 / 11,
+                    ),
+                    itemCount: state.presentations.length,
+                    itemBuilder: (context, index) {
+                      final pres = state.presentations[index];
+                      return _PresentationCard(
+                        presentation: pres,
+                        onTap: () => context.go('/presentations/${pres.id}'),
+                        onFavorite: () => context
                             .read<PresentationBloc>()
-                            .add(DeletePresentationEntry(pres.id));
-                      }
-                    });
-                  },
-                );
-              },
-            );
-          },
-        ),
+                            .add(TogglePresentationFavorite(pres.id)),
+                        onDuplicate: () => context
+                            .read<PresentationBloc>()
+                            .add(DuplicatePresentationEntry(pres.id)),
+                        onDelete: () {
+                          ConfirmationDialog.show(
+                            context,
+                            title: 'Delete Presentation',
+                            message: 'Delete "${pres.title}"?',
+                          ).then((confirmed) {
+                            if (confirmed && context.mounted) {
+                              context
+                                  .read<PresentationBloc>()
+                                  .add(DeletePresentationEntry(pres.id));
+                            }
+                          });
+                        },
+                      );
+                    },
+                  );
+                },
+              ),
             ),
           ],
         ),

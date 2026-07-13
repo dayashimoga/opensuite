@@ -102,17 +102,15 @@ class _DocumentTile extends StatelessWidget {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: (isMarkdown
-                    ? const Color(0xFF14B8A6)
-                    : const Color(0xFF3B82F6))
-                .withValues(alpha: 0.12),
+            color:
+                (isMarkdown ? const Color(0xFF14B8A6) : const Color(0xFF3B82F6))
+                    .withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
           ),
           child: Icon(
             isMarkdown ? Icons.code_rounded : Icons.text_snippet_rounded,
-            color: isMarkdown
-                ? const Color(0xFF14B8A6)
-                : const Color(0xFF3B82F6),
+            color:
+                isMarkdown ? const Color(0xFF14B8A6) : const Color(0xFF3B82F6),
             size: 22,
           ),
         ),

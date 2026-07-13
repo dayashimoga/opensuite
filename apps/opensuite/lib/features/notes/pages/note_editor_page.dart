@@ -275,8 +275,8 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
                       Icon(
                         _iconForType(_contentType),
                         size: 14,
-                        color: theme.colorScheme.onSurface
-                            .withValues(alpha: 0.5),
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.5),
                       ),
                       const SizedBox(width: AppSpacing.xs),
                       Text(
@@ -366,22 +366,20 @@ class _MarkdownToolbar extends StatelessWidget {
                 () => _wrap('~~', '~~')),
             _divider(),
             _toolButton(Icons.title, 'Heading', () => _prefix('# ')),
-            _toolButton(Icons.format_list_bulleted, 'Bullet List',
-                () => _prefix('- ')),
+            _toolButton(
+                Icons.format_list_bulleted, 'Bullet List', () => _prefix('- ')),
             _toolButton(Icons.format_list_numbered, 'Numbered List',
                 () => _prefix('1. ')),
-            _toolButton(Icons.check_box_outlined, 'Checkbox',
-                () => _prefix('- [ ] ')),
+            _toolButton(
+                Icons.check_box_outlined, 'Checkbox', () => _prefix('- [ ] ')),
             _divider(),
             _toolButton(Icons.code, 'Code', () => _wrap('`', '`')),
             _toolButton(Icons.data_object, 'Code Block',
                 () => _wrap('\n```\n', '\n```\n')),
-            _toolButton(Icons.link, 'Link',
-                () => _wrap('[', '](url)')),
-            _toolButton(Icons.image_outlined, 'Image',
-                () => _wrap('![alt](', ')')),
-            _toolButton(Icons.format_quote, 'Quote',
-                () => _prefix('> ')),
+            _toolButton(Icons.link, 'Link', () => _wrap('[', '](url)')),
+            _toolButton(
+                Icons.image_outlined, 'Image', () => _wrap('![alt](', ')')),
+            _toolButton(Icons.format_quote, 'Quote', () => _prefix('> ')),
             _toolButton(Icons.horizontal_rule, 'Horizontal Rule',
                 () => _insert('\n---\n')),
           ],
@@ -415,8 +413,7 @@ class _MarkdownToolbar extends StatelessWidget {
 
     final selected = text.substring(sel.start, sel.end);
     final newText = '$before$selected$after';
-    controller.text =
-        text.replaceRange(sel.start, sel.end, newText);
+    controller.text = text.replaceRange(sel.start, sel.end, newText);
     controller.selection = TextSelection.collapsed(
         offset: sel.start + before.length + selected.length);
     onChanged();
@@ -434,8 +431,8 @@ class _MarkdownToolbar extends StatelessWidget {
     }
 
     controller.text = text.replaceRange(lineStart, lineStart, prefix);
-    controller.selection = TextSelection.collapsed(
-        offset: sel.start + prefix.length);
+    controller.selection =
+        TextSelection.collapsed(offset: sel.start + prefix.length);
     onChanged();
   }
 
@@ -445,8 +442,8 @@ class _MarkdownToolbar extends StatelessWidget {
     if (!sel.isValid) return;
 
     controller.text = text.replaceRange(sel.start, sel.end, snippet);
-    controller.selection = TextSelection.collapsed(
-        offset: sel.start + snippet.length);
+    controller.selection =
+        TextSelection.collapsed(offset: sel.start + snippet.length);
     onChanged();
   }
 }
