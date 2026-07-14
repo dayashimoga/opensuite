@@ -183,11 +183,9 @@ class ImportManager {
 
   /// Returns the list of importable format extensions.
   List<String> get importableExtensions {
-    return _exportManager.importableFormats
-        .map((f) {
-          final codec = _exportManager.getCodec(f);
-          return codec?.extension ?? f.name;
-        })
-        .toList();
+    return _exportManager.importableFormats.map((f) {
+      final codec = _exportManager.getCodec(f);
+      return codec?.extension ?? f.name;
+    }).toList();
   }
 }

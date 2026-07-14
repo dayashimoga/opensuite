@@ -146,9 +146,8 @@ class _EditorContentState extends State<_EditorContent> {
               IconButton(
                 icon: Icon(
                   Icons.search,
-                  color: state.showFindReplace
-                      ? theme.colorScheme.primary
-                      : null,
+                  color:
+                      state.showFindReplace ? theme.colorScheme.primary : null,
                 ),
                 onPressed: () => context
                     .read<DocumentEditorBloc>()
@@ -226,8 +225,7 @@ class _EditorContentState extends State<_EditorContent> {
                 ),
 
               // Find & Replace bar
-              if (state.showFindReplace)
-                _FindReplaceBar(state: state),
+              if (state.showFindReplace) _FindReplaceBar(state: state),
 
               // Editor surface
               Expanded(
@@ -679,9 +677,7 @@ class _FindReplaceBarState extends State<_FindReplaceBar> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final matchCount = widget.state.findMatches.length;
-    final currentMatch = matchCount > 0
-        ? widget.state.currentFindIndex + 1
-        : 0;
+    final currentMatch = matchCount > 0 ? widget.state.currentFindIndex + 1 : 0;
 
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -689,8 +685,7 @@ class _FindReplaceBarState extends State<_FindReplaceBar> {
         vertical: AppSpacing.sm,
       ),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest
-            .withValues(alpha: 0.3),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         border: Border(
           bottom: BorderSide(
             color: theme.colorScheme.outlineVariant,
@@ -722,9 +717,8 @@ class _FindReplaceBarState extends State<_FindReplaceBar> {
                         vertical: 0,
                       ),
                       isDense: true,
-                      suffixText: matchCount > 0
-                          ? '$currentMatch/$matchCount'
-                          : null,
+                      suffixText:
+                          matchCount > 0 ? '$currentMatch/$matchCount' : null,
                       suffixStyle: theme.textTheme.labelSmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),

@@ -244,7 +244,8 @@ class RotateElement extends PresentationEvent {
 }
 
 class AlignElements extends PresentationEvent {
-  final String alignment; // 'left', 'center', 'right', 'top', 'middle', 'bottom'
+  final String
+      alignment; // 'left', 'center', 'right', 'top', 'middle', 'bottom'
   final List<String> elementIds;
   const AlignElements(this.alignment, this.elementIds);
   @override
@@ -863,8 +864,7 @@ class PresentationBloc extends Bloc<PresentationEvent, PresentationState> {
     _scheduleAutoSave();
   }
 
-  void _onRotateElement(
-      RotateElement event, Emitter<PresentationState> emit) {
+  void _onRotateElement(RotateElement event, Emitter<PresentationState> emit) {
     if (state.activeSlide == null) return;
 
     final slide = state.activeSlide!;
@@ -880,14 +880,12 @@ class PresentationBloc extends Bloc<PresentationEvent, PresentationState> {
     _updateCurrentSlide(emit, slide.copyWith(elements: elements));
   }
 
-  void _onAlignElements(
-      AlignElements event, Emitter<PresentationState> emit) {
+  void _onAlignElements(AlignElements event, Emitter<PresentationState> emit) {
     if (state.activeSlide == null || event.elementIds.length < 2) return;
 
     final slide = state.activeSlide!;
-    final targets = slide.elements
-        .where((e) => event.elementIds.contains(e.id))
-        .toList();
+    final targets =
+        slide.elements.where((e) => event.elementIds.contains(e.id)).toList();
 
     if (targets.isEmpty) return;
 
@@ -964,8 +962,7 @@ class PresentationBloc extends Bloc<PresentationEvent, PresentationState> {
     emit(state.copyWith(selectedElementId: duplicate.id));
   }
 
-  void _onGroupElements(
-      GroupElements event, Emitter<PresentationState> emit) {
+  void _onGroupElements(GroupElements event, Emitter<PresentationState> emit) {
     if (state.activeSlide == null || event.elementIds.length < 2) return;
 
     final slide = state.activeSlide!;

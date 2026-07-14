@@ -113,8 +113,8 @@ class BackgroundTaskManager {
 
   /// Returns active (pending or running) tasks.
   List<BackgroundTask<dynamic>> get activeTasks => _tasks.values
-      .where(
-          (t) => t.status == TaskStatus.pending || t.status == TaskStatus.running)
+      .where((t) =>
+          t.status == TaskStatus.pending || t.status == TaskStatus.running)
       .toList();
 
   /// Returns the task with [id], or null.

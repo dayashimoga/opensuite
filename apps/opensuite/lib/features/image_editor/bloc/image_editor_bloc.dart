@@ -284,7 +284,8 @@ class ImageEditorBloc extends Bloc<ImageEditorEvent, ImageEditorState> {
   ImageEditorBloc() : super(const ImageEditorState()) {
     on<LoadImage>(_onLoad);
     on<RotateImage>(_onRotate);
-    on<CropImage>(_onCrop); // FIX: Was missing — CropImage handler now registered
+    on<CropImage>(
+        _onCrop); // FIX: Was missing — CropImage handler now registered
     on<SetBrightness>(_onBrightness);
     on<SetContrast>(_onContrast);
     on<SetSaturation>(_onSaturation);
@@ -477,7 +478,8 @@ class ImageEditorBloc extends Bloc<ImageEditorEvent, ImageEditorState> {
       final adj = state.adjustments;
 
       // Combine exposure with brightness for the processor
-      final effectiveBrightness = (adj.brightness + adj.exposure).clamp(-1.0, 1.0);
+      final effectiveBrightness =
+          (adj.brightness + adj.exposure).clamp(-1.0, 1.0);
 
       final exportedBytes = await ImageProcessor.renderWithAdjustments(
         sourceBytes: state.imageBytes!,

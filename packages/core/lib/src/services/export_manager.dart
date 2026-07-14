@@ -142,18 +142,16 @@ class ExportManager {
   }
 
   /// Returns all registered formats that support encoding.
-  List<ExportFormat> get exportableFormats =>
-      _codecs.entries
-          .where((e) => e.value.canEncode)
-          .map((e) => e.key)
-          .toList();
+  List<ExportFormat> get exportableFormats => _codecs.entries
+      .where((e) => e.value.canEncode)
+      .map((e) => e.key)
+      .toList();
 
   /// Returns all registered formats that support decoding.
-  List<ExportFormat> get importableFormats =>
-      _codecs.entries
-          .where((e) => e.value.canDecode)
-          .map((e) => e.key)
-          .toList();
+  List<ExportFormat> get importableFormats => _codecs.entries
+      .where((e) => e.value.canDecode)
+      .map((e) => e.key)
+      .toList();
 
   /// Exports [data] to the specified [format].
   ///

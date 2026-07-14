@@ -188,7 +188,8 @@ class PdfViewerState extends Equatable {
   final List<PdfAnnotation> annotations;
   final Map<int, int> pageRotations; // page -> degrees
   final String? errorMessage;
-  final String annotationMode; // 'none', 'highlight', 'underline', 'note', 'freehand'
+  final String
+      annotationMode; // 'none', 'highlight', 'underline', 'note', 'freehand'
   final int? extractStartPage;
   final int? extractEndPage;
 
@@ -379,8 +380,10 @@ class PdfViewerBloc extends Bloc<PdfViewerEvent, PdfViewerState> {
 
   /// FIX: Was an empty method body. Now stores the page range for extract/split operations.
   void _onSetPageRange(SetPageRange event, Emitter<PdfViewerState> emit) {
-    final start = event.startPage.clamp(1, state.totalPages > 0 ? state.totalPages : 1);
-    final end = event.endPage.clamp(start, state.totalPages > 0 ? state.totalPages : 1);
+    final start =
+        event.startPage.clamp(1, state.totalPages > 0 ? state.totalPages : 1);
+    final end =
+        event.endPage.clamp(start, state.totalPages > 0 ? state.totalPages : 1);
     emit(state.copyWith(
       extractStartPage: start,
       extractEndPage: end,
@@ -404,20 +407,22 @@ class PdfViewerBloc extends Bloc<PdfViewerEvent, PdfViewerState> {
     try {
       final now = DateTime.now();
       // Delete existing annotations for this file, then insert current ones
-      final entities = state.annotations.map((a) => PdfAnnotationEntity(
-            id: a.id,
-            filePath: state.filePath!,
-            pageNumber: a.page,
-            type: a.type,
-            x: a.x,
-            y: a.y,
-            width: a.width,
-            height: a.height,
-            content: a.text ?? '',
-            color: a.color,
-            createdAt: now,
-            modifiedAt: now,
-          )).toList();
+      final entities = state.annotations
+          .map((a) => PdfAnnotationEntity(
+                id: a.id,
+                filePath: state.filePath!,
+                pageNumber: a.page,
+                type: a.type,
+                x: a.x,
+                y: a.y,
+                width: a.width,
+                height: a.height,
+                content: a.text ?? '',
+                color: a.color,
+                createdAt: now,
+                modifiedAt: now,
+              ))
+          .toList();
 
       // Clear and re-insert (simple strategy for small annotation counts)
       await _annotationDao!.deleteAllForFile(state.filePath!);
@@ -436,17 +441,19 @@ class PdfViewerBloc extends Bloc<PdfViewerEvent, PdfViewerState> {
     try {
       final entities =
           await _annotationDao!.getAnnotationsForFile(state.filePath!);
-      final annotations = entities.map((e) => PdfAnnotation(
-            id: e.id,
-            page: e.pageNumber,
-            type: e.type,
-            x: e.x,
-            y: e.y,
-            width: e.width,
-            height: e.height,
-            text: e.content,
-            color: e.color ?? '#FFFF00',
-          )).toList();
+      final annotations = entities
+          .map((e) => PdfAnnotation(
+                id: e.id,
+                page: e.pageNumber,
+                type: e.type,
+                x: e.x,
+                y: e.y,
+                width: e.width,
+                height: e.height,
+                text: e.content,
+                color: e.color ?? '#FFFF00',
+              ))
+          .toList();
       emit(state.copyWith(annotations: annotations));
     } catch (_) {
       // Silent failure

@@ -31,10 +31,26 @@ class ImageProcessor {
     if (brightness != 0.0) {
       final b = brightness * 255;
       matrix = _multiply(matrix, [
-        1, 0, 0, 0, b,
-        0, 1, 0, 0, b,
-        0, 0, 1, 0, b,
-        0, 0, 0, 1, 0,
+        1,
+        0,
+        0,
+        0,
+        b,
+        0,
+        1,
+        0,
+        0,
+        b,
+        0,
+        0,
+        1,
+        0,
+        b,
+        0,
+        0,
+        0,
+        1,
+        0,
       ]);
     }
 
@@ -43,10 +59,26 @@ class ImageProcessor {
       final c = contrast;
       final t = (1.0 - c) / 2.0 * 255;
       matrix = _multiply(matrix, [
-        c, 0, 0, 0, t,
-        0, c, 0, 0, t,
-        0, 0, c, 0, t,
-        0, 0, 0, 1, 0,
+        c,
+        0,
+        0,
+        0,
+        t,
+        0,
+        c,
+        0,
+        0,
+        t,
+        0,
+        0,
+        c,
+        0,
+        t,
+        0,
+        0,
+        0,
+        1,
+        0,
       ]);
     }
 
@@ -60,10 +92,26 @@ class ImageProcessor {
       final sg = (1 - s) * lg;
       final sb = (1 - s) * lb;
       matrix = _multiply(matrix, [
-        sr + s, sg, sb, 0, 0,
-        sr, sg + s, sb, 0, 0,
-        sr, sg, sb + s, 0, 0,
-        0, 0, 0, 1, 0,
+        sr + s,
+        sg,
+        sb,
+        0,
+        0,
+        sr,
+        sg + s,
+        sb,
+        0,
+        0,
+        sr,
+        sg,
+        sb + s,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
       ]);
     }
 
@@ -71,10 +119,26 @@ class ImageProcessor {
   }
 
   static List<double> _identityMatrix() => [
-        1, 0, 0, 0, 0,
-        0, 1, 0, 0, 0,
-        0, 0, 1, 0, 0,
-        0, 0, 0, 1, 0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
       ];
 
   static List<double> _multiply(List<double> a, List<double> b) {
@@ -129,8 +193,7 @@ class ImageProcessor {
     }
 
     // Handle rotation swapping dimensions
-    final isRotated90 =
-        (rotation % 360 == 90) || (rotation % 360 == 270);
+    final isRotated90 = (rotation % 360 == 90) || (rotation % 360 == 270);
     if (isRotated90) {
       final tmp = outWidth;
       outWidth = outHeight;
