@@ -6,6 +6,7 @@ WORKDIR /app
 # Install additional tools
 RUN apt-get update && apt-get install -y \
     lcov \
+    libsqlite3-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy pubspec files first for dependency caching

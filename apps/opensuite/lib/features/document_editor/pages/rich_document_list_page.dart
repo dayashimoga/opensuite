@@ -225,12 +225,13 @@ class _DocumentListContentState extends State<_DocumentListContent> {
     );
     if (result != null && result.files.isNotEmpty && context.mounted) {
       final file = result.files.single;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Opened: ${file.name}'),
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      final title =
+          file.name.replaceAll(RegExp(r'\.(docx|doc|txt|md|rtf|odt)$'), '');
+      setState(() => _isCreating = true);
+      context.read<DocumentEditorBloc>().add(CreateDocument(
+            title: title,
+            format: file.name.endsWith('.md') ? 'markdown' : 'rich',
+          ));
     }
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:equatable/equatable.dart';
+import 'package:fileutility_storage/fileutility_storage.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 // --- Events ---
@@ -92,6 +93,28 @@ class ClosePdf extends PdfViewerEvent {
   const ClosePdf();
 }
 
+class SaveAnnotations extends PdfViewerEvent {
+  const SaveAnnotations();
+}
+
+class LoadAnnotations extends PdfViewerEvent {
+  const LoadAnnotations();
+}
+
+class ToggleAnnotationMode extends PdfViewerEvent {
+  final String mode; // 'highlight', 'underline', 'note', 'freehand', 'none'
+  const ToggleAnnotationMode(this.mode);
+  @override
+  List<Object?> get props => [mode];
+}
+
+class UpdateAnnotation extends PdfViewerEvent {
+  final PdfAnnotation annotation;
+  const UpdateAnnotation(this.annotation);
+  @override
+  List<Object?> get props => [annotation];
+}
+
 // --- Models ---
 
 class PdfAnnotation extends Equatable {
@@ -119,6 +142,32 @@ class PdfAnnotation extends Equatable {
     this.strokePoints,
   });
 
+  PdfAnnotation copyWith({
+    String? id,
+    int? page,
+    String? type,
+    double? x,
+    double? y,
+    double? width,
+    double? height,
+    String? text,
+    String? color,
+    List<List<double>>? strokePoints,
+  }) {
+    return PdfAnnotation(
+      id: id ?? this.id,
+      page: page ?? this.page,
+      type: type ?? this.type,
+      x: x ?? this.x,
+      y: y ?? this.y,
+      width: width ?? this.width,
+      height: height ?? this.height,
+      text: text ?? this.text,
+      color: color ?? this.color,
+      strokePoints: strokePoints ?? this.strokePoints,
+    );
+  }
+
   @override
   List<Object?> get props => [id, page, type, x, y];
 }
@@ -139,6 +188,10 @@ class PdfViewerState extends Equatable {
   final List<PdfAnnotation> annotations;
   final Map<int, int> pageRotations; // page -> degrees
   final String? errorMessage;
+  final String
+      annotationMode; // 'none', 'highlight', 'underline', 'note', 'freehand'
+  final int? extractStartPage;
+  final int? extractEndPage;
 
   const PdfViewerState({
     this.status = PdfViewerStatus.initial,
@@ -152,6 +205,9 @@ class PdfViewerState extends Equatable {
     this.annotations = const [],
     this.pageRotations = const {},
     this.errorMessage,
+    this.annotationMode = 'none',
+    this.extractStartPage,
+    this.extractEndPage,
   });
 
   PdfViewerState copyWith({
@@ -166,6 +222,9 @@ class PdfViewerState extends Equatable {
     List<PdfAnnotation>? annotations,
     Map<int, int>? pageRotations,
     String? errorMessage,
+    String? annotationMode,
+    int? extractStartPage,
+    int? extractEndPage,
   }) {
     return PdfViewerState(
       status: status ?? this.status,
@@ -179,8 +238,15 @@ class PdfViewerState extends Equatable {
       annotations: annotations ?? this.annotations,
       pageRotations: pageRotations ?? this.pageRotations,
       errorMessage: errorMessage ?? this.errorMessage,
+      annotationMode: annotationMode ?? this.annotationMode,
+      extractStartPage: extractStartPage ?? this.extractStartPage,
+      extractEndPage: extractEndPage ?? this.extractEndPage,
     );
   }
+
+  /// Annotations for the current page.
+  List<PdfAnnotation> get currentPageAnnotations =>
+      annotations.where((a) => a.page == currentPage).toList();
 
   @override
   List<Object?> get props => [
@@ -193,13 +259,18 @@ class PdfViewerState extends Equatable {
         searchQuery,
         annotations,
         pageRotations,
+        annotationMode,
       ];
 }
 
 // --- BLoC ---
 
 class PdfViewerBloc extends Bloc<PdfViewerEvent, PdfViewerState> {
-  PdfViewerBloc() : super(const PdfViewerState()) {
+  final PdfAnnotationDao? _annotationDao;
+
+  PdfViewerBloc({PdfAnnotationDao? annotationDao})
+      : _annotationDao = annotationDao,
+        super(const PdfViewerState()) {
     on<LoadPdf>(_onLoad);
     on<GoToPage>(_onGoToPage);
     on<NextPage>(_onNextPage);
@@ -209,16 +280,21 @@ class PdfViewerBloc extends Bloc<PdfViewerEvent, PdfViewerState> {
     on<SearchInPdf>(_onSearch);
     on<AddAnnotation>(_onAddAnnotation);
     on<RemoveAnnotation>(_onRemoveAnnotation);
+    on<UpdateAnnotation>(_onUpdateAnnotation);
     on<RotatePage>(_onRotatePage);
     on<SetPageRange>(_onSetPageRange);
     on<SetTotalPages>(_onSetTotalPages);
     on<ClosePdf>(_onClose);
+    on<SaveAnnotations>(_onSaveAnnotations);
+    on<LoadAnnotations>(_onLoadAnnotations);
+    on<ToggleAnnotationMode>(_onToggleAnnotationMode);
   }
 
   Future<void> _onLoad(LoadPdf event, Emitter<PdfViewerState> emit) async {
     emit(state.copyWith(
       status: PdfViewerStatus.loading,
       filePath: event.filePath,
+      annotations: const [],
     ));
     // The actual PDF loading is done by pdfrx PdfViewer widget.
     // We transition to loaded state — totalPages will be set by
@@ -227,6 +303,9 @@ class PdfViewerBloc extends Bloc<PdfViewerEvent, PdfViewerState> {
       status: PdfViewerStatus.loaded,
       currentPage: 1,
     ));
+
+    // Load persisted annotations for this file
+    add(const LoadAnnotations());
   }
 
   void _onSetTotalPages(SetTotalPages event, Emitter<PdfViewerState> emit) {
@@ -269,6 +348,8 @@ class PdfViewerBloc extends Bloc<PdfViewerEvent, PdfViewerState> {
     emit(state.copyWith(
       annotations: [...state.annotations, event.annotation],
     ));
+    // Auto-persist
+    add(const SaveAnnotations());
   }
 
   void _onRemoveAnnotation(
@@ -277,6 +358,17 @@ class PdfViewerBloc extends Bloc<PdfViewerEvent, PdfViewerState> {
       annotations:
           state.annotations.where((a) => a.id != event.annotationId).toList(),
     ));
+    add(const SaveAnnotations());
+  }
+
+  void _onUpdateAnnotation(
+      UpdateAnnotation event, Emitter<PdfViewerState> emit) {
+    emit(state.copyWith(
+      annotations: state.annotations
+          .map((a) => a.id == event.annotation.id ? event.annotation : a)
+          .toList(),
+    ));
+    add(const SaveAnnotations());
   }
 
   void _onRotatePage(RotatePage event, Emitter<PdfViewerState> emit) {
@@ -286,11 +378,85 @@ class PdfViewerBloc extends Bloc<PdfViewerEvent, PdfViewerState> {
     emit(state.copyWith(pageRotations: rotations));
   }
 
+  /// FIX: Was an empty method body. Now stores the page range for extract/split operations.
   void _onSetPageRange(SetPageRange event, Emitter<PdfViewerState> emit) {
-    // Used for split/extract operations
+    final start =
+        event.startPage.clamp(1, state.totalPages > 0 ? state.totalPages : 1);
+    final end =
+        event.endPage.clamp(start, state.totalPages > 0 ? state.totalPages : 1);
+    emit(state.copyWith(
+      extractStartPage: start,
+      extractEndPage: end,
+    ));
   }
 
   void _onClose(ClosePdf event, Emitter<PdfViewerState> emit) {
     emit(const PdfViewerState());
+  }
+
+  void _onToggleAnnotationMode(
+      ToggleAnnotationMode event, Emitter<PdfViewerState> emit) {
+    final newMode = state.annotationMode == event.mode ? 'none' : event.mode;
+    emit(state.copyWith(annotationMode: newMode));
+  }
+
+  /// Persists annotations to SQLite via PdfAnnotationDao.
+  Future<void> _onSaveAnnotations(
+      SaveAnnotations event, Emitter<PdfViewerState> emit) async {
+    if (_annotationDao == null || state.filePath == null) return;
+    try {
+      final now = DateTime.now();
+      // Delete existing annotations for this file, then insert current ones
+      final entities = state.annotations
+          .map((a) => PdfAnnotationEntity(
+                id: a.id,
+                filePath: state.filePath!,
+                pageNumber: a.page,
+                type: a.type,
+                x: a.x,
+                y: a.y,
+                width: a.width,
+                height: a.height,
+                content: a.text ?? '',
+                color: a.color,
+                createdAt: now,
+                modifiedAt: now,
+              ))
+          .toList();
+
+      // Clear and re-insert (simple strategy for small annotation counts)
+      await _annotationDao!.deleteAllForFile(state.filePath!);
+      for (final entity in entities) {
+        await _annotationDao!.insertAnnotation(entity);
+      }
+    } catch (_) {
+      // Silent failure for annotation persistence — don't disrupt viewing
+    }
+  }
+
+  /// Loads persisted annotations from SQLite.
+  Future<void> _onLoadAnnotations(
+      LoadAnnotations event, Emitter<PdfViewerState> emit) async {
+    if (_annotationDao == null || state.filePath == null) return;
+    try {
+      final entities =
+          await _annotationDao!.getAnnotationsForFile(state.filePath!);
+      final annotations = entities
+          .map((e) => PdfAnnotation(
+                id: e.id,
+                page: e.pageNumber,
+                type: e.type,
+                x: e.x,
+                y: e.y,
+                width: e.width,
+                height: e.height,
+                text: e.content,
+                color: e.color ?? '#FFFF00',
+              ))
+          .toList();
+      emit(state.copyWith(annotations: annotations));
+    } catch (_) {
+      // Silent failure
+    }
   }
 }

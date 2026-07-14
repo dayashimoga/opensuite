@@ -37,6 +37,15 @@ services:
     working_dir: /app
     command: dart format --set-exit-if-changed .
 
+  security-scan:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    volumes:
+      - ..:/app
+    working_dir: /app/apps/opensuite
+    command: dart pub audit
+
   build-web:
     build:
       context: ..

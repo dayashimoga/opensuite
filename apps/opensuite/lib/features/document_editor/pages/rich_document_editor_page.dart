@@ -142,6 +142,18 @@ class _EditorContentState extends State<_EditorContent> {
                     : null,
                 tooltip: 'Redo (Ctrl+Shift+Z)',
               ),
+              // Find & Replace
+              IconButton(
+                icon: Icon(
+                  Icons.search,
+                  color:
+                      state.showFindReplace ? theme.colorScheme.primary : null,
+                ),
+                onPressed: () => context
+                    .read<DocumentEditorBloc>()
+                    .add(const ToggleFindReplace()),
+                tooltip: 'Find & Replace (Ctrl+H)',
+              ),
               // Save indicator
               _SaveIndicator(state: state),
               const SizedBox(width: 8),
@@ -206,7 +218,14 @@ class _EditorContentState extends State<_EditorContent> {
           body: Column(
             children: [
               // Formatting toolbar
-              if (state.showToolbar) _FormattingToolbar(state: state),
+              if (state.showToolbar)
+                _FormattingToolbar(
+                  state: state,
+                  controller: _contentController,
+                ),
+
+              // Find & Replace bar
+              if (state.showFindReplace) _FindReplaceBar(state: state),
 
               // Editor surface
               Expanded(
@@ -318,8 +337,50 @@ class _StatRow extends StatelessWidget {
 /// Formatting toolbar with bold, italic, underline, headings, lists, etc.
 class _FormattingToolbar extends StatelessWidget {
   final DocumentEditorState state;
+  final TextEditingController controller;
 
-  const _FormattingToolbar({required this.state});
+  const _FormattingToolbar({
+    required this.state,
+    required this.controller,
+  });
+
+  void _wrap(BuildContext context, String before, String after) {
+    final text = controller.text;
+    final sel = controller.selection;
+    if (!sel.isValid) return;
+    final selected = text.substring(sel.start, sel.end);
+    final newText =
+        text.replaceRange(sel.start, sel.end, '$before$selected$after');
+    controller.text = newText;
+    controller.selection = TextSelection.collapsed(
+        offset: sel.start + before.length + selected.length);
+    context.read<DocumentEditorBloc>().add(
+          UpdateDocumentContent(
+            content: newText,
+            plainText: newText,
+          ),
+        );
+  }
+
+  void _prefix(BuildContext context, String prefix) {
+    final text = controller.text;
+    final sel = controller.selection;
+    if (!sel.isValid) return;
+    int lineStart = sel.start;
+    while (lineStart > 0 && text[lineStart - 1] != '\n') {
+      lineStart--;
+    }
+    final newText = text.replaceRange(lineStart, lineStart, prefix);
+    controller.text = newText;
+    controller.selection =
+        TextSelection.collapsed(offset: sel.start + prefix.length);
+    context.read<DocumentEditorBloc>().add(
+          UpdateDocumentContent(
+            content: newText,
+            plainText: newText,
+          ),
+        );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -344,107 +405,143 @@ class _FormattingToolbar extends StatelessWidget {
               icon: Icons.format_bold,
               label: 'Bold',
               isActive: state.activeFormats.contains('bold'),
-              onPressed: () => context
-                  .read<DocumentEditorBloc>()
-                  .add(const ApplyFormatting('bold')),
+              onPressed: () {
+                _wrap(context, '**', '**');
+                context
+                    .read<DocumentEditorBloc>()
+                    .add(const ApplyFormatting('bold'));
+              },
             ),
             _FormatButton(
               icon: Icons.format_italic,
               label: 'Italic',
               isActive: state.activeFormats.contains('italic'),
-              onPressed: () => context
-                  .read<DocumentEditorBloc>()
-                  .add(const ApplyFormatting('italic')),
+              onPressed: () {
+                _wrap(context, '*', '*');
+                context
+                    .read<DocumentEditorBloc>()
+                    .add(const ApplyFormatting('italic'));
+              },
             ),
             _FormatButton(
               icon: Icons.format_underlined,
               label: 'Underline',
               isActive: state.activeFormats.contains('underline'),
-              onPressed: () => context
-                  .read<DocumentEditorBloc>()
-                  .add(const ApplyFormatting('underline')),
+              onPressed: () {
+                _wrap(context, '<u>', '</u>');
+                context
+                    .read<DocumentEditorBloc>()
+                    .add(const ApplyFormatting('underline'));
+              },
             ),
             _FormatButton(
               icon: Icons.strikethrough_s,
               label: 'Strikethrough',
               isActive: state.activeFormats.contains('strikethrough'),
-              onPressed: () => context
-                  .read<DocumentEditorBloc>()
-                  .add(const ApplyFormatting('strikethrough')),
+              onPressed: () {
+                _wrap(context, '~~', '~~');
+                context
+                    .read<DocumentEditorBloc>()
+                    .add(const ApplyFormatting('strikethrough'));
+              },
             ),
             _divider(theme),
             _FormatButton(
               icon: Icons.title,
               label: 'Heading 1',
               isActive: state.activeFormats.contains('h1'),
-              onPressed: () => context
-                  .read<DocumentEditorBloc>()
-                  .add(const ApplyFormatting('h1')),
+              onPressed: () {
+                _prefix(context, '# ');
+                context
+                    .read<DocumentEditorBloc>()
+                    .add(const ApplyFormatting('h1'));
+              },
             ),
             _FormatButton(
               icon: Icons.text_fields,
               label: 'Heading 2',
               isActive: state.activeFormats.contains('h2'),
-              onPressed: () => context
-                  .read<DocumentEditorBloc>()
-                  .add(const ApplyFormatting('h2')),
+              onPressed: () {
+                _prefix(context, '## ');
+                context
+                    .read<DocumentEditorBloc>()
+                    .add(const ApplyFormatting('h2'));
+              },
             ),
             _divider(theme),
             _FormatButton(
               icon: Icons.format_list_bulleted,
               label: 'Bullet List',
               isActive: state.activeFormats.contains('bullet'),
-              onPressed: () => context
-                  .read<DocumentEditorBloc>()
-                  .add(const ApplyFormatting('bullet')),
+              onPressed: () {
+                _prefix(context, '- ');
+                context
+                    .read<DocumentEditorBloc>()
+                    .add(const ApplyFormatting('bullet'));
+              },
             ),
             _FormatButton(
               icon: Icons.format_list_numbered,
               label: 'Numbered List',
               isActive: state.activeFormats.contains('numbered'),
-              onPressed: () => context
-                  .read<DocumentEditorBloc>()
-                  .add(const ApplyFormatting('numbered')),
+              onPressed: () {
+                _prefix(context, '1. ');
+                context
+                    .read<DocumentEditorBloc>()
+                    .add(const ApplyFormatting('numbered'));
+              },
             ),
             _FormatButton(
               icon: Icons.check_box,
               label: 'Checklist',
               isActive: state.activeFormats.contains('checklist'),
-              onPressed: () => context
-                  .read<DocumentEditorBloc>()
-                  .add(const ApplyFormatting('checklist')),
+              onPressed: () {
+                _prefix(context, '- [ ] ');
+                context
+                    .read<DocumentEditorBloc>()
+                    .add(const ApplyFormatting('checklist'));
+              },
             ),
             _divider(theme),
             _FormatButton(
               icon: Icons.format_quote,
               label: 'Quote',
               isActive: state.activeFormats.contains('quote'),
-              onPressed: () => context
-                  .read<DocumentEditorBloc>()
-                  .add(const ApplyFormatting('quote')),
+              onPressed: () {
+                _prefix(context, '> ');
+                context
+                    .read<DocumentEditorBloc>()
+                    .add(const ApplyFormatting('quote'));
+              },
             ),
             _FormatButton(
               icon: Icons.code,
               label: 'Code Block',
               isActive: state.activeFormats.contains('code'),
-              onPressed: () => context
-                  .read<DocumentEditorBloc>()
-                  .add(const ApplyFormatting('code')),
+              onPressed: () {
+                _wrap(context, '\n```\n', '\n```\n');
+                context
+                    .read<DocumentEditorBloc>()
+                    .add(const ApplyFormatting('code'));
+              },
             ),
             _FormatButton(
               icon: Icons.link,
               label: 'Link',
               isActive: state.activeFormats.contains('link'),
-              onPressed: () => context
-                  .read<DocumentEditorBloc>()
-                  .add(const ApplyFormatting('link')),
+              onPressed: () {
+                _wrap(context, '[', '](url)');
+                context
+                    .read<DocumentEditorBloc>()
+                    .add(const ApplyFormatting('link'));
+              },
             ),
             _FormatButton(
               icon: Icons.image,
               label: 'Image',
               isActive: false,
               onPressed: () {
-                // Image insertion will be handled in a future sprint
+                _wrap(context, '![alt](', ')');
               },
             ),
           ],
@@ -543,6 +640,211 @@ class _SaveIndicator extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4),
         child: Icon(icon, size: 18, color: color),
+      ),
+    );
+  }
+}
+
+/// Find & Replace bar shown below the formatting toolbar.
+class _FindReplaceBar extends StatefulWidget {
+  final DocumentEditorState state;
+
+  const _FindReplaceBar({required this.state});
+
+  @override
+  State<_FindReplaceBar> createState() => _FindReplaceBarState();
+}
+
+class _FindReplaceBarState extends State<_FindReplaceBar> {
+  late TextEditingController _findController;
+  late TextEditingController _replaceController;
+
+  @override
+  void initState() {
+    super.initState();
+    _findController = TextEditingController(text: widget.state.findQuery);
+    _replaceController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _findController.dispose();
+    _replaceController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final matchCount = widget.state.findMatches.length;
+    final currentMatch = matchCount > 0 ? widget.state.currentFindIndex + 1 : 0;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        border: Border(
+          bottom: BorderSide(
+            color: theme.colorScheme.outlineVariant,
+            width: 0.5,
+          ),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Find row
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 36,
+                  child: TextField(
+                    controller: _findController,
+                    decoration: InputDecoration(
+                      hintText: 'Find...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(6),
+                        borderSide: BorderSide(
+                          color: theme.colorScheme.outlineVariant,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 0,
+                      ),
+                      isDense: true,
+                      suffixText:
+                          matchCount > 0 ? '$currentMatch/$matchCount' : null,
+                      suffixStyle: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    style: theme.textTheme.bodySmall,
+                    onChanged: (value) {
+                      context
+                          .read<DocumentEditorBloc>()
+                          .add(FindInDocument(value));
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              // Previous match
+              IconButton(
+                icon: const Icon(Icons.keyboard_arrow_up, size: 20),
+                onPressed: matchCount > 0
+                    ? () => context
+                        .read<DocumentEditorBloc>()
+                        .add(const NavigateFindMatch(forward: false))
+                    : null,
+                tooltip: 'Previous',
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(
+                  minWidth: 32,
+                  minHeight: 32,
+                ),
+              ),
+              // Next match
+              IconButton(
+                icon: const Icon(Icons.keyboard_arrow_down, size: 20),
+                onPressed: matchCount > 0
+                    ? () => context
+                        .read<DocumentEditorBloc>()
+                        .add(const NavigateFindMatch(forward: true))
+                    : null,
+                tooltip: 'Next',
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(
+                  minWidth: 32,
+                  minHeight: 32,
+                ),
+              ),
+              // Close
+              IconButton(
+                icon: const Icon(Icons.close, size: 18),
+                onPressed: () => context
+                    .read<DocumentEditorBloc>()
+                    .add(const ToggleFindReplace()),
+                tooltip: 'Close',
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(
+                  minWidth: 32,
+                  minHeight: 32,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          // Replace row
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 36,
+                  child: TextField(
+                    controller: _replaceController,
+                    decoration: InputDecoration(
+                      hintText: 'Replace...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(6),
+                        borderSide: BorderSide(
+                          color: theme.colorScheme.outlineVariant,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 0,
+                      ),
+                      isDense: true,
+                    ),
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              // Replace single
+              TextButton(
+                onPressed: matchCount > 0
+                    ? () => context.read<DocumentEditorBloc>().add(
+                          ReplaceInDocument(
+                            _findController.text,
+                            _replaceController.text,
+                          ),
+                        )
+                    : null,
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  minimumSize: const Size(0, 32),
+                ),
+                child: const Text('Replace'),
+              ),
+              // Replace all
+              TextButton(
+                onPressed: matchCount > 0
+                    ? () => context.read<DocumentEditorBloc>().add(
+                          ReplaceInDocument(
+                            _findController.text,
+                            _replaceController.text,
+                            replaceAll: true,
+                          ),
+                        )
+                    : null,
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  minimumSize: const Size(0, 32),
+                ),
+                child: const Text('All'),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

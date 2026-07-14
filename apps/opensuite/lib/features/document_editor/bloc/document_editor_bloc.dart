@@ -130,6 +130,50 @@ class RedoChange extends DocumentEditorEvent {
   const RedoChange();
 }
 
+/// Toggle find/replace bar visibility.
+class ToggleFindReplace extends DocumentEditorEvent {
+  const ToggleFindReplace();
+}
+
+/// Find text in document.
+class FindInDocument extends DocumentEditorEvent {
+  final String query;
+  const FindInDocument(this.query);
+
+  @override
+  List<Object?> get props => [query];
+}
+
+/// Replace text in document.
+class ReplaceInDocument extends DocumentEditorEvent {
+  final String find;
+  final String replace;
+  final bool replaceAll;
+  const ReplaceInDocument(this.find, this.replace, {this.replaceAll = false});
+
+  @override
+  List<Object?> get props => [find, replace, replaceAll];
+}
+
+/// Navigate to next/previous find match.
+class NavigateFindMatch extends DocumentEditorEvent {
+  final bool forward;
+  const NavigateFindMatch({this.forward = true});
+
+  @override
+  List<Object?> get props => [forward];
+}
+
+/// Insert text at a specific position in the content.
+class InsertAtCursor extends DocumentEditorEvent {
+  final String text;
+  final int position;
+  const InsertAtCursor(this.text, this.position);
+
+  @override
+  List<Object?> get props => [text, position];
+}
+
 // --- State ---
 
 /// Status of the document editor.
@@ -181,6 +225,21 @@ class DocumentEditorState extends Equatable {
   /// Redo history stack.
   final List<String> redoStack;
 
+  /// Whether the find/replace bar is visible.
+  final bool showFindReplace;
+
+  /// Current find query.
+  final String findQuery;
+
+  /// Current replace query.
+  final String replaceQuery;
+
+  /// List of match positions (start indices) in the content.
+  final List<int> findMatches;
+
+  /// Index of the currently highlighted match.
+  final int currentFindIndex;
+
   const DocumentEditorState({
     this.status = DocumentEditorStatus.initial,
     this.documents = const [],
@@ -194,6 +253,11 @@ class DocumentEditorState extends Equatable {
     this.characterCount = 0,
     this.undoStack = const [],
     this.redoStack = const [],
+    this.showFindReplace = false,
+    this.findQuery = '',
+    this.replaceQuery = '',
+    this.findMatches = const [],
+    this.currentFindIndex = 0,
   });
 
   DocumentEditorState copyWith({
@@ -209,6 +273,11 @@ class DocumentEditorState extends Equatable {
     int? characterCount,
     List<String>? undoStack,
     List<String>? redoStack,
+    bool? showFindReplace,
+    String? findQuery,
+    String? replaceQuery,
+    List<int>? findMatches,
+    int? currentFindIndex,
   }) {
     return DocumentEditorState(
       status: status ?? this.status,
@@ -223,6 +292,11 @@ class DocumentEditorState extends Equatable {
       characterCount: characterCount ?? this.characterCount,
       undoStack: undoStack ?? this.undoStack,
       redoStack: redoStack ?? this.redoStack,
+      showFindReplace: showFindReplace ?? this.showFindReplace,
+      findQuery: findQuery ?? this.findQuery,
+      replaceQuery: replaceQuery ?? this.replaceQuery,
+      findMatches: findMatches ?? this.findMatches,
+      currentFindIndex: currentFindIndex ?? this.currentFindIndex,
     );
   }
 
@@ -240,6 +314,10 @@ class DocumentEditorState extends Equatable {
         characterCount,
         undoStack.length,
         redoStack.length,
+        showFindReplace,
+        findQuery,
+        findMatches.length,
+        currentFindIndex,
       ];
 }
 
@@ -275,6 +353,11 @@ class DocumentEditorBloc
     on<ToggleToolbar>(_onToggleToolbar);
     on<UndoChange>(_onUndo);
     on<RedoChange>(_onRedo);
+    on<ToggleFindReplace>(_onToggleFindReplace);
+    on<FindInDocument>(_onFindInDocument);
+    on<ReplaceInDocument>(_onReplaceInDocument);
+    on<NavigateFindMatch>(_onNavigateFindMatch);
+    on<InsertAtCursor>(_onInsertAtCursor);
   }
 
   Future<void> _onLoadDocuments(
@@ -593,6 +676,176 @@ class DocumentEditorBloc
     _autoSaveTimer = Timer(_autoSaveDelay, () {
       add(const AutoSaveDocument());
     });
+  }
+
+  // --- Find & Replace ---
+
+  void _onToggleFindReplace(
+    ToggleFindReplace event,
+    Emitter<DocumentEditorState> emit,
+  ) {
+    emit(state.copyWith(
+      showFindReplace: !state.showFindReplace,
+      findMatches: const [],
+      currentFindIndex: 0,
+      findQuery: '',
+    ));
+  }
+
+  void _onFindInDocument(
+    FindInDocument event,
+    Emitter<DocumentEditorState> emit,
+  ) {
+    if (event.query.isEmpty || state.currentDocument == null) {
+      emit(state.copyWith(
+        findQuery: event.query,
+        findMatches: const [],
+        currentFindIndex: 0,
+      ));
+      return;
+    }
+
+    final content = state.currentDocument!.plainText;
+    final query = event.query.toLowerCase();
+    final contentLower = content.toLowerCase();
+    final matches = <int>[];
+
+    int start = 0;
+    while (true) {
+      final index = contentLower.indexOf(query, start);
+      if (index == -1) break;
+      matches.add(index);
+      start = index + query.length;
+    }
+
+    emit(state.copyWith(
+      findQuery: event.query,
+      findMatches: matches,
+      currentFindIndex: matches.isNotEmpty ? 0 : 0,
+    ));
+  }
+
+  void _onReplaceInDocument(
+    ReplaceInDocument event,
+    Emitter<DocumentEditorState> emit,
+  ) {
+    if (state.currentDocument == null || event.find.isEmpty) return;
+
+    final content = state.currentDocument!.plainText;
+    String newContent;
+
+    if (event.replaceAll) {
+      // Replace all occurrences (case-insensitive)
+      newContent = content;
+      final findLower = event.find.toLowerCase();
+      int start = 0;
+      final buffer = StringBuffer();
+      final contentLower = content.toLowerCase();
+
+      while (true) {
+        final index = contentLower.indexOf(findLower, start);
+        if (index == -1) {
+          buffer.write(content.substring(start));
+          break;
+        }
+        buffer.write(content.substring(start, index));
+        buffer.write(event.replace);
+        start = index + event.find.length;
+      }
+      newContent = buffer.toString();
+    } else {
+      // Replace only current match
+      if (state.findMatches.isEmpty) return;
+      final matchPos = state.findMatches[state.currentFindIndex];
+      newContent = content.substring(0, matchPos) +
+          event.replace +
+          content.substring(matchPos + event.find.length);
+    }
+
+    // Push undo
+    final newUndoStack = List<String>.from(state.undoStack);
+    if (newUndoStack.length >= _maxUndoHistory) {
+      newUndoStack.removeAt(0);
+    }
+    newUndoStack.add(content);
+
+    final updated = state.currentDocument!.copyWith(
+      content: newContent,
+      plainText: newContent,
+      modifiedAt: DateTime.now(),
+    );
+
+    emit(state.copyWith(
+      currentDocument: updated,
+      hasUnsavedChanges: true,
+      wordCount: _countWords(newContent),
+      characterCount: newContent.length,
+      undoStack: newUndoStack,
+      redoStack: const [],
+      findMatches: const [],
+      currentFindIndex: 0,
+    ));
+
+    // Re-run find to update matches
+    if (state.findQuery.isNotEmpty) {
+      add(FindInDocument(state.findQuery));
+    }
+    _scheduleAutoSave();
+  }
+
+  void _onNavigateFindMatch(
+    NavigateFindMatch event,
+    Emitter<DocumentEditorState> emit,
+  ) {
+    if (state.findMatches.isEmpty) return;
+    int newIndex;
+    if (event.forward) {
+      newIndex = (state.currentFindIndex + 1) % state.findMatches.length;
+    } else {
+      newIndex = (state.currentFindIndex - 1 + state.findMatches.length) %
+          state.findMatches.length;
+    }
+    emit(state.copyWith(currentFindIndex: newIndex));
+  }
+
+  void _onInsertAtCursor(
+    InsertAtCursor event,
+    Emitter<DocumentEditorState> emit,
+  ) {
+    if (state.currentDocument == null) return;
+
+    final content = state.currentDocument!.plainText;
+    final pos = event.position.clamp(0, content.length);
+    final newContent =
+        content.substring(0, pos) + event.text + content.substring(pos);
+
+    // Push undo
+    final newUndoStack = List<String>.from(state.undoStack);
+    if (newUndoStack.length >= _maxUndoHistory) {
+      newUndoStack.removeAt(0);
+    }
+    newUndoStack.add(content);
+
+    final updated = state.currentDocument!.copyWith(
+      content: newContent,
+      plainText: newContent,
+      modifiedAt: DateTime.now(),
+    );
+
+    emit(state.copyWith(
+      currentDocument: updated,
+      hasUnsavedChanges: true,
+      wordCount: _countWords(newContent),
+      characterCount: newContent.length,
+      undoStack: newUndoStack,
+      redoStack: const [],
+    ));
+    _scheduleAutoSave();
+  }
+
+  int _countWords(String text) {
+    if (text.trim().isEmpty) return 0;
+    return text.trim().split(RegExp(r'\s+')).length;
   }
 
   @override

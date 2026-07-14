@@ -1,4 +1,5 @@
 import 'package:fileutility_core/fileutility_core.dart';
+import 'package:fileutility_storage/fileutility_storage.dart';
 import 'package:flutter/material.dart';
 
 import 'app.dart';
@@ -9,6 +10,7 @@ import 'di/app_module.dart';
 /// Initializes core services and launches the app.
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  initializeDatabase();
 
   // Initialize configuration
   final config = AppConfig.production();

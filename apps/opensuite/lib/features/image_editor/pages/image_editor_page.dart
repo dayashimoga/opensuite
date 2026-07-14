@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:file_picker/file_picker.dart';
 import 'package:fileutility_ui_kit/fileutility_ui_kit.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../bloc/image_editor_bloc.dart';
@@ -19,7 +20,7 @@ class ImageEditorPage extends StatelessWidget {
       create: (_) {
         final bloc = ImageEditorBloc();
         if (filePath != null) {
-          bloc.add(LoadImage(filePath!));
+          bloc.add(LoadImage(filePath: filePath));
         }
         return bloc;
       },
@@ -35,92 +36,118 @@ class _EditorContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<ImageEditorBloc, ImageEditorState>(
       builder: (context, state) {
-        return Scaffold(
-          appBar: AppBar(
-            title: Text(state.filePath?.split('/').last ?? 'Image Editor'),
-            actions: [
-              // Undo/Redo
-              IconButton(
-                icon: const Icon(Icons.undo, size: 20),
-                onPressed: state.canUndo
-                    ? () =>
-                        context.read<ImageEditorBloc>().add(const UndoEdit())
-                    : null,
-                tooltip: 'Undo',
-              ),
-              IconButton(
-                icon: const Icon(Icons.redo, size: 20),
-                onPressed: state.canRedo
-                    ? () =>
-                        context.read<ImageEditorBloc>().add(const RedoEdit())
-                    : null,
-                tooltip: 'Redo',
-              ),
-              const SizedBox(width: 8),
-              // Reset
-              IconButton(
-                icon: const Icon(Icons.refresh, size: 20),
-                onPressed: state.hasEdits
-                    ? () =>
-                        context.read<ImageEditorBloc>().add(const ResetEdits())
-                    : null,
-                tooltip: 'Reset',
-              ),
-              const SizedBox(width: 8),
-              // Export
-              PopupMenuButton<String>(
-                icon: const Icon(Icons.save_alt, size: 20),
-                tooltip: 'Export',
-                itemBuilder: (_) => const [
-                  PopupMenuItem(value: 'png', child: Text('Export as PNG')),
-                  PopupMenuItem(value: 'jpeg', child: Text('Export as JPEG')),
-                  PopupMenuItem(value: 'webp', child: Text('Export as WebP')),
+        return CallbackShortcuts(
+          bindings: {
+            const SingleActivator(LogicalKeyboardKey.keyZ, control: true): () {
+              context.read<ImageEditorBloc>().add(const UndoEdit());
+            },
+            const SingleActivator(LogicalKeyboardKey.keyY, control: true): () {
+              context.read<ImageEditorBloc>().add(const RedoEdit());
+            },
+            const SingleActivator(LogicalKeyboardKey.keyS, control: true): () {
+              context
+                  .read<ImageEditorBloc>()
+                  .add(const ExportImage(format: 'png'));
+            },
+            const SingleActivator(LogicalKeyboardKey.delete): () {
+              context.read<ImageEditorBloc>().add(const ResetEdits());
+            },
+          },
+          child: Focus(
+            autofocus: true,
+            child: Scaffold(
+              appBar: AppBar(
+                title: Text(state.filePath?.split('/').last ?? 'Image Editor'),
+                actions: [
+                  // Undo/Redo
+                  IconButton(
+                    icon: const Icon(Icons.undo, size: 20),
+                    onPressed: state.canUndo
+                        ? () => context
+                            .read<ImageEditorBloc>()
+                            .add(const UndoEdit())
+                        : null,
+                    tooltip: 'Undo (Ctrl+Z)',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.redo, size: 20),
+                    onPressed: state.canRedo
+                        ? () => context
+                            .read<ImageEditorBloc>()
+                            .add(const RedoEdit())
+                        : null,
+                    tooltip: 'Redo (Ctrl+Y)',
+                  ),
+                  const SizedBox(width: 8),
+                  // Reset
+                  IconButton(
+                    icon: const Icon(Icons.refresh, size: 20),
+                    onPressed: state.hasEdits
+                        ? () => context
+                            .read<ImageEditorBloc>()
+                            .add(const ResetEdits())
+                        : null,
+                    tooltip: 'Reset',
+                  ),
+                  const SizedBox(width: 8),
+                  // Export
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.save_alt, size: 20),
+                    tooltip: 'Export',
+                    itemBuilder: (_) => const [
+                      PopupMenuItem(value: 'png', child: Text('Export as PNG')),
+                      PopupMenuItem(
+                          value: 'jpeg', child: Text('Export as JPEG')),
+                      PopupMenuItem(
+                          value: 'webp', child: Text('Export as WebP')),
+                    ],
+                    onSelected: (format) => context
+                        .read<ImageEditorBloc>()
+                        .add(ExportImage(format: format)),
+                  ),
                 ],
-                onSelected: (format) => context
-                    .read<ImageEditorBloc>()
-                    .add(ExportImage(format: format)),
               ),
-            ],
-          ),
-          body: ResponsiveBuilder(
-            mobile: (context, _) => Column(
-              children: [
-                // Main canvas
-                Expanded(
-                  child: _ImageCanvas(state: state),
+              body: ResponsiveBuilder(
+                mobile: (context, _) => Column(
+                  children: [
+                    // Main canvas
+                    Expanded(
+                      child: _ImageCanvas(state: state),
+                    ),
+                    // Tool selector as horizontal chips
+                    _MobileToolBar(
+                      activeTool: state.activeTool,
+                      onSelectTool: (tool) =>
+                          context.read<ImageEditorBloc>().add(SelectTool(tool)),
+                    ),
+                    // Adjustments panel (scrollable)
+                    SizedBox(
+                      height: 160,
+                      child: _AdjustmentsPanel(state: state),
+                    ),
+                  ],
                 ),
-                // Tool selector as horizontal chips
-                _MobileToolBar(
-                  activeTool: state.activeTool,
-                  onSelectTool: (tool) =>
-                      context.read<ImageEditorBloc>().add(SelectTool(tool)),
+                desktop: (context, _) => Row(
+                  children: [
+                    // Tool sidebar
+                    _ToolSidebar(
+                      activeTool: state.activeTool,
+                      onSelectTool: (tool) =>
+                          context.read<ImageEditorBloc>().add(SelectTool(tool)),
+                    ),
+                    // Main canvas
+                    Expanded(
+                      child: _ImageCanvas(state: state),
+                    ),
+                    // Adjustments panel
+                    _AdjustmentsPanel(state: state),
+                  ],
                 ),
-                // Adjustments panel (scrollable)
-                SizedBox(
-                  height: 160,
-                  child: _AdjustmentsPanel(state: state),
-                ),
-              ],
+              ),
+              // Status bar
+              bottomNavigationBar: _StatusBar(state: state),
             ),
-            desktop: (context, _) => Row(
-              children: [
-                // Tool sidebar
-                _ToolSidebar(
-                  activeTool: state.activeTool,
-                  onSelectTool: (tool) =>
-                      context.read<ImageEditorBloc>().add(SelectTool(tool)),
-                ),
-                // Main canvas
-                Expanded(
-                  child: _ImageCanvas(state: state),
-                ),
-                // Adjustments panel
-                _AdjustmentsPanel(state: state),
-              ],
-            ),
           ),
-          // Status bar
-          bottomNavigationBar: _StatusBar(state: state),
         );
       },
     );
@@ -229,11 +256,15 @@ class _ImageCanvas extends StatelessWidget {
           final result = await FilePicker.platform.pickFiles(
             type: FileType.image,
             allowMultiple: false,
+            withData: true,
           );
           if (result != null && result.files.isNotEmpty) {
-            final path = result.files.single.path;
-            if (path != null && context.mounted) {
-              context.read<ImageEditorBloc>().add(LoadImage(path));
+            final file = result.files.single;
+            if (context.mounted) {
+              context.read<ImageEditorBloc>().add(LoadImage(
+                    filePath: file.path ?? file.name,
+                    imageBytes: file.bytes,
+                  ));
             }
           }
         },
@@ -270,32 +301,39 @@ class _ImageCanvas extends StatelessWidget {
               child: ColorFiltered(
                 colorFilter:
                     ColorFilter.matrix(_buildColorMatrix(state.adjustments)),
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.image,
-                          size: 80,
-                          color:
-                              theme.colorScheme.primary.withValues(alpha: 0.3)),
-                      const SizedBox(height: 8),
-                      Text(
-                        state.filePath?.split('/').last ?? '',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.5),
+                child: state.imageBytes != null
+                    ? Image.memory(
+                        state.imageBytes!,
+                        fit: BoxFit.contain,
+                        width: double.infinity,
+                        height: double.infinity,
+                      )
+                    : Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.image,
+                                size: 80,
+                                color: theme.colorScheme.primary
+                                    .withValues(alpha: 0.3)),
+                            const SizedBox(height: 8),
+                            Text(
+                              state.filePath?.split('/').last ?? '',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.5),
+                              ),
+                            ),
+                            Text(
+                              '${state.imageWidth} × ${state.imageHeight}',
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.3),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      Text(
-                        '${state.imageWidth} × ${state.imageHeight}',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.3),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               ),
             ),
           ),

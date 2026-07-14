@@ -20,4 +20,20 @@ export 'src/shortcuts/keyboard_shortcut_service.dart';
 export 'src/utils/date_utils.dart';
 export 'src/utils/file_utils.dart';
 export 'src/utils/input_sanitizer.dart';
+export 'src/utils/clipboard_service.dart';
 export 'src/utils/string_utils.dart';
+export 'src/utils/undo_redo_manager.dart';
+
+// --- Sprint 1: Shared Services ---
+export 'src/services/save_manager.dart';
+export 'src/services/export_manager.dart';
+export 'src/services/import_manager.dart';
+export 'src/services/background_task_manager.dart';
+export 'src/services/file_format_registry.dart';
+export 'src/services/context_menu_builder.dart';
+
+// --- Formats ---
+export 'src/formats/csv_codec.dart';
+
+// --- Imaging ---
+export 'src/imaging/image_processor.dart';

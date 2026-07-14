@@ -56,6 +56,12 @@ class SlideElement extends Equatable {
   /// Z-index for layer ordering.
   final int zIndex;
 
+  /// Group identifier for grouped elements.
+  final String? groupId;
+
+  /// Opacity (0.0 to 1.0).
+  final double opacity;
+
   const SlideElement({
     required this.id,
     required this.type,
@@ -75,9 +81,12 @@ class SlideElement extends Equatable {
     this.shapeType,
     this.imagePath,
     this.zIndex = 0,
+    this.groupId,
+    this.opacity = 1.0,
   });
 
   SlideElement copyWith({
+    String? id,
     double? x,
     double? y,
     double? width,
@@ -94,9 +103,11 @@ class SlideElement extends Equatable {
     String? shapeType,
     String? imagePath,
     int? zIndex,
+    String? groupId,
+    double? opacity,
   }) {
     return SlideElement(
-      id: id,
+      id: id ?? this.id,
       type: type,
       x: x ?? this.x,
       y: y ?? this.y,
@@ -114,6 +125,8 @@ class SlideElement extends Equatable {
       shapeType: shapeType ?? this.shapeType,
       imagePath: imagePath ?? this.imagePath,
       zIndex: zIndex ?? this.zIndex,
+      groupId: groupId ?? this.groupId,
+      opacity: opacity ?? this.opacity,
     );
   }
 
@@ -136,6 +149,8 @@ class SlideElement extends Equatable {
         if (shapeType != null) 'shapeType': shapeType,
         if (imagePath != null) 'imagePath': imagePath,
         'zIndex': zIndex,
+        if (groupId != null) 'groupId': groupId,
+        'opacity': opacity,
       };
 
   factory SlideElement.fromMap(Map<String, dynamic> map) => SlideElement(
@@ -157,10 +172,13 @@ class SlideElement extends Equatable {
         shapeType: map['shapeType'] as String?,
         imagePath: map['imagePath'] as String?,
         zIndex: (map['zIndex'] as int?) ?? 0,
+        groupId: map['groupId'] as String?,
+        opacity: (map['opacity'] as num?)?.toDouble() ?? 1.0,
       );
 
   @override
-  List<Object?> get props => [id, type, x, y, width, height, content, zIndex];
+  List<Object?> get props =>
+      [id, type, x, y, width, height, content, zIndex, groupId, opacity];
 }
 
 /// Represents a single slide in a presentation.

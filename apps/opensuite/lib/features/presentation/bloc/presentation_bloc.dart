@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:equatable/equatable.dart';
 import 'package:fileutility_core/fileutility_core.dart';
 import 'package:fileutility_storage/fileutility_storage.dart';
@@ -16,6 +17,13 @@ sealed class PresentationEvent extends Equatable {
 
 class LoadPresentations extends PresentationEvent {
   const LoadPresentations();
+}
+
+class SearchPresentations extends PresentationEvent {
+  final String query;
+  const SearchPresentations(this.query);
+  @override
+  List<Object?> get props => [query];
 }
 
 class CreatePresentation extends PresentationEvent {
@@ -161,6 +169,110 @@ class DuplicatePresentationEntry extends PresentationEvent {
   List<Object?> get props => [id];
 }
 
+// --- New events for Sprint 14 ---
+
+class UndoPresentation extends PresentationEvent {
+  const UndoPresentation();
+}
+
+class RedoPresentation extends PresentationEvent {
+  const RedoPresentation();
+}
+
+class BringToFront extends PresentationEvent {
+  final String elementId;
+  const BringToFront(this.elementId);
+  @override
+  List<Object?> get props => [elementId];
+}
+
+class SendToBack extends PresentationEvent {
+  final String elementId;
+  const SendToBack(this.elementId);
+  @override
+  List<Object?> get props => [elementId];
+}
+
+class FormatElement extends PresentationEvent {
+  final String elementId;
+  final String? fontWeight;
+  final String? textAlign;
+  final String? textColor;
+  final double? fontSize;
+  final String? fillColor;
+  final String? borderColor;
+  final double? borderWidth;
+  const FormatElement(
+    this.elementId, {
+    this.fontWeight,
+    this.textAlign,
+    this.textColor,
+    this.fontSize,
+    this.fillColor,
+    this.borderColor,
+    this.borderWidth,
+  });
+  @override
+  List<Object?> get props => [
+        elementId,
+        fontWeight,
+        textAlign,
+        textColor,
+        fontSize,
+        fillColor,
+        borderColor,
+        borderWidth
+      ];
+}
+
+class ReorderSlides extends PresentationEvent {
+  final int oldIndex;
+  final int newIndex;
+  const ReorderSlides(this.oldIndex, this.newIndex);
+  @override
+  List<Object?> get props => [oldIndex, newIndex];
+}
+
+// --- Sprint 3 additions: Rotate, Align, Duplicate, Group ---
+
+class RotateElement extends PresentationEvent {
+  final String elementId;
+  final double degrees;
+  const RotateElement(this.elementId, this.degrees);
+  @override
+  List<Object?> get props => [elementId, degrees];
+}
+
+class AlignElements extends PresentationEvent {
+  final String
+      alignment; // 'left', 'center', 'right', 'top', 'middle', 'bottom'
+  final List<String> elementIds;
+  const AlignElements(this.alignment, this.elementIds);
+  @override
+  List<Object?> get props => [alignment, elementIds];
+}
+
+class DuplicateElement extends PresentationEvent {
+  final String elementId;
+  const DuplicateElement(this.elementId);
+  @override
+  List<Object?> get props => [elementId];
+}
+
+class GroupElements extends PresentationEvent {
+  final List<String> elementIds;
+  const GroupElements(this.elementIds);
+  @override
+  List<Object?> get props => [elementIds];
+}
+
+class UngroupElements extends PresentationEvent {
+  final String groupId;
+  const UngroupElements(this.groupId);
+  @override
+  List<Object?> get props => [groupId];
+}
+
 // --- State ---
 
 enum PresentationStatus {
@@ -174,6 +286,9 @@ enum PresentationStatus {
   error
 }
 
+/// Sentinel for distinguishing 'not set' from explicit null in copyWith.
+const _sentinel = Object();
+
 class PresentationState extends Equatable {
   final PresentationStatus status;
   final List<PresentationEntity> presentations;
@@ -184,6 +299,9 @@ class PresentationState extends Equatable {
   final bool isPresentationMode;
   final bool showSpeakerNotes;
   final bool hasUnsavedChanges;
+  final bool canUndo;
+  final bool canRedo;
+  final String searchQuery;
   final String? errorMessage;
 
   const PresentationState({
@@ -196,6 +314,9 @@ class PresentationState extends Equatable {
     this.isPresentationMode = false,
     this.showSpeakerNotes = true,
     this.hasUnsavedChanges = false,
+    this.canUndo = false,
+    this.canRedo = false,
+    this.searchQuery = '',
     this.errorMessage,
   });
 
@@ -208,10 +329,13 @@ class PresentationState extends Equatable {
     PresentationEntity? currentPresentation,
     List<SlideData>? slides,
     int? activeSlideIndex,
-    String? selectedElementId,
+    Object? selectedElementId = _sentinel,
     bool? isPresentationMode,
     bool? showSpeakerNotes,
     bool? hasUnsavedChanges,
+    bool? canUndo,
+    bool? canRedo,
+    String? searchQuery,
     String? errorMessage,
   }) {
     return PresentationState(
@@ -220,10 +344,15 @@ class PresentationState extends Equatable {
       currentPresentation: currentPresentation ?? this.currentPresentation,
       slides: slides ?? this.slides,
       activeSlideIndex: activeSlideIndex ?? this.activeSlideIndex,
-      selectedElementId: selectedElementId ?? this.selectedElementId,
+      selectedElementId: identical(selectedElementId, _sentinel)
+          ? this.selectedElementId
+          : selectedElementId as String?,
       isPresentationMode: isPresentationMode ?? this.isPresentationMode,
       showSpeakerNotes: showSpeakerNotes ?? this.showSpeakerNotes,
       hasUnsavedChanges: hasUnsavedChanges ?? this.hasUnsavedChanges,
+      canUndo: canUndo ?? this.canUndo,
+      canRedo: canRedo ?? this.canRedo,
+      searchQuery: searchQuery ?? this.searchQuery,
       errorMessage: errorMessage ?? this.errorMessage,
     );
   }
@@ -238,6 +367,7 @@ class PresentationState extends Equatable {
         selectedElementId,
         isPresentationMode,
         hasUnsavedChanges,
+        searchQuery,
         errorMessage
       ];
 }
@@ -247,11 +377,13 @@ class PresentationState extends Equatable {
 class PresentationBloc extends Bloc<PresentationEvent, PresentationState> {
   final PresentationDao _dao;
   Timer? _autoSaveTimer;
+  final UndoRedoManager<List<SlideData>> _undoRedo = UndoRedoManager();
 
   PresentationBloc({required PresentationDao presentationDao})
       : _dao = presentationDao,
         super(const PresentationState()) {
     on<LoadPresentations>(_onLoad);
+    on<SearchPresentations>(_onSearch, transformer: restartable());
     on<CreatePresentation>(_onCreate);
     on<OpenPresentation>(_onOpen);
     on<SelectSlide>(_onSelectSlide);
@@ -273,6 +405,17 @@ class PresentationBloc extends Bloc<PresentationEvent, PresentationState> {
     on<DeletePresentationEntry>(_onDelete);
     on<TogglePresentationFavorite>(_onToggleFavorite);
     on<DuplicatePresentationEntry>(_onDuplicate);
+    on<UndoPresentation>(_onUndo);
+    on<RedoPresentation>(_onRedo);
+    on<BringToFront>(_onBringToFront);
+    on<SendToBack>(_onSendToBack);
+    on<FormatElement>(_onFormatElement);
+    on<ReorderSlides>(_onReorderSlides);
+    on<RotateElement>(_onRotateElement);
+    on<AlignElements>(_onAlignElements);
+    on<DuplicateElement>(_onDuplicateElement);
+    on<GroupElements>(_onGroupElements);
+    on<UngroupElements>(_onUngroupElements);
   }
 
   Future<void> _onLoad(
@@ -280,6 +423,21 @@ class PresentationBloc extends Bloc<PresentationEvent, PresentationState> {
     emit(state.copyWith(status: PresentationStatus.loading));
     try {
       final list = await _dao.getAllPresentations();
+      emit(state.copyWith(
+          status: PresentationStatus.loaded, presentations: list));
+    } catch (e) {
+      emit(
+          state.copyWith(status: PresentationStatus.error, errorMessage: '$e'));
+    }
+  }
+
+  Future<void> _onSearch(
+      SearchPresentations event, Emitter<PresentationState> emit) async {
+    emit(state.copyWith(searchQuery: event.query));
+    try {
+      final list = event.query.isEmpty
+          ? await _dao.getAllPresentations()
+          : await _dao.searchPresentations(event.query);
       emit(state.copyWith(
           status: PresentationStatus.loaded, presentations: list));
     } catch (e) {
@@ -475,34 +633,16 @@ class PresentationBloc extends Bloc<PresentationEvent, PresentationState> {
     final updatedSlide = state.activeSlide!.copyWith(elements: elements);
     final newSlides = List<SlideData>.from(state.slides);
     newSlides[state.activeSlideIndex] = updatedSlide;
-    emit(PresentationState(
-      status: state.status,
-      presentations: state.presentations,
-      currentPresentation: state.currentPresentation,
+    emit(state.copyWith(
       slides: newSlides,
-      activeSlideIndex: state.activeSlideIndex,
       selectedElementId: null,
-      isPresentationMode: state.isPresentationMode,
-      showSpeakerNotes: state.showSpeakerNotes,
       hasUnsavedChanges: true,
-      errorMessage: state.errorMessage,
     ));
     _scheduleAutoSave();
   }
 
   void _onSelectElement(SelectElement event, Emitter<PresentationState> emit) {
-    emit(PresentationState(
-      status: state.status,
-      presentations: state.presentations,
-      currentPresentation: state.currentPresentation,
-      slides: state.slides,
-      activeSlideIndex: state.activeSlideIndex,
-      selectedElementId: event.elementId,
-      isPresentationMode: state.isPresentationMode,
-      showSpeakerNotes: state.showSpeakerNotes,
-      hasUnsavedChanges: state.hasUnsavedChanges,
-      errorMessage: state.errorMessage,
-    ));
+    emit(state.copyWith(selectedElementId: event.elementId));
   }
 
   void _onMoveElement(MoveElement event, Emitter<PresentationState> emit) {
@@ -556,9 +696,15 @@ class PresentationBloc extends Bloc<PresentationEvent, PresentationState> {
 
   void _updateCurrentSlide(
       Emitter<PresentationState> emit, SlideData updatedSlide) {
+    _undoRedo.push(state.slides);
     final newSlides = List<SlideData>.from(state.slides);
     newSlides[state.activeSlideIndex] = updatedSlide;
-    emit(state.copyWith(slides: newSlides, hasUnsavedChanges: true));
+    emit(state.copyWith(
+      slides: newSlides,
+      hasUnsavedChanges: true,
+      canUndo: _undoRedo.canUndo,
+      canRedo: _undoRedo.canRedo,
+    ));
     _scheduleAutoSave();
   }
 
@@ -636,6 +782,215 @@ class PresentationBloc extends Bloc<PresentationEvent, PresentationState> {
       emit(
           state.copyWith(status: PresentationStatus.error, errorMessage: '$e'));
     }
+  }
+
+  void _onUndo(UndoPresentation event, Emitter<PresentationState> emit) {
+    final previous = _undoRedo.undo();
+    if (previous != null) {
+      emit(state.copyWith(
+        slides: previous,
+        hasUnsavedChanges: true,
+        canUndo: _undoRedo.canUndo,
+        canRedo: _undoRedo.canRedo,
+      ));
+    }
+  }
+
+  void _onRedo(RedoPresentation event, Emitter<PresentationState> emit) {
+    final next = _undoRedo.redo();
+    if (next != null) {
+      emit(state.copyWith(
+        slides: next,
+        hasUnsavedChanges: true,
+        canUndo: _undoRedo.canUndo,
+        canRedo: _undoRedo.canRedo,
+      ));
+    }
+  }
+
+  void _onBringToFront(BringToFront event, Emitter<PresentationState> emit) {
+    if (state.activeSlide == null) return;
+    final elements = List<SlideElement>.from(state.activeSlide!.elements);
+    final idx = elements.indexWhere((e) => e.id == event.elementId);
+    if (idx < 0) return;
+    final maxZ =
+        elements.fold<int>(0, (max, e) => e.zIndex > max ? e.zIndex : max);
+    elements[idx] = elements[idx].copyWith(zIndex: maxZ + 1);
+    _updateCurrentSlide(emit, state.activeSlide!.copyWith(elements: elements));
+  }
+
+  void _onSendToBack(SendToBack event, Emitter<PresentationState> emit) {
+    if (state.activeSlide == null) return;
+    final elements = List<SlideElement>.from(state.activeSlide!.elements);
+    final idx = elements.indexWhere((e) => e.id == event.elementId);
+    if (idx < 0) return;
+    final minZ =
+        elements.fold<int>(0, (min, e) => e.zIndex < min ? e.zIndex : min);
+    elements[idx] = elements[idx].copyWith(zIndex: minZ - 1);
+    _updateCurrentSlide(emit, state.activeSlide!.copyWith(elements: elements));
+  }
+
+  void _onFormatElement(FormatElement event, Emitter<PresentationState> emit) {
+    if (state.activeSlide == null) return;
+    final elements = state.activeSlide!.elements.map((e) {
+      if (e.id != event.elementId) return e;
+      return e.copyWith(
+        fontWeight: event.fontWeight,
+        textAlign: event.textAlign,
+        textColor: event.textColor,
+        fontSize: event.fontSize,
+        fillColor: event.fillColor,
+        borderColor: event.borderColor,
+        borderWidth: event.borderWidth,
+      );
+    }).toList();
+    _updateCurrentSlide(emit, state.activeSlide!.copyWith(elements: elements));
+  }
+
+  void _onReorderSlides(ReorderSlides event, Emitter<PresentationState> emit) {
+    _undoRedo.push(state.slides);
+    final slides = List<SlideData>.from(state.slides);
+    final slide = slides.removeAt(event.oldIndex);
+    final newIdx =
+        event.newIndex > event.oldIndex ? event.newIndex - 1 : event.newIndex;
+    slides.insert(newIdx, slide);
+    emit(state.copyWith(
+      slides: slides,
+      activeSlideIndex: newIdx,
+      hasUnsavedChanges: true,
+      canUndo: _undoRedo.canUndo,
+      canRedo: _undoRedo.canRedo,
+    ));
+    _scheduleAutoSave();
+  }
+
+  void _onRotateElement(RotateElement event, Emitter<PresentationState> emit) {
+    if (state.activeSlide == null) return;
+
+    final slide = state.activeSlide!;
+    final elements = slide.elements.map((e) {
+      if (e.id == event.elementId) {
+        return e.copyWith(
+          rotation: (e.rotation + event.degrees) % 360,
+        );
+      }
+      return e;
+    }).toList();
+
+    _updateCurrentSlide(emit, slide.copyWith(elements: elements));
+  }
+
+  void _onAlignElements(AlignElements event, Emitter<PresentationState> emit) {
+    if (state.activeSlide == null || event.elementIds.length < 2) return;
+
+    final slide = state.activeSlide!;
+    final targets =
+        slide.elements.where((e) => event.elementIds.contains(e.id)).toList();
+
+    if (targets.isEmpty) return;
+
+    double? refValue;
+    switch (event.alignment) {
+      case 'left':
+        refValue = targets.map((e) => e.x).reduce((a, b) => a < b ? a : b);
+      case 'right':
+        refValue =
+            targets.map((e) => e.x + e.width).reduce((a, b) => a > b ? a : b);
+      case 'center':
+        final minX = targets.map((e) => e.x).reduce((a, b) => a < b ? a : b);
+        final maxX =
+            targets.map((e) => e.x + e.width).reduce((a, b) => a > b ? a : b);
+        refValue = (minX + maxX) / 2;
+      case 'top':
+        refValue = targets.map((e) => e.y).reduce((a, b) => a < b ? a : b);
+      case 'bottom':
+        refValue =
+            targets.map((e) => e.y + e.height).reduce((a, b) => a > b ? a : b);
+      case 'middle':
+        final minY = targets.map((e) => e.y).reduce((a, b) => a < b ? a : b);
+        final maxY =
+            targets.map((e) => e.y + e.height).reduce((a, b) => a > b ? a : b);
+        refValue = (minY + maxY) / 2;
+    }
+
+    if (refValue == null) return;
+
+    final ref = refValue;
+    final elements = slide.elements.map((e) {
+      if (!event.elementIds.contains(e.id)) return e;
+      switch (event.alignment) {
+        case 'left':
+          return e.copyWith(x: ref);
+        case 'right':
+          return e.copyWith(x: ref - e.width);
+        case 'center':
+          return e.copyWith(x: ref - e.width / 2);
+        case 'top':
+          return e.copyWith(y: ref);
+        case 'bottom':
+          return e.copyWith(y: ref - e.height);
+        case 'middle':
+          return e.copyWith(y: ref - e.height / 2);
+        default:
+          return e;
+      }
+    }).toList();
+
+    _updateCurrentSlide(emit, slide.copyWith(elements: elements));
+  }
+
+  void _onDuplicateElement(
+      DuplicateElement event, Emitter<PresentationState> emit) {
+    if (state.activeSlide == null) return;
+
+    final slide = state.activeSlide!;
+    final source = slide.elements.cast<SlideElement?>().firstWhere(
+          (e) => e!.id == event.elementId,
+          orElse: () => null,
+        );
+    if (source == null) return;
+
+    final duplicate = source.copyWith(
+      id: '${source.id}_dup_${DateTime.now().millisecondsSinceEpoch}',
+      x: source.x + 0.02,
+      y: source.y + 0.02,
+    );
+
+    final elements = [...slide.elements, duplicate];
+    // Use _updateCurrentSlide for undo, then set selected element
+    _updateCurrentSlide(emit, slide.copyWith(elements: elements));
+    emit(state.copyWith(selectedElementId: duplicate.id));
+  }
+
+  void _onGroupElements(GroupElements event, Emitter<PresentationState> emit) {
+    if (state.activeSlide == null || event.elementIds.length < 2) return;
+
+    final slide = state.activeSlide!;
+    final groupId = 'group_${DateTime.now().millisecondsSinceEpoch}';
+
+    final elements = slide.elements.map((e) {
+      if (event.elementIds.contains(e.id)) {
+        return e.copyWith(groupId: groupId);
+      }
+      return e;
+    }).toList();
+
+    _updateCurrentSlide(emit, slide.copyWith(elements: elements));
+  }
+
+  void _onUngroupElements(
+      UngroupElements event, Emitter<PresentationState> emit) {
+    if (state.activeSlide == null) return;
+
+    final slide = state.activeSlide!;
+    final elements = slide.elements.map((e) {
+      if (e.groupId == event.groupId) {
+        return e.copyWith(groupId: '');
+      }
+      return e;
+    }).toList();
+
+    _updateCurrentSlide(emit, slide.copyWith(elements: elements));
   }
 
   void _scheduleAutoSave() {
