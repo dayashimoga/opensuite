@@ -1,8 +1,8 @@
 # OpenSuite — Project Status
 
-## Current Sprint: Sprint 13 — Architecture Overhaul & Gap Closure (v1.5.0)
+## Current Release: Systems Architecture & Root Cause Fixes (v1.6.1+8)
 
-**Status**: 🔧 In Progress
+**Status**: ✅ Complete
 
 **Dates**: July 14, 2026
 

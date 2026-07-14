@@ -895,6 +895,27 @@ class _EditorContentState extends State<_EditorContent> {
       return KeyEventResult.handled;
     }
 
+    // Direct typing into selected cell: when a printable key is pressed without Control/Alt/Meta
+    if (event.character != null &&
+        event.character!.isNotEmpty &&
+        !HardwareKeyboard.instance.isAltPressed &&
+        !HardwareKeyboard.instance.isMetaPressed) {
+      final char = event.character!;
+      if (char.codeUnitAt(0) >= 32 && char.codeUnitAt(0) != 127) {
+        _formulaController.text = char;
+        _formulaController.selection = TextSelection.fromPosition(
+          TextPosition(offset: char.length),
+        );
+        _formulaFocusNode.requestFocus();
+        if (state.selectedCell != null) {
+          context
+              .read<SpreadsheetBloc>()
+              .add(UpdateCell(state.selectedCell!, char));
+        }
+        return KeyEventResult.handled;
+      }
+    }
+
     return KeyEventResult.ignored;
   }
 

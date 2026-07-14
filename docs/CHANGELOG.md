@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.1+8] - 2026-07-14
+
+### Fixed — System Architecture & State Synchronization Root Causes
+- **Notes BLoC Scoping**: Replaced direct DAO instantiation and manual BLoC instance closing in `NoteEditorPage` with top-level `BlocProvider<NotesBloc>` scoping and standard event dispatch.
+- **Spreadsheet On-Cell Keyboard Typing**: Updated `_handleKeyEvent` in `SpreadsheetEditorPage` so pressing printable character keys when a cell is selected automatically focuses the formula bar input node and streams typed characters into active cell state.
+- **Presentation Canvas Element Resizing**: Mapped `onPanUpdate` gestures on slide canvas resize handles directly to `ResizeElement` events.
+- **File Manager Event Routing**: Bound file sorting options directly to `FileManagerBloc` `SortFiles` events and added interactive `RenameFile` dialogs to file tiles.
+
 ## [1.6.0+7] - 2026-07-14
 
 ### Added — Sprint 4: Document Editor Enhancements

@@ -744,6 +744,17 @@ class _SlideCanvas extends StatelessWidget {
                               .clamp(0.0, 1.0);
                           onMoveElement(element.id, newX, newY);
                         },
+                        onResize: (dw, dh) {
+                          final newW =
+                              (element.width + dw / constraints.maxWidth)
+                                  .clamp(0.05, 1.0);
+                          final newH =
+                              (element.height + dh / constraints.maxHeight)
+                                  .clamp(0.05, 1.0);
+                          context
+                              .read<PresentationBloc>()
+                              .add(ResizeElement(element.id, newW, newH));
+                        },
                         onDelete: () => onDeleteElement(element.id),
                       );
                     }).toList(),
@@ -773,6 +784,7 @@ class _CanvasElement extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
   final void Function(double dx, double dy) onMove;
+  final void Function(double dw, double dh) onResize;
   final VoidCallback onDelete;
 
   const _CanvasElement({
@@ -781,6 +793,7 @@ class _CanvasElement extends StatelessWidget {
     required this.isSelected,
     required this.onTap,
     required this.onMove,
+    required this.onResize,
     required this.onDelete,
   });
 
@@ -846,14 +859,19 @@ class _CanvasElement extends StatelessWidget {
               if (isSelected) ...[
                 // Bottom-right resize handle
                 Positioned(
-                  bottom: -4,
-                  right: -4,
-                  child: Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary,
-                      shape: BoxShape.circle,
+                  bottom: -6,
+                  right: -6,
+                  child: GestureDetector(
+                    onPanUpdate: (details) =>
+                        onResize(details.delta.dx, details.delta.dy),
+                    child: Container(
+                      width: 14,
+                      height: 14,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
                     ),
                   ),
                 ),
