@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0+9] - 2026-07-14
+
+### Fixed & Enhanced — Live Cloudflare Deployment Root Cause Fixes
+- **LinePrefixUtils Framework**: Added `LinePrefixUtils` helper in `packages/core` to strip existing list/heading prefixes (`1. `, `- `, `- [ ] `, `> `, `# `) before applying new ones, completely fixing list prefix collisions (e.g. `1. - asdfasdf` in Screenshot 2). Supports multi-line selection formatting across documents & notes.
+- **Presentation Shape Library Dropdown**: Replaced single rectangle shape icon button with a comprehensive Shape Library Popup Menu offering 8 vector geometric shapes (Rectangle, Circle, Triangle, Diamond, Star, Arrow, Line, Callout).
+- **Image Editor Interactive Crop Box Canvas Overlay**: Rendered draggable/scalable crop outline box with corner handles directly on the image canvas matching live right-panel aspect ratio chips (`Free`, `16:9`, `4:3`, `1:1`, `Passport 2x2`).
+
 ## [1.6.1+8] - 2026-07-14
 
 ### Fixed — System Architecture & State Synchronization Root Causes

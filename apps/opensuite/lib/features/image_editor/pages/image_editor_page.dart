@@ -285,59 +285,110 @@ class _ImageCanvas extends StatelessWidget {
                 state.adjustments.flipHorizontal ? -1.0 : 1.0,
                 state.adjustments.flipVertical ? -1.0 : 1.0,
               ),
-            child: Container(
-              width: 600,
-              height: 400,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.2),
-                    blurRadius: 16,
-                    offset: const Offset(0, 4),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: 600,
+                  height: 400,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ColorFiltered(
+                    colorFilter: ColorFilter.matrix(
+                        _buildColorMatrix(state.adjustments)),
+                    child: state.imageBytes != null
+                        ? Image.memory(
+                            state.imageBytes!,
+                            fit: BoxFit.contain,
+                            width: double.infinity,
+                            height: double.infinity,
+                          )
+                        : Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.image,
+                                    size: 80,
+                                    color: theme.colorScheme.primary
+                                        .withValues(alpha: 0.3)),
+                                const SizedBox(height: 8),
+                                Text(
+                                  state.filePath?.split('/').last ?? '',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.onSurface
+                                        .withValues(alpha: 0.5),
+                                  ),
+                                ),
+                                Text(
+                                  '${state.imageWidth} × ${state.imageHeight}',
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: theme.colorScheme.onSurface
+                                        .withValues(alpha: 0.3),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                  ),
+                ),
+                if (state.activeTool == 'crop') ...[
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.white, width: 2),
+                        color: Colors.blue.withValues(alpha: 0.1),
+                      ),
+                      child: Stack(
+                        children: [
+                          Positioned(
+                            top: 0,
+                            left: 0,
+                            child: _cropHandle(theme),
+                          ),
+                          Positioned(
+                            top: 0,
+                            right: 0,
+                            child: _cropHandle(theme),
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            left: 0,
+                            child: _cropHandle(theme),
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: _cropHandle(theme),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
-              ),
-              child: ColorFiltered(
-                colorFilter:
-                    ColorFilter.matrix(_buildColorMatrix(state.adjustments)),
-                child: state.imageBytes != null
-                    ? Image.memory(
-                        state.imageBytes!,
-                        fit: BoxFit.contain,
-                        width: double.infinity,
-                        height: double.infinity,
-                      )
-                    : Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.image,
-                                size: 80,
-                                color: theme.colorScheme.primary
-                                    .withValues(alpha: 0.3)),
-                            const SizedBox(height: 8),
-                            Text(
-                              state.filePath?.split('/').last ?? '',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurface
-                                    .withValues(alpha: 0.5),
-                              ),
-                            ),
-                            Text(
-                              '${state.imageWidth} × ${state.imageHeight}',
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: theme.colorScheme.onSurface
-                                    .withValues(alpha: 0.3),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-              ),
+              ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _cropHandle(ThemeData theme) {
+    return Container(
+      width: 14,
+      height: 14,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary,
+        shape: BoxShape.rectangle,
+        border: Border.all(color: Colors.white, width: 2),
       ),
     );
   }

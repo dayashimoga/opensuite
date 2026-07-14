@@ -431,19 +431,10 @@ class _MarkdownToolbar extends StatelessWidget {
   }
 
   void _prefix(String prefix) {
-    final text = controller.text;
-    final sel = controller.selection;
-    if (!sel.isValid) return;
-
-    // Find the start of the current line
-    int lineStart = sel.start;
-    while (lineStart > 0 && text[lineStart - 1] != '\n') {
-      lineStart--;
-    }
-
-    controller.text = text.replaceRange(lineStart, lineStart, prefix);
-    controller.selection =
-        TextSelection.collapsed(offset: sel.start + prefix.length);
+    LinePrefixUtils.applyPrefix(
+      controller: controller,
+      prefix: prefix,
+    );
     onChanged();
   }
 

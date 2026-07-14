@@ -150,10 +150,77 @@ class _EditorContentState extends State<_EditorContent> {
                     onPressed: () => _addTextBox(context),
                     tooltip: 'Add Text',
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.crop_square, size: 20),
-                    onPressed: () => _addShape(context),
-                    tooltip: 'Add Shape',
+                  // Shape Library Dropdown
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.category_outlined, size: 20),
+                    tooltip: 'Insert Shape',
+                    itemBuilder: (_) => const [
+                      PopupMenuItem(
+                        value: 'rectangle',
+                        child: Row(children: [
+                          Icon(Icons.crop_square, size: 18),
+                          SizedBox(width: 8),
+                          Text('Rectangle'),
+                        ]),
+                      ),
+                      PopupMenuItem(
+                        value: 'circle',
+                        child: Row(children: [
+                          Icon(Icons.circle_outlined, size: 18),
+                          SizedBox(width: 8),
+                          Text('Circle'),
+                        ]),
+                      ),
+                      PopupMenuItem(
+                        value: 'triangle',
+                        child: Row(children: [
+                          Icon(Icons.change_history, size: 18),
+                          SizedBox(width: 8),
+                          Text('Triangle'),
+                        ]),
+                      ),
+                      PopupMenuItem(
+                        value: 'diamond',
+                        child: Row(children: [
+                          Icon(Icons.details, size: 18),
+                          SizedBox(width: 8),
+                          Text('Diamond'),
+                        ]),
+                      ),
+                      PopupMenuItem(
+                        value: 'star',
+                        child: Row(children: [
+                          Icon(Icons.star_outline, size: 18),
+                          SizedBox(width: 8),
+                          Text('Star'),
+                        ]),
+                      ),
+                      PopupMenuItem(
+                        value: 'arrow',
+                        child: Row(children: [
+                          Icon(Icons.arrow_forward, size: 18),
+                          SizedBox(width: 8),
+                          Text('Arrow'),
+                        ]),
+                      ),
+                      PopupMenuItem(
+                        value: 'line',
+                        child: Row(children: [
+                          Icon(Icons.horizontal_rule, size: 18),
+                          SizedBox(width: 8),
+                          Text('Line'),
+                        ]),
+                      ),
+                      PopupMenuItem(
+                        value: 'callout',
+                        child: Row(children: [
+                          Icon(Icons.chat_bubble_outline, size: 18),
+                          SizedBox(width: 8),
+                          Text('Callout'),
+                        ]),
+                      ),
+                    ],
+                    onSelected: (shapeType) => _addShape(context, shapeType),
                   ),
                   IconButton(
                     icon: const Icon(Icons.image_outlined, size: 20),
@@ -273,7 +340,7 @@ class _EditorContentState extends State<_EditorContent> {
         )));
   }
 
-  void _addShape(BuildContext context) {
+  void _addShape(BuildContext context, [String shapeType = 'rectangle']) {
     context.read<PresentationBloc>().add(AddElement(SlideElement(
           id: 'shape_${DateTime.now().microsecondsSinceEpoch}',
           type: 'shape',
@@ -281,7 +348,7 @@ class _EditorContentState extends State<_EditorContent> {
           y: 0.3,
           width: 0.2,
           height: 0.2,
-          shapeType: 'rectangle',
+          shapeType: shapeType,
           fillColor: '#4A90D9',
         )));
   }
