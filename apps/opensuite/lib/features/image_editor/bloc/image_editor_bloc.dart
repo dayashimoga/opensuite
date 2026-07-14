@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:equatable/equatable.dart';
+import 'package:fileutility_core/fileutility_core.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'dart:typed_data';
@@ -78,6 +80,20 @@ class SetSaturation extends ImageEditorEvent {
   List<Object?> get props => [value];
 }
 
+class SetHue extends ImageEditorEvent {
+  final double value; // -180 to 180
+  const SetHue(this.value);
+  @override
+  List<Object?> get props => [value];
+}
+
+class SetExposure extends ImageEditorEvent {
+  final double value; // -1.0 to 1.0
+  const SetExposure(this.value);
+  @override
+  List<Object?> get props => [value];
+}
+
 class FlipImage extends ImageEditorEvent {
   final bool horizontal;
   const FlipImage({this.horizontal = true});
@@ -106,7 +122,7 @@ class ExportImage extends ImageEditorEvent {
 }
 
 class SelectTool extends ImageEditorEvent {
-  final String tool; // 'crop', 'rotate', 'filter', 'adjust', 'resize'
+  final String tool; // 'crop', 'rotate', 'filter', 'adjust', 'resize', 'draw'
   const SelectTool(this.tool);
   @override
   List<Object?> get props => [tool];
@@ -128,34 +144,47 @@ class ImageAdjustments extends Equatable {
   final double brightness;
   final double contrast;
   final double saturation;
+  final double hue;
+  final double exposure;
   final double rotation;
   final bool flipHorizontal;
   final bool flipVertical;
+  final ui.Rect? cropRect;
 
   const ImageAdjustments({
     this.brightness = 0.0,
     this.contrast = 1.0,
     this.saturation = 1.0,
+    this.hue = 0.0,
+    this.exposure = 0.0,
     this.rotation = 0.0,
     this.flipHorizontal = false,
     this.flipVertical = false,
+    this.cropRect,
   });
 
   ImageAdjustments copyWith({
     double? brightness,
     double? contrast,
     double? saturation,
+    double? hue,
+    double? exposure,
     double? rotation,
     bool? flipHorizontal,
     bool? flipVertical,
+    ui.Rect? cropRect,
+    bool clearCrop = false,
   }) {
     return ImageAdjustments(
       brightness: brightness ?? this.brightness,
       contrast: contrast ?? this.contrast,
       saturation: saturation ?? this.saturation,
+      hue: hue ?? this.hue,
+      exposure: exposure ?? this.exposure,
       rotation: rotation ?? this.rotation,
       flipHorizontal: flipHorizontal ?? this.flipHorizontal,
       flipVertical: flipVertical ?? this.flipVertical,
+      cropRect: clearCrop ? null : (cropRect ?? this.cropRect),
     );
   }
 
@@ -164,9 +193,12 @@ class ImageAdjustments extends Equatable {
         brightness,
         contrast,
         saturation,
+        hue,
+        exposure,
         rotation,
         flipHorizontal,
-        flipVertical
+        flipVertical,
+        cropRect,
       ];
 }
 
@@ -174,6 +206,7 @@ class ImageEditorState extends Equatable {
   final ImageEditorStatus status;
   final String? filePath;
   final Uint8List? imageBytes;
+  final Uint8List? exportedBytes;
   final int imageWidth;
   final int imageHeight;
   final String activeTool;
@@ -187,6 +220,7 @@ class ImageEditorState extends Equatable {
     this.status = ImageEditorStatus.initial,
     this.filePath,
     this.imageBytes,
+    this.exportedBytes,
     this.imageWidth = 0,
     this.imageHeight = 0,
     this.activeTool = 'adjust',
@@ -204,6 +238,7 @@ class ImageEditorState extends Equatable {
     ImageEditorStatus? status,
     String? filePath,
     Uint8List? imageBytes,
+    Uint8List? exportedBytes,
     int? imageWidth,
     int? imageHeight,
     String? activeTool,
@@ -217,6 +252,7 @@ class ImageEditorState extends Equatable {
       status: status ?? this.status,
       filePath: filePath ?? this.filePath,
       imageBytes: imageBytes ?? this.imageBytes,
+      exportedBytes: exportedBytes ?? this.exportedBytes,
       imageWidth: imageWidth ?? this.imageWidth,
       imageHeight: imageHeight ?? this.imageHeight,
       activeTool: activeTool ?? this.activeTool,
@@ -248,9 +284,12 @@ class ImageEditorBloc extends Bloc<ImageEditorEvent, ImageEditorState> {
   ImageEditorBloc() : super(const ImageEditorState()) {
     on<LoadImage>(_onLoad);
     on<RotateImage>(_onRotate);
+    on<CropImage>(_onCrop); // FIX: Was missing — CropImage handler now registered
     on<SetBrightness>(_onBrightness);
     on<SetContrast>(_onContrast);
     on<SetSaturation>(_onSaturation);
+    on<SetHue>(_onHue);
+    on<SetExposure>(_onExposure);
     on<FlipImage>(_onFlip);
     on<UndoEdit>(_onUndo);
     on<RedoEdit>(_onRedo);
@@ -276,11 +315,23 @@ class ImageEditorBloc extends Bloc<ImageEditorEvent, ImageEditorState> {
             'Failed to load image bytes: filePath and imageBytes are both null');
       }
 
+      // Decode to get actual dimensions
+      int width = 1920;
+      int height = 1080;
+      try {
+        final image = await ImageProcessor.decodeImage(bytes);
+        width = image.width;
+        height = image.height;
+        image.dispose();
+      } catch (_) {
+        // Fallback to default dimensions if decode fails
+      }
+
       emit(state.copyWith(
         status: ImageEditorStatus.loaded,
         imageBytes: bytes,
-        imageWidth: 1920,
-        imageHeight: 1080,
+        imageWidth: width,
+        imageHeight: height,
       ));
     } catch (e) {
       emit(state.copyWith(status: ImageEditorStatus.error, errorMessage: '$e'));
@@ -300,6 +351,31 @@ class ImageEditorBloc extends Bloc<ImageEditorEvent, ImageEditorState> {
     final newRotation = (state.adjustments.rotation + event.degrees) % 360;
     emit(state.copyWith(
       adjustments: state.adjustments.copyWith(rotation: newRotation),
+    ));
+  }
+
+  /// FIX: CropImage handler — was never registered in original code.
+  ///
+  /// Applies crop by storing the crop rectangle in adjustments.
+  /// The actual pixel cropping happens during export via [ImageProcessor].
+  void _onCrop(CropImage event, Emitter<ImageEditorState> emit) {
+    _pushUndo(emit);
+
+    final cropRect = ui.Rect.fromLTRB(
+      event.left.clamp(0.0, state.imageWidth.toDouble()),
+      event.top.clamp(0.0, state.imageHeight.toDouble()),
+      event.right.clamp(0.0, state.imageWidth.toDouble()),
+      event.bottom.clamp(0.0, state.imageHeight.toDouble()),
+    );
+
+    // Update image dimensions to reflect crop
+    final newWidth = cropRect.width.toInt();
+    final newHeight = cropRect.height.toInt();
+
+    emit(state.copyWith(
+      adjustments: state.adjustments.copyWith(cropRect: cropRect),
+      imageWidth: newWidth > 0 ? newWidth : state.imageWidth,
+      imageHeight: newHeight > 0 ? newHeight : state.imageHeight,
     ));
   }
 
@@ -324,6 +400,22 @@ class ImageEditorBloc extends Bloc<ImageEditorEvent, ImageEditorState> {
     emit(state.copyWith(
       adjustments:
           state.adjustments.copyWith(saturation: event.value.clamp(0.0, 2.0)),
+    ));
+  }
+
+  void _onHue(SetHue event, Emitter<ImageEditorState> emit) {
+    _pushUndo(emit);
+    emit(state.copyWith(
+      adjustments:
+          state.adjustments.copyWith(hue: event.value.clamp(-180.0, 180.0)),
+    ));
+  }
+
+  void _onExposure(SetExposure event, Emitter<ImageEditorState> emit) {
+    _pushUndo(emit);
+    emit(state.copyWith(
+      adjustments:
+          state.adjustments.copyWith(exposure: event.value.clamp(-1.0, 1.0)),
     ));
   }
 
@@ -372,17 +464,48 @@ class ImageEditorBloc extends Bloc<ImageEditorEvent, ImageEditorState> {
     emit(state.copyWith(imageWidth: event.width, imageHeight: event.height));
   }
 
+  /// FIX: Real export using ImageProcessor instead of fake Future.delayed.
+  ///
+  /// Applies all adjustments (brightness, contrast, saturation, rotation,
+  /// flip, crop, resize) to actual pixel data and produces real PNG bytes.
   Future<void> _onExport(
       ExportImage event, Emitter<ImageEditorState> emit) async {
+    if (state.imageBytes == null) return;
+
     emit(state.copyWith(status: ImageEditorStatus.saving));
     try {
-      // In production, apply adjustments and save to the chosen format
-      await Future.delayed(const Duration(milliseconds: 500));
-      emit(state.copyWith(status: ImageEditorStatus.saved, hasEdits: false));
+      final adj = state.adjustments;
+
+      // Combine exposure with brightness for the processor
+      final effectiveBrightness = (adj.brightness + adj.exposure).clamp(-1.0, 1.0);
+
+      final exportedBytes = await ImageProcessor.renderWithAdjustments(
+        sourceBytes: state.imageBytes!,
+        brightness: effectiveBrightness,
+        contrast: adj.contrast,
+        saturation: adj.saturation,
+        rotation: adj.rotation,
+        flipHorizontal: adj.flipHorizontal,
+        flipVertical: adj.flipVertical,
+        targetWidth: state.imageWidth > 0 ? state.imageWidth : null,
+        targetHeight: state.imageHeight > 0 ? state.imageHeight : null,
+        cropRect: adj.cropRect,
+      );
+
+      emit(state.copyWith(
+        status: ImageEditorStatus.saved,
+        exportedBytes: exportedBytes,
+        hasEdits: false,
+      ));
+
+      // Brief pause to show saved indicator
       await Future.delayed(const Duration(milliseconds: 500));
       emit(state.copyWith(status: ImageEditorStatus.loaded));
     } catch (e) {
-      emit(state.copyWith(status: ImageEditorStatus.error, errorMessage: '$e'));
+      emit(state.copyWith(
+        status: ImageEditorStatus.error,
+        errorMessage: 'Export failed: $e',
+      ));
     }
   }
 }

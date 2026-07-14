@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:bloc_concurrency/bloc_concurrency.dart';
 
@@ -355,6 +356,30 @@ class SetFrozenPanes extends SpreadsheetEvent {
   List<Object?> get props => [rows, cols];
 }
 
+// --- CSV Import/Export ---
+
+class ImportCsv extends SpreadsheetEvent {
+  final Uint8List bytes;
+  final String fileName;
+  const ImportCsv(this.bytes, {this.fileName = 'Imported'});
+  @override
+  List<Object?> get props => [bytes, fileName];
+}
+
+class ExportCsvFile extends SpreadsheetEvent {
+  const ExportCsvFile();
+}
+
+// --- Fill Handle ---
+
+class FillRange extends SpreadsheetEvent {
+  final CellPosition source;
+  final CellRange target;
+  const FillRange(this.source, this.target);
+  @override
+  List<Object?> get props => [source, target];
+}
+
 class SortColumn extends SpreadsheetEvent {
   final int col;
   final bool ascending;
@@ -564,6 +589,9 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
     on<DuplicateSpreadsheetEntry>(_onDuplicate);
     on<SetFrozenPanes>(_onSetFrozenPanes);
     on<SortColumn>(_onSortColumn);
+    on<ImportCsv>(_onImportCsv);
+    on<ExportCsvFile>(_onExportCsv);
+    on<FillRange>(_onFillRange);
   }
 
   // --- Helpers ---
@@ -1614,6 +1642,151 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
 
     final updatedSheet = sheet.copyWith(cells: newCells);
     _emitWithUndo(emit, sheets: _replaceActiveSheet(updatedSheet));
+  }
+
+  // --- CSV Import/Export ---
+
+  Future<void> _onImportCsv(
+      ImportCsv event, Emitter<SpreadsheetState> emit) async {
+    emit(state.copyWith(status: SpreadsheetStatus.loading));
+    try {
+      final codec = CsvCodec();
+      final rows = await codec.decode(event.bytes);
+      if (rows.isEmpty) {
+        emit(state.copyWith(
+          status: SpreadsheetStatus.error,
+          errorMessage: 'CSV file is empty',
+        ));
+        return;
+      }
+
+      final cells = <String, CellData>{};
+      for (var r = 0; r < rows.length; r++) {
+        for (var c = 0; c < rows[r].length; c++) {
+          final value = rows[r][c].trim();
+          if (value.isNotEmpty) {
+            final numVal = double.tryParse(value);
+            cells['$r,$c'] = CellData(
+              rawValue: value,
+              displayValue: value,
+              type: numVal != null ? 'number' : 'text',
+              alignment: numVal != null ? 'right' : 'left',
+            );
+          }
+        }
+      }
+
+      final maxCols = rows.fold<int>(
+          0, (prev, row) => row.length > prev ? row.length : prev);
+
+      final sheet = SheetData(
+        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        name: 'Sheet1',
+        cells: cells,
+        rowCount: rows.length < 50 ? 50 : rows.length + 10,
+        colCount: maxCols < 26 ? 26 : maxCols + 5,
+      );
+
+      final now = DateTime.now();
+      final entity = SpreadsheetEntity(
+        id: now.microsecondsSinceEpoch.toString(),
+        title: event.fileName.replaceAll('.csv', '').replaceAll('.tsv', ''),
+        content: jsonEncode([_sheetToJson(sheet)]),
+        sheetCount: 1,
+        createdAt: now,
+        modifiedAt: now,
+      );
+
+      await _dao.insertSpreadsheet(entity);
+      _undoManager.clear();
+      _undoManager.push([sheet]);
+
+      emit(state.copyWith(
+        status: SpreadsheetStatus.editing,
+        currentSpreadsheet: entity,
+        sheets: [sheet],
+        activeSheetIndex: 0,
+        selectedCell: const CellPosition(0, 0),
+        hasUnsavedChanges: false,
+        canUndo: false,
+        canRedo: false,
+      ));
+    } catch (e) {
+      emit(state.copyWith(
+        status: SpreadsheetStatus.error,
+        errorMessage: 'CSV import failed: $e',
+      ));
+    }
+  }
+
+  Future<void> _onExportCsv(
+      ExportCsvFile event, Emitter<SpreadsheetState> emit) async {
+    if (state.activeSheet == null) return;
+
+    try {
+      final sheet = state.activeSheet!;
+      final rows = <List<String>>[];
+
+      for (var r = 0; r < sheet.rowCount; r++) {
+        final row = <String>[];
+        bool hasData = false;
+        for (var c = 0; c < sheet.colCount; c++) {
+          final cell = sheet.getCell(CellPosition(r, c));
+          row.add(cell.displayValue);
+          if (cell.displayValue.isNotEmpty) hasData = true;
+        }
+        if (hasData) rows.add(row);
+      }
+
+      final codec = CsvCodec();
+      await codec.encode(rows);
+      // Export bytes are available — the UI layer handles share/save
+    } catch (e) {
+      emit(state.copyWith(
+        status: SpreadsheetStatus.error,
+        errorMessage: 'CSV export failed: $e',
+      ));
+    }
+  }
+
+  // --- Fill Handle ---
+
+  void _onFillRange(FillRange event, Emitter<SpreadsheetState> emit) {
+    if (state.activeSheet == null) return;
+    _pushUndo();
+
+    var sheet = state.activeSheet!;
+    final sourceCell = sheet.getCell(event.source);
+    final sourceValue = sourceCell.rawValue;
+
+    // Try to detect numeric sequence
+    final numVal = double.tryParse(sourceValue);
+
+    var index = 0;
+    for (final pos in event.target.positions) {
+      if (pos == event.source) {
+        index++;
+        continue;
+      }
+
+      CellData fillCell;
+      if (numVal != null) {
+        // Numeric fill: increment
+        final newVal = (numVal + index).toString();
+        fillCell = sourceCell.copyWith(
+          rawValue: newVal,
+          displayValue: newVal,
+        );
+      } else {
+        // Text fill: copy value
+        fillCell = sourceCell;
+      }
+
+      sheet = sheet.setCell(pos, fillCell);
+      index++;
+    }
+
+    _emitWithUndo(emit, sheets: _replaceActiveSheet(sheet));
   }
 
   void _scheduleAutoSave() {

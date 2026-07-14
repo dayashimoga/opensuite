@@ -233,6 +233,45 @@ class ReorderSlides extends PresentationEvent {
   List<Object?> get props => [oldIndex, newIndex];
 }
 
+// --- Sprint 3 additions: Rotate, Align, Duplicate, Group ---
+
+class RotateElement extends PresentationEvent {
+  final String elementId;
+  final double degrees;
+  const RotateElement(this.elementId, this.degrees);
+  @override
+  List<Object?> get props => [elementId, degrees];
+}
+
+class AlignElements extends PresentationEvent {
+  final String alignment; // 'left', 'center', 'right', 'top', 'middle', 'bottom'
+  final List<String> elementIds;
+  const AlignElements(this.alignment, this.elementIds);
+  @override
+  List<Object?> get props => [alignment, elementIds];
+}
+
+class DuplicateElement extends PresentationEvent {
+  final String elementId;
+  const DuplicateElement(this.elementId);
+  @override
+  List<Object?> get props => [elementId];
+}
+
+class GroupElements extends PresentationEvent {
+  final List<String> elementIds;
+  const GroupElements(this.elementIds);
+  @override
+  List<Object?> get props => [elementIds];
+}
+
+class UngroupElements extends PresentationEvent {
+  final String groupId;
+  const UngroupElements(this.groupId);
+  @override
+  List<Object?> get props => [groupId];
+}
+
 // --- State ---
 
 enum PresentationStatus {
@@ -371,6 +410,11 @@ class PresentationBloc extends Bloc<PresentationEvent, PresentationState> {
     on<SendToBack>(_onSendToBack);
     on<FormatElement>(_onFormatElement);
     on<ReorderSlides>(_onReorderSlides);
+    on<RotateElement>(_onRotateElement);
+    on<AlignElements>(_onAlignElements);
+    on<DuplicateElement>(_onDuplicateElement);
+    on<GroupElements>(_onGroupElements);
+    on<UngroupElements>(_onUngroupElements);
   }
 
   Future<void> _onLoad(
@@ -817,6 +861,139 @@ class PresentationBloc extends Bloc<PresentationEvent, PresentationState> {
       canRedo: _undoRedo.canRedo,
     ));
     _scheduleAutoSave();
+  }
+
+  void _onRotateElement(
+      RotateElement event, Emitter<PresentationState> emit) {
+    if (state.activeSlide == null) return;
+
+    final slide = state.activeSlide!;
+    final elements = slide.elements.map((e) {
+      if (e.id == event.elementId) {
+        return e.copyWith(
+          rotation: (e.rotation + event.degrees) % 360,
+        );
+      }
+      return e;
+    }).toList();
+
+    _updateCurrentSlide(emit, slide.copyWith(elements: elements));
+  }
+
+  void _onAlignElements(
+      AlignElements event, Emitter<PresentationState> emit) {
+    if (state.activeSlide == null || event.elementIds.length < 2) return;
+
+    final slide = state.activeSlide!;
+    final targets = slide.elements
+        .where((e) => event.elementIds.contains(e.id))
+        .toList();
+
+    if (targets.isEmpty) return;
+
+    double? refValue;
+    switch (event.alignment) {
+      case 'left':
+        refValue = targets.map((e) => e.x).reduce((a, b) => a < b ? a : b);
+      case 'right':
+        refValue =
+            targets.map((e) => e.x + e.width).reduce((a, b) => a > b ? a : b);
+      case 'center':
+        final minX = targets.map((e) => e.x).reduce((a, b) => a < b ? a : b);
+        final maxX =
+            targets.map((e) => e.x + e.width).reduce((a, b) => a > b ? a : b);
+        refValue = (minX + maxX) / 2;
+      case 'top':
+        refValue = targets.map((e) => e.y).reduce((a, b) => a < b ? a : b);
+      case 'bottom':
+        refValue =
+            targets.map((e) => e.y + e.height).reduce((a, b) => a > b ? a : b);
+      case 'middle':
+        final minY = targets.map((e) => e.y).reduce((a, b) => a < b ? a : b);
+        final maxY =
+            targets.map((e) => e.y + e.height).reduce((a, b) => a > b ? a : b);
+        refValue = (minY + maxY) / 2;
+    }
+
+    if (refValue == null) return;
+
+    final ref = refValue;
+    final elements = slide.elements.map((e) {
+      if (!event.elementIds.contains(e.id)) return e;
+      switch (event.alignment) {
+        case 'left':
+          return e.copyWith(x: ref);
+        case 'right':
+          return e.copyWith(x: ref - e.width);
+        case 'center':
+          return e.copyWith(x: ref - e.width / 2);
+        case 'top':
+          return e.copyWith(y: ref);
+        case 'bottom':
+          return e.copyWith(y: ref - e.height);
+        case 'middle':
+          return e.copyWith(y: ref - e.height / 2);
+        default:
+          return e;
+      }
+    }).toList();
+
+    _updateCurrentSlide(emit, slide.copyWith(elements: elements));
+  }
+
+  void _onDuplicateElement(
+      DuplicateElement event, Emitter<PresentationState> emit) {
+    if (state.activeSlide == null) return;
+
+    final slide = state.activeSlide!;
+    final source = slide.elements.cast<SlideElement?>().firstWhere(
+          (e) => e!.id == event.elementId,
+          orElse: () => null,
+        );
+    if (source == null) return;
+
+    final duplicate = source.copyWith(
+      id: '${source.id}_dup_${DateTime.now().millisecondsSinceEpoch}',
+      x: source.x + 0.02,
+      y: source.y + 0.02,
+    );
+
+    final elements = [...slide.elements, duplicate];
+    // Use _updateCurrentSlide for undo, then set selected element
+    _updateCurrentSlide(emit, slide.copyWith(elements: elements));
+    emit(state.copyWith(selectedElementId: duplicate.id));
+  }
+
+  void _onGroupElements(
+      GroupElements event, Emitter<PresentationState> emit) {
+    if (state.activeSlide == null || event.elementIds.length < 2) return;
+
+    final slide = state.activeSlide!;
+    final groupId = 'group_${DateTime.now().millisecondsSinceEpoch}';
+
+    final elements = slide.elements.map((e) {
+      if (event.elementIds.contains(e.id)) {
+        return e.copyWith(groupId: groupId);
+      }
+      return e;
+    }).toList();
+
+    _updateCurrentSlide(emit, slide.copyWith(elements: elements));
+  }
+
+  void _onUngroupElements(
+      UngroupElements event, Emitter<PresentationState> emit) {
+    if (state.activeSlide == null) return;
+
+    final slide = state.activeSlide!;
+    final elements = slide.elements.map((e) {
+      if (e.groupId == event.groupId) {
+        return e.copyWith(groupId: '');
+      }
+      return e;
+    }).toList();
+
+    _updateCurrentSlide(emit, slide.copyWith(elements: elements));
   }
 
   void _scheduleAutoSave() {

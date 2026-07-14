@@ -1,5 +1,107 @@
 # OpenSuite Implementation Status
 
+## Sprint 13 — Architecture Overhaul & Gap Closure (v1.5.0) 🔧
+
+### Shared Services Created (packages/core)
+
+#### SaveManager<T> (`services/save_manager.dart`)
+- Generic auto-save with configurable debounce (default 5s)
+- Dirty-state tracking, manual save, dispose cleanup
+- Replaces 5 duplicated `_scheduleAutoSave()` + `Timer` patterns
+
+#### ExportManager (`services/export_manager.dart`)
+- Singleton export pipeline with `FormatCodec<T>` registry
+- `registerCodec()` / `encode()` / `decode()` API
+- Extension-based format detection via `formatFromExtension()`
+- Defines `ExportFormat` enum (17 formats: txt, md, html, docx, csv, tsv, xlsx, pptx, pdf, png, jpeg, webp, svg, tiff, bmp, json, xml)
+
+#### ImportManager (`services/import_manager.dart`)
+- Unified import with `file_picker` integration
+- Preset file type filters (documents, spreadsheets, presentations, images, PDFs)
+- Format auto-detection from extension
+- Parser dispatch via ExportManager's codec registry
+
+#### BackgroundTaskManager (`services/background_task_manager.dart`)
+- Singleton async task queue
+- `BackgroundTask<T>` with status (pending/running/completed/failed/cancelled)
+- Progress tracking (0.0–1.0), cancellation tokens
+- `taskUpdates` stream for UI progress bars
+- Used for file imports, exports, image processing
+
+#### FileFormatRegistry (`services/file_format_registry.dart`)
+- Maps extensions + MIME types → `FileFormatEntry` metadata
+- 15+ formats registered at startup via `initializeDefaults()`
+- Category filtering (document/spreadsheet/presentation/image/pdf)
+- Import/export capability flags per format
+- Extension alias resolution (jpg→jpeg, htm→html, md→markdown)
+
+#### ContextMenuBuilder (`services/context_menu_builder.dart`)
+- Static `show()` method with position, items, max-width
+- `ContextMenuItem` with id, label, icon, shortcut, destructive flag, children
+- Preset builders: `textEditingItems()`, `fileOperationItems()`
+- Theme-aware styling (destructive = error color)
+
+#### ImageProcessor (`imaging/image_processor.dart`)
+- `buildColorMatrix()` — 5x4 color matrix for brightness/contrast/saturation
+- `decodeImage()` — Uint8List → dart:ui Image
+- `renderWithAdjustments()` — full pipeline: decode → canvas → transform → encode PNG
+- Supports: brightness, contrast, saturation, rotation, flip, crop, resize
+- Replaces fake `Future.delayed(500ms)` export
+
+#### CsvCodec / TsvCodec (`formats/csv_codec.dart`)
+- Implements `FormatCodec<List<List<String>>>`
+- RFC 4180-compliant parsing (quoted fields, escaped quotes, multi-line)
+- Configurable delimiter, qualifier, line separator
+- TsvCodec extends CsvCodec with `\t` delimiter
+
+### Critical Bug Fixes
+
+#### Image Editor — CropImage Handler Missing
+- **Root Cause**: `CropImage` event class was defined but `on<CropImage>()` was never called in constructor
+- **Fix**: Registered handler, implemented crop rect storage, dimension updates
+
+#### Image Editor — Fake Export
+- **Root Cause**: `_onExport()` used `Future.delayed(500ms)` instead of real processing
+- **Fix**: Replaced with `ImageProcessor.renderWithAdjustments()` producing real PNG bytes
+- Added `exportedBytes` to state for downstream saving
+
+#### Image Editor — Hardcoded Dimensions
+- **Root Cause**: `LoadImage` always set 1920x1080 regardless of actual image
+- **Fix**: Decodes image to detect real width/height
+
+#### PDF Viewer — Empty SetPageRange
+- **Root Cause**: `_onSetPageRange()` had empty method body
+- **Fix**: Now stores clamped start/end page for extract/split operations
+
+#### PDF Viewer — No Annotation Persistence
+- **Root Cause**: `PdfAnnotationDao` existed but was never wired into `PdfViewerBloc`
+- **Fix**: Wired via `AppModule`, auto-load on open, auto-save on add/remove/update
+
+#### Spreadsheet — Web Interactivity Broken
+- **Root Cause**: Multiple focus management issues specific to Flutter Web
+- **Fixes**:
+  1. Added `_gridFocusNode` and `_formulaFocusNode` for explicit focus control
+  2. `onCellTap` now calls `_gridFocusNode.requestFocus()` to ensure keyboard events work
+  3. `_handleKeyEvent` accepts `KeyRepeatEvent` (not just `KeyDownEvent`)
+  4. `_isEditingActive()` checks formula bar FocusNode specifically
+  5. Replaced `onSecondaryTapDown` with `Listener.onPointerDown` for right-click
+  6. Formula bar returns focus to grid after submit
+
+### Presentation Editor Additions
+- `RotateElement`: rotation delta with modular arithmetic
+- `AlignElements`: 6-mode alignment (left/center/right/top/middle/bottom)
+- `DuplicateElement`: clone with offset + unique ID
+- `GroupElements` / `UngroupElements`: shared groupId assignment/clearing
+- `SlideElement` model: added `groupId`, `opacity`, `id` in `copyWith`
+
+### AppModule DI Updates
+- Registers `PdfAnnotationDao` as lazy singleton
+- Initializes `FileFormatRegistry.instance.initializeDefaults()` at startup
+- Registers `CsvCodec` and `TsvCodec` with `ExportManager`
+- Added `pdfViewerBloc` getter (with `PdfAnnotationDao` injection)
+- Added `imageEditorBloc` getter
+
+
 ## Sprint 1 — Foundation & Core Modules ✅
 
 ### Completed

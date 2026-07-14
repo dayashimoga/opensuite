@@ -5,6 +5,79 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0+7] - 2026-07-14
+
+### Added — Sprint 4: Document Editor Enhancements
+- **Find & Replace**: Full find/replace implementation with case-insensitive matching, match counting, next/previous navigation, replace single, and replace all operations.
+- **FindInDocument Event**: Searches document content and returns all match positions.
+- **ReplaceInDocument Event**: Replaces single match at current index or all matches. Pushes undo state before modification.
+- **NavigateFindMatch Event**: Cycles through match positions forward/backward with wrapping.
+- **InsertAtCursor Event**: Inserts text at any position with undo support.
+- **ToggleFindReplace Event**: Shows/hides find & replace bar, clears state on close.
+- **_FindReplaceBar Widget**: Interactive find/replace bar with find field (shows match count), up/down navigation arrows, replace field, Replace and Replace All buttons.
+
+### Added — Sprint 7: File Manager Enhancements
+- **BrowseDirectory Event**: Lists contents of a local directory via `dart:io` (non-web). Returns `FileSystemItem` list with name, path, size, modified date, extension, and isDirectory flag. Hidden files are excluded. Directories sort first, then alphabetically.
+- **RenameFile Event**: Renames both the database record and the actual file on disk (non-web).
+- **CopyFile Event**: Copies a file to a destination path via `dart:io` (non-web).
+- **MoveFile Event**: Moves/renames a file to a destination path via `dart:io` (non-web).
+- **SortFiles Event**: Sorts file list by name, date, size, or type in ascending/descending order.
+- **ToggleMultiSelect Event**: Toggles multi-select mode on/off, clears selections on toggle.
+- **SelectFile Event**: Toggles a file's selection in multi-select mode.
+- **ClearSelection Event**: Clears all selected file IDs.
+- **PerformBulkDelete Event**: Deletes all selected files from the database in one operation.
+- **FileSystemItem Model**: New Equatable model representing a file/directory from local browsing with name, path, isDirectory, sizeBytes, modifiedAt, and extension fields.
+
+## [1.5.0+6] - 2026-07-14
+
+### Added — Sprint 1: Shared Editor Foundation
+- **SaveManager\<T\>**: Generic auto-save service with debounce, dirty-state tracking, and configurable delay. Replaces 5 duplicated `_scheduleAutoSave()` implementations across all editor BLoCs.
+- **ExportManager**: Centralized export pipeline with format codec registry, MIME type resolution, and extension-based format detection. Supports pluggable `FormatCodec<T>` implementations.
+- **ImportManager**: Unified import pipeline with file picking abstraction, format auto-detection, and parser dispatch via ExportManager's codec registry. Includes preset filters for documents, spreadsheets, presentations, images, and PDFs.
+- **BackgroundTaskManager**: Async task queue with progress tracking (0-100%), cancellation tokens, and status stream for UI updates. Designed for long-running operations (file imports, exports, image processing).
+- **FileFormatRegistry**: Central registry mapping file extensions and MIME types to format metadata. Initialized with 15+ format entries at app startup. Provides category-filtered format lists for UI dropdowns.
+- **ContextMenuBuilder**: Reusable context menu framework with consistent styling, keyboard shortcut display, nested menus, destructive action styling, and preset item collections for text editing and file operations.
+- **ImageProcessor**: Real image processing engine using `dart:ui` canvas rendering. Applies brightness, contrast, saturation, rotation, flip, crop, and resize to actual pixel data. Produces PNG byte output.
+- **CsvCodec / TsvCodec**: Robust CSV/TSV codec for spreadsheet import/export with proper field quoting, escape handling, multi-line field support, and configurable delimiters.
+
+### Added — Sprint 2: Spreadsheet Completion
+- **CSV Import**: `ImportCsv` event parses CSV bytes into SheetData cells with automatic type detection (number vs text), auto-sizing grid dimensions, and DAO persistence.
+- **CSV Export**: `ExportCsvFile` event converts current sheet to CSV bytes via CsvCodec.
+- **Fill Handle**: `FillRange` event supports numeric sequence fill (auto-increment) and text fill (copy) across a target range.
+
+### Added — Sprint 3: Presentation Editor
+- **RotateElement**: Applies rotation delta to any slide element with modular arithmetic.
+- **AlignElements**: Supports left/center/right/top/middle/bottom alignment of multiple selected elements using bounding box calculation.
+- **DuplicateElement**: Clones an element with 2% positional offset and unique ID.
+- **GroupElements / UngroupElements**: Assigns/clears shared `groupId` for multi-element grouping.
+- **SlideElement Model**: Added `groupId` (String?) and `opacity` (double) fields with full serialization support. Added `id` parameter to `copyWith` for duplication.
+
+### Added — Sprint 6: PDF Module
+- **Annotation Persistence**: Wired `PdfAnnotationDao` into `PdfViewerBloc` for SQLite-based annotation persistence. Annotations auto-load on PDF open and auto-save on add/remove/update.
+- **Annotation Mode Toggle**: `ToggleAnnotationMode` event cycles through highlight/underline/note/freehand/none modes.
+- **UpdateAnnotation Event**: Allows modifying existing annotations in place.
+- **currentPageAnnotations Helper**: State getter filtering annotations for the active page.
+- **SetPageRange Fix**: Previously empty method body now stores start/end page for extract/split operations.
+
+### Fixed — Sprint 2: Spreadsheet Web Interactivity
+- **Focus Management**: Added explicit `FocusNode` for the grid (`_gridFocusNode`) and formula bar (`_formulaFocusNode`). Grid now properly regains focus after cell tap, ensuring keyboard events (arrow keys, Enter, Tab, Delete, Ctrl+shortcuts) work on Web.
+- **Keyboard Handling**: Extended `_handleKeyEvent` to also respond to `KeyRepeatEvent` (not just `KeyDownEvent`), fixing held-key navigation on Web.
+- **Right-Click Context Menu**: Replaced `onSecondaryTapDown` (unreliable on Web) with `Listener.onPointerDown` checking `event.buttons == 2` to intercept right-clicks before the browser context menu.
+- **Formula Bar Focus Return**: After submitting a value in the formula bar, focus automatically returns to the grid for continued keyboard navigation.
+- **_isEditingActive()**: Now checks the formula bar's specific FocusNode first and distinguishes grid focus from cell editor focus, fixing false-positive detection on Web.
+
+### Fixed — Sprint 5: Image Editor Critical Bugs
+- **CropImage Handler**: The `CropImage` event class existed since Sprint 1 but was **never registered** in the BLoC constructor. Now fully implemented with crop rectangle storage and dimension updates.
+- **Real Export**: Replaced fake `Future.delayed(500ms)` export with actual `ImageProcessor.renderWithAdjustments()` that applies all adjustments (brightness, contrast, saturation, rotation, flip, crop, resize) to pixel data and produces real PNG bytes.
+- **SetHue / SetExposure Events**: New adjustment events for hue (-180 to 180) and exposure (-1.0 to 1.0).
+- **Real Dimension Detection**: `LoadImage` now decodes the image to detect actual width/height instead of hardcoding 1920x1080.
+- **exportedBytes State**: Added `exportedBytes` field to state for downstream file saving/sharing.
+
+### Changed
+- **AppModule DI**: Now initializes `FileFormatRegistry` with default formats and registers CSV/TSV codecs with `ExportManager` at startup. Added `pdfViewerBloc` getter (with `PdfAnnotationDao` injection) and `imageEditorBloc` getter.
+- **Core barrel file**: Exports all new Sprint 1 services, CSV codec, and ImageProcessor.
+- Version bumped to 1.5.0+6
+
 ## [1.3.2+5] - 2026-07-13
 
 ### Added

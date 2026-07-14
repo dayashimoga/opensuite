@@ -49,6 +49,8 @@ class _EditorContentState extends State<_EditorContent> {
   final _horizontalController = ScrollController();
   final _findController = TextEditingController();
   final _replaceController = TextEditingController();
+  final _gridFocusNode = FocusNode(debugLabel: 'SpreadsheetGrid');
+  final _formulaFocusNode = FocusNode(debugLabel: 'FormulaBar');
   bool _showFindBar = false;
 
   String _selectedFont = 'Inter';
@@ -62,6 +64,8 @@ class _EditorContentState extends State<_EditorContent> {
     _horizontalController.dispose();
     _findController.dispose();
     _replaceController.dispose();
+    _gridFocusNode.dispose();
+    _formulaFocusNode.dispose();
     super.dispose();
   }
 
@@ -119,6 +123,7 @@ class _EditorContentState extends State<_EditorContent> {
         }
 
         return Focus(
+          focusNode: _gridFocusNode,
           autofocus: true,
           onKeyEvent: (node, event) => _handleKeyEvent(event, state),
           child: Scaffold(
@@ -131,6 +136,7 @@ class _EditorContentState extends State<_EditorContent> {
                 // Formula bar
                 _FormulaBar(
                   controller: _formulaController,
+                  focusNode: _formulaFocusNode,
                   cellRef: state.selectedCell?.reference ?? 'A1',
                   onSubmitted: (value) {
                     if (state.selectedCell != null) {
@@ -138,6 +144,8 @@ class _EditorContentState extends State<_EditorContent> {
                           .read<SpreadsheetBloc>()
                           .add(UpdateCell(state.selectedCell!, value));
                     }
+                    // Return focus to grid after formula bar submit
+                    _gridFocusNode.requestFocus();
                   },
                   onChanged: (value) {
                     if (state.selectedCell != null) {
@@ -162,6 +170,8 @@ class _EditorContentState extends State<_EditorContent> {
                     horizontalController: _horizontalController,
                     onCellTap: (pos) {
                       context.read<SpreadsheetBloc>().add(SelectCell(pos));
+                      // Ensure grid has focus for keyboard events on web
+                      _gridFocusNode.requestFocus();
                     },
                     onCellEdit: (pos, value) {
                       context
@@ -792,14 +802,22 @@ class _EditorContentState extends State<_EditorContent> {
   // --- Shortcuts & Focus Handling ---
 
   bool _isEditingActive() {
+    // Check if formula bar or a cell editor has focus.
+    // On web, FocusManager.instance.primaryFocus may not match widget type
+    // reliably, so we check our known focus node instead.
+    if (_formulaFocusNode.hasFocus) return true;
     final focus = FocusManager.instance.primaryFocus;
     if (focus == null) return false;
+    // Check if focus is within a cell editor (not our grid focus node)
+    if (focus == _gridFocusNode) return false;
     final widget = focus.context?.widget;
     return widget is EditableText;
   }
 
   KeyEventResult _handleKeyEvent(KeyEvent event, SpreadsheetState state) {
-    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+      return KeyEventResult.ignored;
+    }
     if (_isEditingActive()) return KeyEventResult.ignored;
 
     final key = event.logicalKey;
@@ -1249,12 +1267,14 @@ class _ColorPickerButton extends StatelessWidget {
 
 class _FormulaBar extends StatelessWidget {
   final TextEditingController controller;
+  final FocusNode? focusNode;
   final String cellRef;
   final ValueChanged<String> onSubmitted;
   final ValueChanged<String>? onChanged;
 
   const _FormulaBar({
     required this.controller,
+    this.focusNode,
     required this.cellRef,
     required this.onSubmitted,
     this.onChanged,
@@ -1297,6 +1317,7 @@ class _FormulaBar extends StatelessWidget {
           Expanded(
             child: TextField(
               controller: controller,
+              focusNode: focusNode,
               decoration: const InputDecoration(
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.symmetric(vertical: 8),
@@ -1555,57 +1576,63 @@ class _GridCellState extends State<_GridCell> {
       bgColor = cellBgColor;
     }
 
-    return GestureDetector(
-      onTap: () {
-        widget.onTap();
-        if (_isEditing) return;
+    return Listener(
+      // Prevent browser context menu on web and trigger our custom one
+      onPointerDown: (event) {
+        if (event.buttons == 2) {
+          // Right-click
+          widget.onTap();
+          widget.onContextMenu(event.position);
+        }
       },
-      onDoubleTap: () {
-        setState(() => _isEditing = true);
-        _controller.text = widget.cell.rawValue;
-      },
-      onSecondaryTapDown: (details) {
-        widget.onTap();
-        widget.onContextMenu(details.globalPosition);
-      },
-      onLongPressStart: (details) {
-        widget.onTap();
-        widget.onContextMenu(details.globalPosition);
-      },
-      child: Container(
-        width: widget.width,
-        height: widget.height,
-        decoration: BoxDecoration(
-          color: bgColor,
-          border: Border.all(
-            color: widget.isSelected
-                ? theme.colorScheme.primary
-                : theme.colorScheme.outlineVariant,
-            width: widget.isSelected ? 2.0 : 0.5,
+      child: GestureDetector(
+        onTap: () {
+          widget.onTap();
+          if (_isEditing) return;
+        },
+        onDoubleTap: () {
+          setState(() => _isEditing = true);
+          _controller.text = widget.cell.rawValue;
+        },
+        onLongPressStart: (details) {
+          widget.onTap();
+          widget.onContextMenu(details.globalPosition);
+        },
+        child: Container(
+          width: widget.width,
+          height: widget.height,
+          decoration: BoxDecoration(
+            color: bgColor,
+            border: Border.all(
+              color: widget.isSelected
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.outlineVariant,
+              width: widget.isSelected ? 2.0 : 0.5,
+            ),
           ),
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          alignment: _getAlignment(widget.cell.alignment),
+          child: _isEditing
+              ? TextField(
+                  controller: _controller,
+                  autofocus: true,
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
+                    isDense: true,
+                  ),
+                  style: _getCellTextStyle(theme),
+                  onSubmitted: (value) {
+                    widget.onEdit(value);
+                    setState(() => _isEditing = false);
+                  },
+                  onTapOutside: (_) {
+                    widget.onEdit(_controller.text);
+                    setState(() => _isEditing = false);
+                  },
+                )
+              : _buildCellContent(theme),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        alignment: _getAlignment(widget.cell.alignment),
-        child: _isEditing
-            ? TextField(
-                controller: _controller,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.zero,
-                  isDense: true,
-                ),
-                style: _getCellTextStyle(theme),
-                onSubmitted: (value) {
-                  widget.onEdit(value);
-                  setState(() => _isEditing = false);
-                },
-                onTapOutside: (_) {
-                  widget.onEdit(_controller.text);
-                  setState(() => _isEditing = false);
-                },
-              )
-            : _buildCellContent(theme),
       ),
     );
   }

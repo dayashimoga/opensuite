@@ -3,7 +3,9 @@ import 'package:fileutility_storage/fileutility_storage.dart';
 
 import '../features/document_editor/bloc/document_editor_bloc.dart';
 import '../features/file_manager/bloc/file_manager_bloc.dart';
+import '../features/image_editor/bloc/image_editor_bloc.dart';
 import '../features/notes/bloc/notes_bloc.dart';
+import '../features/pdf_viewer/bloc/pdf_viewer_bloc.dart';
 import '../features/presentation/bloc/presentation_bloc.dart';
 import '../features/settings/bloc/settings_bloc.dart';
 import '../features/spreadsheet/bloc/spreadsheet_bloc.dart';
@@ -30,6 +32,14 @@ class AppModule {
     sl.registerLazySingleton<FileStorageService>(
       () => FileStorageService.instance,
     );
+
+    // --- Sprint 1: Shared Services ---
+    // Initialize the file format registry with default formats
+    FileFormatRegistry.instance.initializeDefaults();
+
+    // Register CSV codec with the export manager
+    ExportManager.instance.registerCodec(CsvCodec());
+    ExportManager.instance.registerCodec(TsvCodec());
   }
 
   /// Creates a new [NotesBloc] instance.
@@ -59,6 +69,16 @@ class AppModule {
   static PresentationBloc get presentationBloc => PresentationBloc(
         presentationDao: sl<PresentationDao>(),
       );
+
+  /// Creates a new [PdfViewerBloc] instance.
+  ///
+  /// Now wired with PdfAnnotationDao for annotation persistence.
+  static PdfViewerBloc get pdfViewerBloc => PdfViewerBloc(
+        annotationDao: sl<PdfAnnotationDao>(),
+      );
+
+  /// Creates a new [ImageEditorBloc] instance.
+  static ImageEditorBloc get imageEditorBloc => ImageEditorBloc();
 
   /// Creates a new [SettingsBloc] instance.
   static SettingsBloc get settingsBloc => SettingsBloc(

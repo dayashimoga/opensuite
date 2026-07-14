@@ -142,6 +142,19 @@ class _EditorContentState extends State<_EditorContent> {
                     : null,
                 tooltip: 'Redo (Ctrl+Shift+Z)',
               ),
+              // Find & Replace
+              IconButton(
+                icon: Icon(
+                  Icons.search,
+                  color: state.showFindReplace
+                      ? theme.colorScheme.primary
+                      : null,
+                ),
+                onPressed: () => context
+                    .read<DocumentEditorBloc>()
+                    .add(const ToggleFindReplace()),
+                tooltip: 'Find & Replace (Ctrl+H)',
+              ),
               // Save indicator
               _SaveIndicator(state: state),
               const SizedBox(width: 8),
@@ -211,6 +224,10 @@ class _EditorContentState extends State<_EditorContent> {
                   state: state,
                   controller: _contentController,
                 ),
+
+              // Find & Replace bar
+              if (state.showFindReplace)
+                _FindReplaceBar(state: state),
 
               // Editor surface
               Expanded(
@@ -625,6 +642,215 @@ class _SaveIndicator extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4),
         child: Icon(icon, size: 18, color: color),
+      ),
+    );
+  }
+}
+
+/// Find & Replace bar shown below the formatting toolbar.
+class _FindReplaceBar extends StatefulWidget {
+  final DocumentEditorState state;
+
+  const _FindReplaceBar({required this.state});
+
+  @override
+  State<_FindReplaceBar> createState() => _FindReplaceBarState();
+}
+
+class _FindReplaceBarState extends State<_FindReplaceBar> {
+  late TextEditingController _findController;
+  late TextEditingController _replaceController;
+
+  @override
+  void initState() {
+    super.initState();
+    _findController = TextEditingController(text: widget.state.findQuery);
+    _replaceController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _findController.dispose();
+    _replaceController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final matchCount = widget.state.findMatches.length;
+    final currentMatch = matchCount > 0
+        ? widget.state.currentFindIndex + 1
+        : 0;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest
+            .withValues(alpha: 0.3),
+        border: Border(
+          bottom: BorderSide(
+            color: theme.colorScheme.outlineVariant,
+            width: 0.5,
+          ),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Find row
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 36,
+                  child: TextField(
+                    controller: _findController,
+                    decoration: InputDecoration(
+                      hintText: 'Find...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(6),
+                        borderSide: BorderSide(
+                          color: theme.colorScheme.outlineVariant,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 0,
+                      ),
+                      isDense: true,
+                      suffixText: matchCount > 0
+                          ? '$currentMatch/$matchCount'
+                          : null,
+                      suffixStyle: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    style: theme.textTheme.bodySmall,
+                    onChanged: (value) {
+                      context
+                          .read<DocumentEditorBloc>()
+                          .add(FindInDocument(value));
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              // Previous match
+              IconButton(
+                icon: const Icon(Icons.keyboard_arrow_up, size: 20),
+                onPressed: matchCount > 0
+                    ? () => context
+                        .read<DocumentEditorBloc>()
+                        .add(const NavigateFindMatch(forward: false))
+                    : null,
+                tooltip: 'Previous',
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(
+                  minWidth: 32,
+                  minHeight: 32,
+                ),
+              ),
+              // Next match
+              IconButton(
+                icon: const Icon(Icons.keyboard_arrow_down, size: 20),
+                onPressed: matchCount > 0
+                    ? () => context
+                        .read<DocumentEditorBloc>()
+                        .add(const NavigateFindMatch(forward: true))
+                    : null,
+                tooltip: 'Next',
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(
+                  minWidth: 32,
+                  minHeight: 32,
+                ),
+              ),
+              // Close
+              IconButton(
+                icon: const Icon(Icons.close, size: 18),
+                onPressed: () => context
+                    .read<DocumentEditorBloc>()
+                    .add(const ToggleFindReplace()),
+                tooltip: 'Close',
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(
+                  minWidth: 32,
+                  minHeight: 32,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          // Replace row
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 36,
+                  child: TextField(
+                    controller: _replaceController,
+                    decoration: InputDecoration(
+                      hintText: 'Replace...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(6),
+                        borderSide: BorderSide(
+                          color: theme.colorScheme.outlineVariant,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 0,
+                      ),
+                      isDense: true,
+                    ),
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              // Replace single
+              TextButton(
+                onPressed: matchCount > 0
+                    ? () => context.read<DocumentEditorBloc>().add(
+                          ReplaceInDocument(
+                            _findController.text,
+                            _replaceController.text,
+                          ),
+                        )
+                    : null,
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  minimumSize: const Size(0, 32),
+                ),
+                child: const Text('Replace'),
+              ),
+              // Replace all
+              TextButton(
+                onPressed: matchCount > 0
+                    ? () => context.read<DocumentEditorBloc>().add(
+                          ReplaceInDocument(
+                            _findController.text,
+                            _replaceController.text,
+                            replaceAll: true,
+                          ),
+                        )
+                    : null,
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  minimumSize: const Size(0, 32),
+                ),
+                child: const Text('All'),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
