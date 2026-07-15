@@ -24,6 +24,7 @@ export 'src/utils/clipboard_service.dart';
 export 'src/utils/string_utils.dart';
 export 'src/utils/undo_redo_manager.dart';
 export 'src/utils/line_prefix_utils.dart';
+export 'src/utils/file_download_utils.dart';
 
 // --- Sprint 1: Shared Services ---
 export 'src/services/save_manager.dart';

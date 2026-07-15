@@ -1,6 +1,6 @@
 # OpenSuite — Project Status
 
-## Current Release: Full Functional Completion & Cloudflare Stabilization (v1.7.0+9)
+## Current Release: Web Spreadsheet Right-Click, File Import/Export & Drag Selection (v1.7.1+10)
 
 **Status**: ✅ Complete (Production Ready)
 

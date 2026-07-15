@@ -113,6 +113,10 @@ class SetBorders extends SpreadsheetEvent {
   List<Object?> get props => [borders];
 }
 
+class CreateTable extends SpreadsheetEvent {
+  const CreateTable();
+}
+
 // --- Row/Column Operations ---
 
 class InsertRow extends SpreadsheetEvent {
@@ -552,6 +556,7 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
     on<SetFontSize>(_onSetFontSize);
     on<SetNumberFormat>(_onSetNumberFormat);
     on<SetBorders>(_onSetBorders);
+    on<CreateTable>(_onCreateTable);
     on<InsertRow>(_onInsertRow);
     on<DeleteRow>(_onDeleteRow);
     on<InsertColumn>(_onInsertColumn);
@@ -643,6 +648,69 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
       sheet = sheet.setCell(state.selectedCell!, transform(cell));
     } else {
       return;
+    }
+
+    _emitWithUndo(emit, sheets: _replaceActiveSheet(sheet));
+  }
+
+  void _onCreateTable(CreateTable event, Emitter<SpreadsheetState> emit) {
+    if (state.activeSheet == null) return;
+    _pushUndo();
+
+    var sheet = state.activeSheet!;
+    CellRange range;
+    if (state.selectedRange != null && !state.selectedRange!.isSingleCell) {
+      range = state.selectedRange!;
+    } else if (state.selectedCell != null) {
+      final start = state.selectedCell!;
+      range = CellRange(
+        start,
+        CellPosition(start.row + 3, start.col + 3),
+      );
+    } else {
+      range = const CellRange(CellPosition(0, 0), CellPosition(3, 3));
+    }
+
+    final startRow =
+        range.start.row < range.end.row ? range.start.row : range.end.row;
+    final endRow =
+        range.start.row < range.end.row ? range.end.row : range.start.row;
+    final startCol =
+        range.start.col < range.end.col ? range.start.col : range.end.col;
+    final endCol =
+        range.start.col < range.end.col ? range.end.col : range.start.col;
+
+    for (int r = startRow; r <= endRow; r++) {
+      final isHeader = r == startRow;
+      final isEven = (r - startRow) % 2 == 0;
+      for (int c = startCol; c <= endCol; c++) {
+        final pos = CellPosition(r, c);
+        final cell = sheet.getCell(pos);
+        if (isHeader) {
+          final headerText = cell.rawValue.isNotEmpty
+              ? cell.rawValue
+              : 'Header ${c - startCol + 1}';
+          sheet = sheet.setCell(
+            pos,
+            cell.copyWith(
+              rawValue: headerText,
+              displayValue: headerText,
+              isBold: true,
+              backgroundColor: '#1F4E79',
+              textColor: '#FFFFFF',
+              alignment: 'center',
+            ),
+          );
+        } else {
+          final rowBg = isEven ? '#F2F4F7' : '#FFFFFF';
+          sheet = sheet.setCell(
+            pos,
+            cell.copyWith(
+              backgroundColor: rowBg,
+            ),
+          );
+        }
+      }
     }
 
     _emitWithUndo(emit, sheets: _replaceActiveSheet(sheet));

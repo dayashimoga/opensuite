@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.1+10] - 2026-07-15
+
+### Fixed & Enhanced — Web Spreadsheet Right-Click, Import/Export & Drag Selection
+- **Web Browser Right-Click Context Menu Fix**: Suppressed default browser DOM context menu (`Back`, `Forward`, `Ask Gemini`) on Flutter Web via `BrowserContextMenu.disableContextMenu()` in `initState()`, leaving only the custom spreadsheet context menu visible on right-click.
+- **Local Disk File Export & Download**: Created `FileDownloadUtils` in `packages/core` to instantly trigger browser Blob downloads (`html.AnchorElement`) on Web and native save dialogs on Desktop/Mobile for CSV and Excel exports.
+- **Local File Import (CSV / XLSX / TSV / ODS)**: Integrated local file picker in AppBar overflow menu and Data ribbon tab to import CSV/Excel spreadsheets from disk into full editing state.
+- **Drag Mouse Selection for Multi-Cell Ranges & Table Creation**: Converted `_VirtualSpreadsheetGrid` to StatefulWidget with interactive pointer drag range selection, full column header click selection, full row header click selection, top-left full sheet selection, and `CreateTable` event formatting.
+- **Empty Cell & Range Color Filling**: Updated `_GridCell` background color rendering to use `Color.alphaBlend` over `baseBgColor`, allowing background fill colors on empty cells, multi-cell ranges, rows, and columns to render cleanly.
+
 ## [1.7.0+9] - 2026-07-14
 
 ### Fixed & Enhanced — Live Cloudflare Deployment Root Cause Fixes

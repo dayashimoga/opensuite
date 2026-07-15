@@ -1,6 +1,8 @@
 import 'package:csv/csv.dart';
+import 'package:file_picker/file_picker.dart' as fp;
 import 'package:fileutility_core/fileutility_core.dart';
 import 'package:fileutility_ui_kit/fileutility_ui_kit.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -57,7 +59,18 @@ class _EditorContentState extends State<_EditorContent> {
   double _selectedFontSize = 12.0;
 
   @override
+  void initState() {
+    super.initState();
+    if (kIsWeb) {
+      BrowserContextMenu.disableContextMenu();
+    }
+  }
+
+  @override
   void dispose() {
+    if (kIsWeb) {
+      BrowserContextMenu.enableContextMenu();
+    }
     _formulaController.dispose();
     _cellEditController.dispose();
     _verticalController.dispose();
@@ -284,6 +297,22 @@ class _EditorContentState extends State<_EditorContent> {
           icon: const Icon(Icons.more_vert),
           itemBuilder: (_) => [
             const PopupMenuItem(
+              value: 'import_file',
+              child: Row(children: [
+                Icon(Icons.file_open, size: 20),
+                SizedBox(width: 8),
+                Text('Import CSV / Excel'),
+              ]),
+            ),
+            const PopupMenuItem(
+              value: 'create_table',
+              child: Row(children: [
+                Icon(Icons.table_chart, size: 20),
+                SizedBox(width: 8),
+                Text('Create Table'),
+              ]),
+            ),
+            const PopupMenuItem(
               value: 'export_csv',
               child: Row(children: [
                 Icon(Icons.download, size: 20),
@@ -302,6 +331,10 @@ class _EditorContentState extends State<_EditorContent> {
           ],
           onSelected: (value) {
             switch (value) {
+              case 'import_file':
+                _importLocalFile(context);
+              case 'create_table':
+                context.read<SpreadsheetBloc>().add(const CreateTable());
               case 'export_csv':
                 _exportCsv(context, state);
               case 'share':
@@ -1143,7 +1176,23 @@ class _EditorContentState extends State<_EditorContent> {
     );
   }
 
-  void _exportCsv(BuildContext context, SpreadsheetState state) {
+  Future<void> _importLocalFile(BuildContext context) async {
+    final result = await fp.FilePicker.platform.pickFiles(
+      type: fp.FileType.custom,
+      allowedExtensions: ['csv', 'tsv', 'xlsx', 'xls', 'ods', 'txt'],
+      withData: true,
+    );
+    if (result != null && result.files.isNotEmpty) {
+      final file = result.files.single;
+      if (file.bytes != null && context.mounted) {
+        context.read<SpreadsheetBloc>().add(
+              ImportCsv(file.bytes!, fileName: file.name),
+            );
+      }
+    }
+  }
+
+  Future<void> _exportCsv(BuildContext context, SpreadsheetState state) async {
     final sheet = state.activeSheet;
     if (sheet == null) return;
 
@@ -1169,7 +1218,14 @@ class _EditorContentState extends State<_EditorContent> {
 
     final csv = const ListToCsvConverter().convert(rows);
     final title = state.currentSpreadsheet?.title ?? 'spreadsheet';
-    Share.share(csv, subject: '$title.csv');
+    final fileName = '$title.csv';
+    final bytes = Uint8List.fromList(csv.codeUnits);
+
+    await FileDownloadUtils.downloadBytes(
+      bytes: bytes,
+      fileName: fileName,
+      mimeType: 'text/csv',
+    );
   }
 
   void _shareSpreadsheet(BuildContext context, SpreadsheetState state) {
@@ -1358,7 +1414,7 @@ class _FormulaBar extends StatelessWidget {
 
 // --- Virtual Spreadsheet Grid ---
 
-class _VirtualSpreadsheetGrid extends StatelessWidget {
+class _VirtualSpreadsheetGrid extends StatefulWidget {
   final SheetData sheet;
   final CellPosition? selectedCell;
   final CellRange? selectedRange;
@@ -1391,20 +1447,40 @@ class _VirtualSpreadsheetGrid extends StatelessWidget {
   static const double _headerHeight = 28;
 
   @override
+  State<_VirtualSpreadsheetGrid> createState() =>
+      _VirtualSpreadsheetGridState();
+}
+
+class _VirtualSpreadsheetGridState extends State<_VirtualSpreadsheetGrid> {
+  CellPosition? _dragStartCell;
+
+  void _handleCellDragStart(CellPosition pos) {
+    _dragStartCell = pos;
+    widget.onCellTap(pos);
+  }
+
+  void _handleCellDragUpdate(CellPosition pos) {
+    if (_dragStartCell != null) {
+      widget.onRangeSelect(CellRange(_dragStartCell!, pos));
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final visibleCols = sheet.colCount;
+    final visibleCols = widget.sheet.colCount;
 
-    double totalWidth = _headerWidth;
+    double totalWidth = _VirtualSpreadsheetGrid._headerWidth;
     for (int c = 0; c < visibleCols; c++) {
-      if (!sheet.hiddenCols.contains(c)) {
-        totalWidth += sheet.columnWidths[c] ?? _defaultColWidth;
+      if (!widget.sheet.hiddenCols.contains(c)) {
+        totalWidth += widget.sheet.columnWidths[c] ??
+            _VirtualSpreadsheetGrid._defaultColWidth;
       }
     }
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      controller: horizontalController,
+      controller: widget.horizontalController,
       child: SizedBox(
         width: totalWidth,
         child: Column(
@@ -1412,11 +1488,11 @@ class _VirtualSpreadsheetGrid extends StatelessWidget {
             _buildColumnHeaders(theme, visibleCols),
             Expanded(
               child: ListView.builder(
-                controller: verticalController,
-                itemCount: sheet.rowCount,
-                itemExtent: _defaultRowHeight,
+                controller: widget.verticalController,
+                itemCount: widget.sheet.rowCount,
+                itemExtent: _VirtualSpreadsheetGrid._defaultRowHeight,
                 itemBuilder: (context, row) {
-                  if (sheet.hiddenRows.contains(row)) {
+                  if (widget.sheet.hiddenRows.contains(row)) {
                     return const SizedBox.shrink();
                   }
                   return _buildDataRow(theme, row, visibleCols);
@@ -1431,33 +1507,47 @@ class _VirtualSpreadsheetGrid extends StatelessWidget {
 
   Widget _buildColumnHeaders(ThemeData theme, int visibleCols) {
     return SizedBox(
-      height: _headerHeight,
+      height: _VirtualSpreadsheetGrid._headerHeight,
       child: Row(
         children: [
-          Container(
-            width: _headerWidth,
-            height: _headerHeight,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest,
-              border: Border.all(
-                  color: theme.colorScheme.outlineVariant, width: 0.5),
+          GestureDetector(
+            onTap: () => widget.onRangeSelect(CellRange(
+              const CellPosition(0, 0),
+              CellPosition(
+                  widget.sheet.rowCount - 1, widget.sheet.colCount - 1),
+            )),
+            child: Container(
+              width: _VirtualSpreadsheetGrid._headerWidth,
+              height: _VirtualSpreadsheetGrid._headerHeight,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest,
+                border: Border.all(
+                    color: theme.colorScheme.outlineVariant, width: 0.5),
+              ),
+              alignment: Alignment.center,
+              child: const Icon(Icons.select_all, size: 14),
             ),
           ),
           for (var col = 0; col < visibleCols; col++)
-            if (!sheet.hiddenCols.contains(col))
+            if (!widget.sheet.hiddenCols.contains(col))
               GestureDetector(
+                onTap: () => widget.onRangeSelect(CellRange(
+                  CellPosition(0, col),
+                  CellPosition(widget.sheet.rowCount - 1, col),
+                )),
                 onHorizontalDragUpdate: (details) {
-                  final currentWidth =
-                      sheet.columnWidths[col] ?? _defaultColWidth;
+                  final currentWidth = widget.sheet.columnWidths[col] ??
+                      _VirtualSpreadsheetGrid._defaultColWidth;
                   final newWidth =
                       (currentWidth + details.delta.dx).clamp(40.0, 400.0);
-                  onColumnResize(col, newWidth);
+                  widget.onColumnResize(col, newWidth);
                 },
                 child: Container(
-                  width: sheet.columnWidths[col] ?? _defaultColWidth,
-                  height: _headerHeight,
+                  width: widget.sheet.columnWidths[col] ??
+                      _VirtualSpreadsheetGrid._defaultColWidth,
+                  height: _VirtualSpreadsheetGrid._headerHeight,
                   decoration: BoxDecoration(
-                    color: selectedCell?.col == col
+                    color: widget.selectedCell?.col == col
                         ? theme.colorScheme.primaryContainer
                         : theme.colorScheme.surfaceContainerHighest,
                     border: Border.all(
@@ -1478,45 +1568,57 @@ class _VirtualSpreadsheetGrid extends StatelessWidget {
   }
 
   Widget _buildDataRow(ThemeData theme, int row, int visibleCols) {
-    final rowHeight = sheet.rowHeights[row] ?? _defaultRowHeight;
+    final rowHeight = widget.sheet.rowHeights[row] ??
+        _VirtualSpreadsheetGrid._defaultRowHeight;
     return SizedBox(
       height: rowHeight,
       child: Row(
         children: [
-          Container(
-            width: _headerWidth,
-            height: rowHeight,
-            decoration: BoxDecoration(
-              color: selectedCell?.row == row
-                  ? theme.colorScheme.primaryContainer
-                  : theme.colorScheme.surfaceContainerHighest,
-              border: Border.all(
-                  color: theme.colorScheme.outlineVariant, width: 0.5),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              '${row + 1}',
-              style: theme.textTheme.labelSmall?.copyWith(
-                fontWeight: FontWeight.w600,
+          GestureDetector(
+            onTap: () => widget.onRangeSelect(CellRange(
+              CellPosition(row, 0),
+              CellPosition(row, widget.sheet.colCount - 1),
+            )),
+            child: Container(
+              width: _VirtualSpreadsheetGrid._headerWidth,
+              height: rowHeight,
+              decoration: BoxDecoration(
+                color: widget.selectedCell?.row == row
+                    ? theme.colorScheme.primaryContainer
+                    : theme.colorScheme.surfaceContainerHighest,
+                border: Border.all(
+                    color: theme.colorScheme.outlineVariant, width: 0.5),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                '${row + 1}',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
           for (var col = 0; col < visibleCols; col++)
-            if (!sheet.hiddenCols.contains(col))
+            if (!widget.sheet.hiddenCols.contains(col))
               _GridCell(
                 position: CellPosition(row, col),
-                cell: sheet.getCell(CellPosition(row, col)),
-                isSelected:
-                    selectedCell?.row == row && selectedCell?.col == col,
+                cell: widget.sheet.getCell(CellPosition(row, col)),
+                isSelected: widget.selectedCell?.row == row &&
+                    widget.selectedCell?.col == col,
                 isInRange:
-                    selectedRange?.contains(CellPosition(row, col)) ?? false,
-                isSearchMatch: findMatches.contains(CellPosition(row, col)),
-                width: sheet.columnWidths[col] ?? _defaultColWidth,
+                    widget.selectedRange?.contains(CellPosition(row, col)) ??
+                        false,
+                isSearchMatch:
+                    widget.findMatches.contains(CellPosition(row, col)),
+                width: widget.sheet.columnWidths[col] ??
+                    _VirtualSpreadsheetGrid._defaultColWidth,
                 height: rowHeight,
-                onTap: () => onCellTap(CellPosition(row, col)),
-                onEdit: (value) => onCellEdit(CellPosition(row, col), value),
+                onTap: () => _handleCellDragStart(CellPosition(row, col)),
+                onDragUpdate: (pos) => _handleCellDragUpdate(pos),
+                onEdit: (value) =>
+                    widget.onCellEdit(CellPosition(row, col), value),
                 onContextMenu: (offset) =>
-                    onContextMenu(CellPosition(row, col), offset),
+                    widget.onContextMenu(CellPosition(row, col), offset),
               ),
         ],
       ),
@@ -1535,6 +1637,7 @@ class _GridCell extends StatefulWidget {
   final double width;
   final double height;
   final VoidCallback onTap;
+  final ValueChanged<CellPosition> onDragUpdate;
   final ValueChanged<String> onEdit;
   final ValueChanged<Offset> onContextMenu;
 
@@ -1547,6 +1650,7 @@ class _GridCell extends StatefulWidget {
     required this.width,
     required this.height,
     required this.onTap,
+    required this.onDragUpdate,
     required this.onEdit,
     required this.onContextMenu,
   });
@@ -1586,15 +1690,19 @@ class _GridCellState extends State<_GridCell> {
         ? _parseColor(widget.cell.backgroundColor!)
         : null;
 
-    Color? bgColor;
+    final baseBgColor = cellBgColor ?? Colors.transparent;
+    Color? bgColor = baseBgColor;
     if (widget.isSearchMatch) {
-      bgColor = Colors.amber.withValues(alpha: 0.3);
+      bgColor =
+          Color.alphaBlend(Colors.amber.withValues(alpha: 0.4), baseBgColor);
     } else if (widget.isSelected) {
-      bgColor = theme.colorScheme.primaryContainer.withValues(alpha: 0.3);
+      bgColor = Color.alphaBlend(
+          theme.colorScheme.primaryContainer.withValues(alpha: 0.35),
+          baseBgColor);
     } else if (widget.isInRange) {
-      bgColor = theme.colorScheme.primaryContainer.withValues(alpha: 0.15);
-    } else {
-      bgColor = cellBgColor;
+      bgColor = Color.alphaBlend(
+          theme.colorScheme.primaryContainer.withValues(alpha: 0.2),
+          baseBgColor);
     }
 
     return Listener(
@@ -1610,6 +1718,12 @@ class _GridCellState extends State<_GridCell> {
         onTap: () {
           widget.onTap();
           if (_isEditing) return;
+        },
+        onPanStart: (_) {
+          widget.onTap();
+        },
+        onPanUpdate: (_) {
+          widget.onDragUpdate(widget.position);
         },
         onDoubleTap: () {
           setState(() => _isEditing = true);
