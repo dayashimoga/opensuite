@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0+13] - 2026-07-16
+
+### Fixed & Enhanced — Image Editor Interactive Crop, Pixel Resize & Multi-Tile Photo Generator
+- **Interactive Free & Constrained Aspect Ratio Crop**: Implemented `_InteractiveCropBox` with 8 corner/edge drag handles, custom darkened overlay mask, aspect ratio preset chips (`Free`, `16:9`, `4:3`, `1:1`, `Passport 3.5:4.5`, `3:2`), and **Apply Crop** / **Reset** controls dispatching pixel-accurate cropping to `ImageEditorBloc`.
+- **Numerical Pixel & Preset Resizing**: Added `Width` and `Height` px `TextField`s with auto aspect-ratio calculation, scale sliders (`25%` to `200%`), and preset buttons (`1080p`, `720p`, `50%`), coupled with responsive canvas scaling matching image dimensions.
+- **Multi-Tile Photo Sheet Layout Generator**: Created `PhotoTileGenerator` supporting international paper size formats (`A4`, `A3`, `B4`, `B5`, `Letter`, `Legal`) and photo size standards (`Passport 35×45mm`, `US/India Passport 2×2in`, `Stamp 20×25mm`, `Schengen Visa`, `Postcard 4×6in`, `Wallet 64×89mm`). Automatically calculates max photo capacity per sheet (e.g. 35 tiles on A4) with cut outlines toggle and instant Blob file downloads (`FileDownloadUtils`).
+
 ## [1.8.0+12] - 2026-07-16
 
 ### Fixed & Enhanced — Presentation Canvas Direct Inline Editing, 8-Point Handles & Layout Templates

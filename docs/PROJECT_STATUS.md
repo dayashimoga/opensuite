@@ -1,6 +1,6 @@
 # OpenSuite — Project Status
 
-## Current Release: Presentation Direct Canvas Inline Editing, 8-Point Control Points & Layout Templates (v1.8.0+12)
+## Current Release: Image Editor Interactive Crop, Pixel Resize & Multi-Tile Photo Sheet Generator (v1.9.0+13)
 
 **Status**: ✅ Complete (Production Ready)
 
