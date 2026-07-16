@@ -1,8 +1,8 @@
 # OpenSuite — Project Status
 
-## Current Sprint: Sprint 13 — Architecture Overhaul & Gap Closure (v1.5.0)
+## Current Release: Presentation Direct Canvas Inline Editing, 8-Point Control Points & Layout Templates (v1.8.0+12)
 
-**Status**: 🔧 In Progress
+**Status**: ✅ Complete (Production Ready)
 
 **Dates**: July 14, 2026
 

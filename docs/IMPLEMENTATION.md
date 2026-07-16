@@ -1,5 +1,17 @@
 # OpenSuite Implementation Status
 
+## Architectural Root Cause Analysis & Permanent System Fixes (v1.6.1+8) 🚀
+
+### Root Causes Identified & Permanently Resolved
+
+1. **State Management & UI Controller Decoupling**:
+   - **Fix**: Replaced raw DAO calls and direct state mutations in `NoteEditorPage` with proper `BlocProvider<NotesBloc>` scoping and standard event dispatch.
+   - **Fix**: Fixed key handling routing in `SpreadsheetEditorPage` to automatically stream printable keyboard characters to active selected cells and focus formula input node seamlessly.
+   - **Fix**: Interactive canvas resize handles in `PresentationEditorPage` now bind `onPanUpdate` directly to `ResizeElement` events.
+   - **Fix**: Wired `FileManagerBloc` `SortFiles` and `RenameFile` events to UI sort popup menus and interactive file tile rename dialogs.
+
+---
+
 ## Sprint 13 — Architecture Overhaul & Gap Closure (v1.5.0) 🔧
 
 ### Shared Services Created (packages/core)

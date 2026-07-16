@@ -6,6 +6,7 @@ import 'package:fileutility_storage/fileutility_storage.dart';
 import 'package:fileutility_ui_kit/fileutility_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -16,20 +17,32 @@ import '../bloc/notes_bloc.dart';
 ///
 /// Supports plain text, markdown, and checklist content types
 /// with autosave functionality.
-class NoteEditorPage extends StatefulWidget {
+class NoteEditorPage extends StatelessWidget {
   const NoteEditorPage({this.noteId, super.key});
 
-  /// The ID of the note to edit. Null for a new note.
   final String? noteId;
 
   @override
-  State<NoteEditorPage> createState() => _NoteEditorPageState();
+  Widget build(BuildContext context) {
+    return BlocProvider<NotesBloc>(
+      create: (_) => AppModule.notesBloc,
+      child: _NoteEditorContent(noteId: noteId),
+    );
+  }
 }
 
-class _NoteEditorPageState extends State<NoteEditorPage> {
+class _NoteEditorContent extends StatefulWidget {
+  const _NoteEditorContent({this.noteId});
+
+  final String? noteId;
+
+  @override
+  State<_NoteEditorContent> createState() => _NoteEditorContentState();
+}
+
+class _NoteEditorContentState extends State<_NoteEditorContent> {
   late final TextEditingController _titleController;
   late final TextEditingController _contentController;
-  late NotesBloc _bloc;
   NoteEntity? _note;
   NoteContentType _contentType = NoteContentType.plain;
   Timer? _autosaveTimer;
@@ -41,7 +54,6 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     super.initState();
     _titleController = TextEditingController();
     _contentController = TextEditingController();
-    _bloc = AppModule.notesBloc;
     _loadNote();
   }
 
@@ -64,7 +76,6 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       setState(() => _isLoading = false);
     }
 
-    // Start autosave timer
     _autosaveTimer = Timer.periodic(
       const Duration(seconds: AppConstants.autosaveIntervalSeconds),
       (_) => _autoSave(),
@@ -77,7 +88,6 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     if (_isModified) _save();
     _titleController.dispose();
     _contentController.dispose();
-    _bloc.close();
     super.dispose();
   }
 
@@ -99,14 +109,15 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
 
     if (title.isEmpty && content.isEmpty) return;
 
+    final bloc = context.read<NotesBloc>();
     if (_note != null) {
-      _bloc.add(UpdateNote(_note!.copyWith(
+      bloc.add(UpdateNote(_note!.copyWith(
         title: title.isEmpty ? 'Untitled' : title,
         content: content,
         contentType: _contentType,
       )));
     } else {
-      _bloc.add(CreateNote(
+      bloc.add(CreateNote(
         title: title.isEmpty ? 'Untitled' : title,
         content: content,
         contentType: _contentType,
@@ -420,19 +431,10 @@ class _MarkdownToolbar extends StatelessWidget {
   }
 
   void _prefix(String prefix) {
-    final text = controller.text;
-    final sel = controller.selection;
-    if (!sel.isValid) return;
-
-    // Find the start of the current line
-    int lineStart = sel.start;
-    while (lineStart > 0 && text[lineStart - 1] != '\n') {
-      lineStart--;
-    }
-
-    controller.text = text.replaceRange(lineStart, lineStart, prefix);
-    controller.selection =
-        TextSelection.collapsed(offset: sel.start + prefix.length);
+    LinePrefixUtils.applyPrefix(
+      controller: controller,
+      prefix: prefix,
+    );
     onChanged();
   }
 

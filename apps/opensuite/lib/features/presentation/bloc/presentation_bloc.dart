@@ -49,9 +49,10 @@ class SelectSlide extends PresentationEvent {
 
 class AddSlide extends PresentationEvent {
   final String layout;
-  const AddSlide({this.layout = 'blank'});
+  final List<SlideElement>? initialElements;
+  const AddSlide({this.layout = 'blank', this.initialElements});
   @override
-  List<Object?> get props => [layout];
+  List<Object?> get props => [layout, initialElements];
 }
 
 class DeleteSlide extends PresentationEvent {
@@ -81,6 +82,14 @@ class UpdateElement extends PresentationEvent {
   const UpdateElement(this.elementId, this.element);
   @override
   List<Object?> get props => [elementId, element];
+}
+
+class UpdateElementContent extends PresentationEvent {
+  final String elementId;
+  final String content;
+  const UpdateElementContent(this.elementId, this.content);
+  @override
+  List<Object?> get props => [elementId, content];
 }
 
 class DeleteElement extends PresentationEvent {
@@ -392,6 +401,7 @@ class PresentationBloc extends Bloc<PresentationEvent, PresentationState> {
     on<DuplicateSlide>(_onDuplicateSlide);
     on<AddElement>(_onAddElement);
     on<UpdateElement>(_onUpdateElement);
+    on<UpdateElementContent>(_onUpdateElementContent);
     on<DeleteElement>(_onDeleteElement);
     on<SelectElement>(_onSelectElement);
     on<MoveElement>(_onMoveElement);
@@ -543,6 +553,7 @@ class PresentationBloc extends Bloc<PresentationEvent, PresentationState> {
     final newSlide = SlideData(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
       layout: event.layout,
+      elements: event.initialElements ?? const [],
     );
     final newSlides = List<SlideData>.from(state.slides)
       ..insert(state.activeSlideIndex + 1, newSlide);
@@ -621,6 +632,15 @@ class PresentationBloc extends Bloc<PresentationEvent, PresentationState> {
     if (state.activeSlide == null) return;
     final elements = state.activeSlide!.elements.map((e) {
       return e.id == event.elementId ? event.element : e;
+    }).toList();
+    _updateCurrentSlide(emit, state.activeSlide!.copyWith(elements: elements));
+  }
+
+  void _onUpdateElementContent(
+      UpdateElementContent event, Emitter<PresentationState> emit) {
+    if (state.activeSlide == null) return;
+    final elements = state.activeSlide!.elements.map((e) {
+      return e.id == event.elementId ? e.copyWith(content: event.content) : e;
     }).toList();
     _updateCurrentSlide(emit, state.activeSlide!.copyWith(elements: elements));
   }

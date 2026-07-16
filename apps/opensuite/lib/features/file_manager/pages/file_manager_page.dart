@@ -4,6 +4,7 @@ import 'package:fileutility_storage/fileutility_storage.dart';
 import 'package:fileutility_ui_kit/fileutility_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../di/app_module.dart';
 import '../bloc/file_manager_bloc.dart';
@@ -45,14 +46,14 @@ class _FileManagerContentState extends State<_FileManagerContent> {
             icon: const Icon(Icons.sort),
             tooltip: 'Sort by',
             onSelected: (value) {
+              final newAsc = _sortBy == value ? !_sortAsc : (value == 'name');
               setState(() {
-                if (_sortBy == value) {
-                  _sortAsc = !_sortAsc;
-                } else {
-                  _sortBy = value;
-                  _sortAsc = value == 'name';
-                }
+                _sortBy = value;
+                _sortAsc = newAsc;
               });
+              context.read<FileManagerBloc>().add(
+                    SortFiles(field: value, ascending: newAsc),
+                  );
             },
             itemBuilder: (_) => [
               _sortItem('date', 'Date Opened', Icons.schedule),
@@ -455,12 +456,64 @@ class _FileListTile extends StatelessWidget {
 
   final RecentFileEntity file;
 
+  void _showRenameDialog(BuildContext context, RecentFileEntity file) {
+    final controller = TextEditingController(text: file.fileName);
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Rename File'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: 'New file name',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final newName = controller.text.trim();
+              if (newName.isNotEmpty && newName != file.fileName) {
+                context
+                    .read<FileManagerBloc>()
+                    .add(RenameFile(id: file.id, newName: newName));
+              }
+              Navigator.pop(context);
+            },
+            child: const Text('Rename'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openFile(BuildContext context, RecentFileEntity file) {
+    final fileType = FileType.fromPath(file.fileName);
+    if (fileType.isDocument) {
+      context.go('/documents');
+    } else if (fileType.isSpreadsheet) {
+      context.go('/spreadsheets');
+    } else if (fileType.isPresentation) {
+      context.go('/presentations');
+    } else if (fileType.isImage) {
+      context.go('/images');
+    } else if (fileType == FileType.pdf) {
+      context.go('/pdf');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final fileType = FileType.fromPath(file.fileName);
 
     return ListTile(
+      onTap: () => _openFile(context, file),
       leading: Container(
         width: 40,
         height: 40,
@@ -504,6 +557,16 @@ class _FileListTile extends StatelessWidget {
             iconSize: 18,
             itemBuilder: (context) => [
               const PopupMenuItem(
+                value: 'rename',
+                child: Row(
+                  children: [
+                    Icon(Icons.edit_outlined, size: 18),
+                    SizedBox(width: AppSpacing.sm),
+                    Text('Rename'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
                 value: 'delete',
                 child: Row(
                   children: [
@@ -515,7 +578,9 @@ class _FileListTile extends StatelessWidget {
               ),
             ],
             onSelected: (value) {
-              if (value == 'delete') {
+              if (value == 'rename') {
+                _showRenameDialog(context, file);
+              } else if (value == 'delete') {
                 context.read<FileManagerBloc>().add(DeleteRecentFile(file.id));
               }
             },
@@ -539,7 +604,17 @@ class _FileGridCard extends StatelessWidget {
     return Card(
       child: InkWell(
         onTap: () {
-          // Open file
+          if (fileType.isDocument) {
+            context.go('/documents');
+          } else if (fileType.isSpreadsheet) {
+            context.go('/spreadsheets');
+          } else if (fileType.isPresentation) {
+            context.go('/presentations');
+          } else if (fileType.isImage) {
+            context.go('/images');
+          } else if (fileType == FileType.pdf) {
+            context.go('/pdf');
+          }
         },
         borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
         child: Padding(

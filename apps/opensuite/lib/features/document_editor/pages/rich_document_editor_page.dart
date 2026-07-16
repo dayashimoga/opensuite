@@ -363,17 +363,10 @@ class _FormattingToolbar extends StatelessWidget {
   }
 
   void _prefix(BuildContext context, String prefix) {
-    final text = controller.text;
-    final sel = controller.selection;
-    if (!sel.isValid) return;
-    int lineStart = sel.start;
-    while (lineStart > 0 && text[lineStart - 1] != '\n') {
-      lineStart--;
-    }
-    final newText = text.replaceRange(lineStart, lineStart, prefix);
-    controller.text = newText;
-    controller.selection =
-        TextSelection.collapsed(offset: sel.start + prefix.length);
+    final newText = LinePrefixUtils.applyPrefix(
+      controller: controller,
+      prefix: prefix,
+    );
     context.read<DocumentEditorBloc>().add(
           UpdateDocumentContent(
             content: newText,

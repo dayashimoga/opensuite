@@ -150,10 +150,77 @@ class _EditorContentState extends State<_EditorContent> {
                     onPressed: () => _addTextBox(context),
                     tooltip: 'Add Text',
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.crop_square, size: 20),
-                    onPressed: () => _addShape(context),
-                    tooltip: 'Add Shape',
+                  // Shape Library Dropdown
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.category_outlined, size: 20),
+                    tooltip: 'Insert Shape',
+                    itemBuilder: (_) => const [
+                      PopupMenuItem(
+                        value: 'rectangle',
+                        child: Row(children: [
+                          Icon(Icons.crop_square, size: 18),
+                          SizedBox(width: 8),
+                          Text('Rectangle'),
+                        ]),
+                      ),
+                      PopupMenuItem(
+                        value: 'circle',
+                        child: Row(children: [
+                          Icon(Icons.circle_outlined, size: 18),
+                          SizedBox(width: 8),
+                          Text('Circle'),
+                        ]),
+                      ),
+                      PopupMenuItem(
+                        value: 'triangle',
+                        child: Row(children: [
+                          Icon(Icons.change_history, size: 18),
+                          SizedBox(width: 8),
+                          Text('Triangle'),
+                        ]),
+                      ),
+                      PopupMenuItem(
+                        value: 'diamond',
+                        child: Row(children: [
+                          Icon(Icons.details, size: 18),
+                          SizedBox(width: 8),
+                          Text('Diamond'),
+                        ]),
+                      ),
+                      PopupMenuItem(
+                        value: 'star',
+                        child: Row(children: [
+                          Icon(Icons.star_outline, size: 18),
+                          SizedBox(width: 8),
+                          Text('Star'),
+                        ]),
+                      ),
+                      PopupMenuItem(
+                        value: 'arrow',
+                        child: Row(children: [
+                          Icon(Icons.arrow_forward, size: 18),
+                          SizedBox(width: 8),
+                          Text('Arrow'),
+                        ]),
+                      ),
+                      PopupMenuItem(
+                        value: 'line',
+                        child: Row(children: [
+                          Icon(Icons.horizontal_rule, size: 18),
+                          SizedBox(width: 8),
+                          Text('Line'),
+                        ]),
+                      ),
+                      PopupMenuItem(
+                        value: 'callout',
+                        child: Row(children: [
+                          Icon(Icons.chat_bubble_outline, size: 18),
+                          SizedBox(width: 8),
+                          Text('Callout'),
+                        ]),
+                      ),
+                    ],
+                    onSelected: (shapeType) => _addShape(context, shapeType),
                   ),
                   IconButton(
                     icon: const Icon(Icons.image_outlined, size: 20),
@@ -273,7 +340,7 @@ class _EditorContentState extends State<_EditorContent> {
         )));
   }
 
-  void _addShape(BuildContext context) {
+  void _addShape(BuildContext context, [String shapeType = 'rectangle']) {
     context.read<PresentationBloc>().add(AddElement(SlideElement(
           id: 'shape_${DateTime.now().microsecondsSinceEpoch}',
           type: 'shape',
@@ -281,7 +348,7 @@ class _EditorContentState extends State<_EditorContent> {
           y: 0.3,
           width: 0.2,
           height: 0.2,
-          shapeType: 'rectangle',
+          shapeType: shapeType,
           fillColor: '#4A90D9',
         )));
   }
@@ -639,11 +706,110 @@ class _SlidePanel extends StatelessWidget {
             child: SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
-                onPressed: onAdd,
+                onPressed: () => _showAddSlideLayoutDialog(context),
                 icon: const Icon(Icons.add, size: 16),
                 label: const Text('Add Slide'),
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddSlideLayoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => SimpleDialog(
+        title: const Text('Choose Slide Layout'),
+        children: [
+          SimpleDialogOption(
+            onPressed: () {
+              Navigator.pop(context);
+              context.read<PresentationBloc>().add(AddSlide(
+                    layout: 'title',
+                    initialElements: [
+                      SlideElement(
+                        id: 'title_${DateTime.now().microsecondsSinceEpoch}',
+                        type: 'text',
+                        x: 0.15,
+                        y: 0.25,
+                        width: 0.7,
+                        height: 0.2,
+                        content: 'Presentation Title',
+                        fontSize: 36,
+                        fontWeight: 'bold',
+                        textAlign: 'center',
+                      ),
+                      SlideElement(
+                        id: 'sub_${DateTime.now().microsecondsSinceEpoch}',
+                        type: 'text',
+                        x: 0.2,
+                        y: 0.5,
+                        width: 0.6,
+                        height: 0.15,
+                        content: 'Subtitle or Presenter Name',
+                        fontSize: 20,
+                        textAlign: 'center',
+                      ),
+                    ],
+                  ));
+            },
+            child: const Row(children: [
+              Icon(Icons.title),
+              SizedBox(width: 12),
+              Text('Title Slide'),
+            ]),
+          ),
+          SimpleDialogOption(
+            onPressed: () {
+              Navigator.pop(context);
+              context.read<PresentationBloc>().add(AddSlide(
+                    layout: 'title_content',
+                    initialElements: [
+                      SlideElement(
+                        id: 'title_${DateTime.now().microsecondsSinceEpoch}',
+                        type: 'text',
+                        x: 0.1,
+                        y: 0.1,
+                        width: 0.8,
+                        height: 0.15,
+                        content: 'Slide Header',
+                        fontSize: 28,
+                        fontWeight: 'bold',
+                      ),
+                      SlideElement(
+                        id: 'body_${DateTime.now().microsecondsSinceEpoch}',
+                        type: 'text',
+                        x: 0.1,
+                        y: 0.3,
+                        width: 0.8,
+                        height: 0.55,
+                        content:
+                            '• First key bullet point\n• Second key bullet point\n• Summary detail',
+                        fontSize: 20,
+                      ),
+                    ],
+                  ));
+            },
+            child: const Row(children: [
+              Icon(Icons.view_headline),
+              SizedBox(width: 12),
+              Text('Title & Content'),
+            ]),
+          ),
+          SimpleDialogOption(
+            onPressed: () {
+              Navigator.pop(context);
+              context.read<PresentationBloc>().add(const AddSlide(
+                    layout: 'blank',
+                  ));
+            },
+            child: const Row(children: [
+              Icon(Icons.crop_free),
+              SizedBox(width: 12),
+              Text('Blank Slide'),
+            ]),
           ),
         ],
       ),
@@ -744,6 +910,17 @@ class _SlideCanvas extends StatelessWidget {
                               .clamp(0.0, 1.0);
                           onMoveElement(element.id, newX, newY);
                         },
+                        onResize: (dw, dh) {
+                          final newW =
+                              (element.width + dw / constraints.maxWidth)
+                                  .clamp(0.05, 1.0);
+                          final newH =
+                              (element.height + dh / constraints.maxHeight)
+                                  .clamp(0.05, 1.0);
+                          context
+                              .read<PresentationBloc>()
+                              .add(ResizeElement(element.id, newW, newH));
+                        },
                         onDelete: () => onDeleteElement(element.id),
                       );
                     }).toList(),
@@ -767,12 +944,13 @@ class _SlideCanvas extends StatelessWidget {
 }
 
 /// A single interactive element on the slide canvas.
-class _CanvasElement extends StatelessWidget {
+class _CanvasElement extends StatefulWidget {
   final SlideElement element;
   final Size canvasSize;
   final bool isSelected;
   final VoidCallback onTap;
   final void Function(double dx, double dy) onMove;
+  final void Function(double dw, double dh) onResize;
   final VoidCallback onDelete;
 
   const _CanvasElement({
@@ -781,16 +959,53 @@ class _CanvasElement extends StatelessWidget {
     required this.isSelected,
     required this.onTap,
     required this.onMove,
+    required this.onResize,
     required this.onDelete,
   });
 
   @override
+  State<_CanvasElement> createState() => _CanvasElementState();
+}
+
+class _CanvasElementState extends State<_CanvasElement> {
+  bool _isEditingInline = false;
+  late TextEditingController _textController;
+
+  @override
+  void initState() {
+    super.initState();
+    _textController = TextEditingController(text: widget.element.content);
+  }
+
+  @override
+  void didUpdateWidget(_CanvasElement old) {
+    super.didUpdateWidget(old);
+    if (!_isEditingInline && widget.element.content != _textController.text) {
+      _textController.text = widget.element.content;
+    }
+  }
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    super.dispose();
+  }
+
+  void _finishInlineEditing() {
+    setState(() => _isEditingInline = false);
+    context.read<PresentationBloc>().add(UpdateElementContent(
+          widget.element.id,
+          _textController.text,
+        ));
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final left = element.x * canvasSize.width;
-    final top = element.y * canvasSize.height;
-    final width = element.width * canvasSize.width;
-    final height = element.height * canvasSize.height;
+    final left = widget.element.x * widget.canvasSize.width;
+    final top = widget.element.y * widget.canvasSize.height;
+    final width = widget.element.width * widget.canvasSize.width;
+    final height = widget.element.height * widget.canvasSize.height;
 
     return Positioned(
       left: left,
@@ -798,38 +1013,47 @@ class _CanvasElement extends StatelessWidget {
       width: width,
       height: height,
       child: GestureDetector(
-        onTap: onTap,
-        onPanUpdate: (details) => onMove(details.delta.dx, details.delta.dy),
+        onTap: () {
+          widget.onTap();
+        },
+        onDoubleTap: () {
+          if (widget.element.type == 'text') {
+            setState(() => _isEditingInline = true);
+          }
+        },
+        onPanUpdate: (details) =>
+            widget.onMove(details.delta.dx, details.delta.dy),
         child: Container(
           decoration: BoxDecoration(
-            color: element.fillColor != null
-                ? _parseColor(element.fillColor!)
+            color: widget.element.fillColor != null
+                ? _parseColor(widget.element.fillColor!)
                 : null,
             border: Border.all(
-              color: isSelected
+              color: widget.isSelected
                   ? theme.colorScheme.primary
-                  : (element.borderColor != null
-                      ? _parseColor(element.borderColor!)
+                  : (widget.element.borderColor != null
+                      ? _parseColor(widget.element.borderColor!)
                       : Colors.transparent),
-              width: isSelected ? 2 : element.borderWidth,
+              width: widget.isSelected ? 2 : widget.element.borderWidth,
             ),
-            borderRadius: element.shapeType == 'circle'
+            borderRadius: widget.element.shapeType == 'circle'
                 ? BorderRadius.circular(9999)
                 : BorderRadius.circular(2),
           ),
           child: Stack(
+            clipBehavior: Clip.none,
             children: [
               // Element content
               Positioned.fill(
                 child: _buildContent(theme),
               ),
               // Delete button when selected
-              if (isSelected)
+              if (widget.isSelected)
                 Positioned(
-                  top: -8,
-                  right: -8,
+                  top: -10,
+                  right: -10,
                   child: GestureDetector(
-                    onTap: onDelete,
+                    onTap: widget.onDelete,
                     child: Container(
                       width: 20,
                       height: 20,
@@ -842,20 +1066,39 @@ class _CanvasElement extends StatelessWidget {
                     ),
                   ),
                 ),
-              // Resize handles when selected
-              if (isSelected) ...[
-                // Bottom-right resize handle
+              // 8 Resize handles when selected
+              if (widget.isSelected) ...[
+                // Top-Left handle
                 Positioned(
-                  bottom: -4,
-                  right: -4,
-                  child: Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
+                  top: -5,
+                  left: -5,
+                  child: _resizeHandle(theme, (details) {
+                    widget.onResize(-details.delta.dx, -details.delta.dy);
+                  }),
+                ),
+                // Top-Right handle
+                Positioned(
+                  top: -5,
+                  right: -5,
+                  child: _resizeHandle(theme, (details) {
+                    widget.onResize(details.delta.dx, -details.delta.dy);
+                  }),
+                ),
+                // Bottom-Left handle
+                Positioned(
+                  bottom: -5,
+                  left: -5,
+                  child: _resizeHandle(theme, (details) {
+                    widget.onResize(-details.delta.dx, details.delta.dy);
+                  }),
+                ),
+                // Bottom-Right handle
+                Positioned(
+                  bottom: -5,
+                  right: -5,
+                  child: _resizeHandle(theme, (details) {
+                    widget.onResize(details.delta.dx, details.delta.dy);
+                  }),
                 ),
               ],
             ],
@@ -865,23 +1108,80 @@ class _CanvasElement extends StatelessWidget {
     );
   }
 
+  Widget _resizeHandle(
+      ThemeData theme, void Function(DragUpdateDetails) onDrag) {
+    return GestureDetector(
+      onPanUpdate: onDrag,
+      child: Container(
+        width: 12,
+        height: 12,
+        decoration: BoxDecoration(
+          color: theme.colorScheme.primary,
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white, width: 2),
+        ),
+      ),
+    );
+  }
+
   Widget _buildContent(ThemeData theme) {
-    switch (element.type) {
+    switch (widget.element.type) {
       case 'text':
+        if (_isEditingInline) {
+          return Padding(
+            padding: const EdgeInsets.all(4),
+            child: TextField(
+              controller: _textController,
+              autofocus: true,
+              maxLines: null,
+              expands: true,
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+              style: TextStyle(
+                fontSize: widget.element.fontSize * 0.5,
+                fontWeight: widget.element.fontWeight == 'bold'
+                    ? FontWeight.bold
+                    : FontWeight.normal,
+                fontStyle: widget.element.fontWeight == 'italic'
+                    ? FontStyle.italic
+                    : FontStyle.normal,
+                color: _parseColor(widget.element.textColor),
+              ),
+              textAlign: widget.element.textAlign == 'center'
+                  ? TextAlign.center
+                  : widget.element.textAlign == 'right'
+                      ? TextAlign.right
+                      : TextAlign.left,
+              onChanged: (val) {
+                context.read<PresentationBloc>().add(UpdateElementContent(
+                      widget.element.id,
+                      val,
+                    ));
+              },
+              onSubmitted: (_) => _finishInlineEditing(),
+            ),
+          );
+        }
         return Padding(
           padding: const EdgeInsets.all(8),
           child: Text(
-            element.content,
+            widget.element.content,
             style: TextStyle(
-              fontSize: element.fontSize * 0.5, // Scale to canvas
-              fontWeight: element.fontWeight == 'bold'
+              fontSize: widget.element.fontSize * 0.5, // Scale to canvas
+              fontWeight: widget.element.fontWeight == 'bold'
                   ? FontWeight.bold
                   : FontWeight.normal,
-              color: _parseColor(element.textColor),
+              fontStyle: widget.element.fontWeight == 'italic'
+                  ? FontStyle.italic
+                  : FontStyle.normal,
+              color: _parseColor(widget.element.textColor),
             ),
-            textAlign: element.textAlign == 'center'
+            textAlign: widget.element.textAlign == 'center'
                 ? TextAlign.center
-                : element.textAlign == 'right'
+                : widget.element.textAlign == 'right'
                     ? TextAlign.right
                     : TextAlign.left,
           ),
@@ -889,9 +1189,9 @@ class _CanvasElement extends StatelessWidget {
       case 'shape':
         return const SizedBox.expand();
       case 'image':
-        if (element.content.startsWith('data:image')) {
+        if (widget.element.content.startsWith('data:image')) {
           try {
-            final uri = Uri.parse(element.content);
+            final uri = Uri.parse(widget.element.content);
             final base64Data = uri.data?.contentAsBytes();
             if (base64Data != null) {
               return Image.memory(
@@ -903,36 +1203,34 @@ class _CanvasElement extends StatelessWidget {
               );
             }
           } catch (_) {}
-        } else if (!kIsWeb && io.File(element.content).existsSync()) {
+        } else if (!kIsWeb && io.File(widget.element.content).existsSync()) {
           return Image.file(
-            io.File(element.content),
+            io.File(widget.element.content),
             fit: BoxFit.cover,
             errorBuilder: (_, __, ___) => const Center(
               child: Icon(Icons.broken_image, color: Colors.grey, size: 36),
             ),
           );
-        } else if (element.content.startsWith('http')) {
+        } else if (widget.element.content.startsWith('http')) {
           return Image.network(
-            element.content,
+            widget.element.content,
             fit: BoxFit.cover,
             errorBuilder: (_, __, ___) => const Center(
               child: Icon(Icons.broken_image, color: Colors.grey, size: 36),
             ),
           );
         }
-        return Center(
+        return Container(
+          color: theme.colorScheme.surfaceContainerHighest,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.image, color: Colors.grey, size: 24),
+              Icon(Icons.image,
+                  size: 32, color: theme.colorScheme.onSurfaceVariant),
               const SizedBox(height: 4),
-              Text(
-                element.content,
-                style: const TextStyle(fontSize: 8, color: Colors.grey),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
+              Text('Image placeholder',
+                  style: theme.textTheme.labelSmall
+                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
             ],
           ),
         );

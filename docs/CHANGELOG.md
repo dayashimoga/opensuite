@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0+12] - 2026-07-16
+
+### Fixed & Enhanced — Presentation Canvas Direct Inline Editing, 8-Point Handles & Layout Templates
+- **Presentation Direct Canvas Inline Text Editing**: Converted `_CanvasElement` to `StatefulWidget` so double-clicking any text box directly on the slide canvas opens a transparent, focused `TextField` with live typing, auto-wrap, and instant BLoC state updates (`UpdateElementContent`).
+- **8-Point Control Points for Object Resizing**: Rendered 8 interactive resize handles (`Top-Left`, `Top-Right`, `Bottom-Left`, `Bottom-Right`, etc.) around selected slide elements for proportional 2D manipulation.
+- **Slide Layout Template Selector Modal**: Integrated layout picker modal when clicking "Add Slide" to select pre-formatted slide archetypes (`Title Slide`, `Title & Content`, `Blank Slide`).
+- **Package Core & Storage Dependency Pinning**: Added pinned `file_picker: ^9.2.1` and `csv: ^6.0.0` dependencies to `packages/core/pubspec.yaml`, ensuring isolated CI test runs (`flutter test --coverage`) pass cleanly without missing package errors.
+
+## [1.7.1+10] - 2026-07-15
+
+### Fixed & Enhanced — Web Spreadsheet Right-Click, Import/Export & Drag Selection
+- **Web Browser Right-Click Context Menu Fix**: Suppressed default browser DOM context menu (`Back`, `Forward`, `Ask Gemini`) on Flutter Web via `BrowserContextMenu.disableContextMenu()` in `initState()`, leaving only the custom spreadsheet context menu visible on right-click.
+- **Local Disk File Export & Download**: Created `FileDownloadUtils` in `packages/core` to instantly trigger browser Blob downloads (`html.AnchorElement`) on Web and native save dialogs on Desktop/Mobile for CSV and Excel exports.
+- **Local File Import (CSV / XLSX / TSV / ODS)**: Integrated local file picker in AppBar overflow menu and Data ribbon tab to import CSV/Excel spreadsheets from disk into full editing state.
+- **Drag Mouse Selection for Multi-Cell Ranges & Table Creation**: Converted `_VirtualSpreadsheetGrid` to StatefulWidget with interactive pointer drag range selection, full column header click selection, full row header click selection, top-left full sheet selection, and `CreateTable` event formatting.
+- **Empty Cell & Range Color Filling**: Updated `_GridCell` background color rendering to use `Color.alphaBlend` over `baseBgColor`, allowing background fill colors on empty cells, multi-cell ranges, rows, and columns to render cleanly.
+
+## [1.7.0+9] - 2026-07-14
+
+### Fixed & Enhanced — Live Cloudflare Deployment Root Cause Fixes
+- **LinePrefixUtils Framework**: Added `LinePrefixUtils` helper in `packages/core` to strip existing list/heading prefixes (`1. `, `- `, `- [ ] `, `> `, `# `) before applying new ones, completely fixing list prefix collisions (e.g. `1. - asdfasdf` in Screenshot 2). Supports multi-line selection formatting across documents & notes.
+- **Presentation Shape Library Dropdown**: Replaced single rectangle shape icon button with a comprehensive Shape Library Popup Menu offering 8 vector geometric shapes (Rectangle, Circle, Triangle, Diamond, Star, Arrow, Line, Callout).
+- **Image Editor Interactive Crop Box Canvas Overlay**: Rendered draggable/scalable crop outline box with corner handles directly on the image canvas matching live right-panel aspect ratio chips (`Free`, `16:9`, `4:3`, `1:1`, `Passport 2x2`).
+
+## [1.6.1+8] - 2026-07-14
+
+### Fixed — System Architecture & State Synchronization Root Causes
+- **Notes BLoC Scoping**: Replaced direct DAO instantiation and manual BLoC instance closing in `NoteEditorPage` with top-level `BlocProvider<NotesBloc>` scoping and standard event dispatch.
+- **Spreadsheet On-Cell Keyboard Typing**: Updated `_handleKeyEvent` in `SpreadsheetEditorPage` so pressing printable character keys when a cell is selected automatically focuses the formula bar input node and streams typed characters into active cell state.
+- **Presentation Canvas Element Resizing**: Mapped `onPanUpdate` gestures on slide canvas resize handles directly to `ResizeElement` events.
+- **File Manager Event Routing**: Bound file sorting options directly to `FileManagerBloc` `SortFiles` events and added interactive `RenameFile` dialogs to file tiles.
+
 ## [1.6.0+7] - 2026-07-14
 
 ### Added — Sprint 4: Document Editor Enhancements
