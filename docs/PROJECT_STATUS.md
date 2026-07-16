@@ -1,6 +1,6 @@
 # OpenSuite — Project Status
 
-## Current Release: Web Spreadsheet Right-Click, File Import/Export & Drag Selection (v1.7.1+10)
+## Current Release: Presentation Direct Canvas Inline Editing, 8-Point Control Points & Layout Templates (v1.8.0+12)
 
 **Status**: ✅ Complete (Production Ready)
 

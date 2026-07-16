@@ -4,7 +4,6 @@ import 'package:equatable/equatable.dart';
 import 'package:fileutility_core/fileutility_core.dart';
 import 'package:fileutility_storage/fileutility_storage.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:uuid/uuid.dart';
 
 // ── Events ──────────────────────────────────────────────────
 
@@ -223,7 +222,6 @@ class TextEditorBloc extends Bloc<TextEditorEvent, TextEditorState> {
   }
 
   final FileStorageService _fileStorage;
-  static const _uuid = Uuid();
 
   Future<void> _onLoadDocument(
     LoadDocument event,
@@ -248,7 +246,7 @@ class TextEditorBloc extends Bloc<TextEditorEvent, TextEditorState> {
     CreateNewDocument event,
     Emitter<TextEditorState> emit,
   ) async {
-    final id = _uuid.v4();
+    final id = DateTime.now().microsecondsSinceEpoch.toString();
     emit(TextEditorState(
       status: TextEditorStatus.loaded,
       documentId: id,

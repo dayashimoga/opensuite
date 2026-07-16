@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0+12] - 2026-07-16
+
+### Fixed & Enhanced — Presentation Canvas Direct Inline Editing, 8-Point Handles & Layout Templates
+- **Presentation Direct Canvas Inline Text Editing**: Converted `_CanvasElement` to `StatefulWidget` so double-clicking any text box directly on the slide canvas opens a transparent, focused `TextField` with live typing, auto-wrap, and instant BLoC state updates (`UpdateElementContent`).
+- **8-Point Control Points for Object Resizing**: Rendered 8 interactive resize handles (`Top-Left`, `Top-Right`, `Bottom-Left`, `Bottom-Right`, etc.) around selected slide elements for proportional 2D manipulation.
+- **Slide Layout Template Selector Modal**: Integrated layout picker modal when clicking "Add Slide" to select pre-formatted slide archetypes (`Title Slide`, `Title & Content`, `Blank Slide`).
+- **Package Core & Storage Dependency Pinning**: Added pinned `file_picker: ^9.2.1` and `csv: ^6.0.0` dependencies to `packages/core/pubspec.yaml`, ensuring isolated CI test runs (`flutter test --coverage`) pass cleanly without missing package errors.
+
 ## [1.7.1+10] - 2026-07-15
 
 ### Fixed & Enhanced — Web Spreadsheet Right-Click, Import/Export & Drag Selection
