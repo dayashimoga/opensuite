@@ -9,6 +9,8 @@ import 'package:fileutility_core/fileutility_core.dart';
 import 'package:fileutility_storage/fileutility_storage.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../services/xlsx_service.dart';
+
 // --- Events ---
 
 sealed class SpreadsheetEvent extends Equatable {
@@ -374,6 +376,24 @@ class ExportCsvFile extends SpreadsheetEvent {
   const ExportCsvFile();
 }
 
+// --- XLSX Import/Export ---
+
+class ImportXlsx extends SpreadsheetEvent {
+  final Uint8List bytes;
+  final String fileName;
+  const ImportXlsx(this.bytes, {this.fileName = 'Imported'});
+  @override
+  List<Object?> get props => [bytes, fileName];
+}
+
+class ExportXlsxFile extends SpreadsheetEvent {
+  const ExportXlsxFile();
+}
+
+class ClearExportedSpreadsheet extends SpreadsheetEvent {
+  const ClearExportedSpreadsheet();
+}
+
 // --- Fill Handle ---
 
 class FillRange extends SpreadsheetEvent {
@@ -392,6 +412,26 @@ class SortColumn extends SpreadsheetEvent {
   List<Object?> get props => [col, ascending];
 }
 
+// --- Conditional Formatting ---
+
+class AddConditionalFormat extends SpreadsheetEvent {
+  final ConditionalFormat rule;
+  const AddConditionalFormat(this.rule);
+  @override
+  List<Object?> get props => [rule];
+}
+
+class RemoveConditionalFormat extends SpreadsheetEvent {
+  final int index;
+  const RemoveConditionalFormat(this.index);
+  @override
+  List<Object?> get props => [index];
+}
+
+class ClearConditionalFormats extends SpreadsheetEvent {
+  const ClearConditionalFormats();
+}
+
 // --- State ---
 
 enum SpreadsheetStatus {
@@ -401,6 +441,9 @@ enum SpreadsheetStatus {
   editing,
   saving,
   saved,
+  exporting,
+  exported,
+  importing,
   error
 }
 
@@ -429,6 +472,14 @@ class SpreadsheetState extends Equatable {
   final CellRange? clipboardRange;
   final bool isClipboardCut;
 
+  // Export state
+  final Uint8List? exportedBytes;
+  final String? exportedFileName;
+  final String? exportedMimeType;
+
+  // Conditional formatting
+  final List<ConditionalFormat> conditionalFormats;
+
   const SpreadsheetState({
     this.status = SpreadsheetStatus.initial,
     this.spreadsheets = const [],
@@ -449,6 +500,10 @@ class SpreadsheetState extends Equatable {
     this.findMatchIndex = -1,
     this.clipboardRange,
     this.isClipboardCut = false,
+    this.exportedBytes,
+    this.exportedFileName,
+    this.exportedMimeType,
+    this.conditionalFormats = const [],
   });
 
   /// The currently active sheet.
@@ -475,6 +530,10 @@ class SpreadsheetState extends Equatable {
     int? findMatchIndex,
     CellRange? clipboardRange,
     bool? isClipboardCut,
+    Uint8List? exportedBytes,
+    String? exportedFileName,
+    String? exportedMimeType,
+    List<ConditionalFormat>? conditionalFormats,
   }) {
     return SpreadsheetState(
       status: status ?? this.status,
@@ -496,6 +555,10 @@ class SpreadsheetState extends Equatable {
       findMatchIndex: findMatchIndex ?? this.findMatchIndex,
       clipboardRange: clipboardRange ?? this.clipboardRange,
       isClipboardCut: isClipboardCut ?? this.isClipboardCut,
+      exportedBytes: exportedBytes,
+      exportedFileName: exportedFileName,
+      exportedMimeType: exportedMimeType,
+      conditionalFormats: conditionalFormats ?? this.conditionalFormats,
     );
   }
 
@@ -596,7 +659,13 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
     on<SortColumn>(_onSortColumn);
     on<ImportCsv>(_onImportCsv);
     on<ExportCsvFile>(_onExportCsv);
+    on<ImportXlsx>(_onImportXlsx);
+    on<ExportXlsxFile>(_onExportXlsx);
+    on<ClearExportedSpreadsheet>(_onClearExported);
     on<FillRange>(_onFillRange);
+    on<AddConditionalFormat>(_onAddConditionalFormat);
+    on<RemoveConditionalFormat>(_onRemoveConditionalFormat);
+    on<ClearConditionalFormats>(_onClearConditionalFormats);
   }
 
   // --- Helpers ---
@@ -1857,6 +1926,102 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
     _emitWithUndo(emit, sheets: _replaceActiveSheet(sheet));
   }
 
+  // --- XLSX Import/Export ---
+
+  Future<void> _onImportXlsx(
+    ImportXlsx event,
+    Emitter<SpreadsheetState> emit,
+  ) async {
+    emit(state.copyWith(status: SpreadsheetStatus.importing));
+    try {
+      final importedSheets = XlsxService.importFromXlsx(
+        fileBytes: event.bytes,
+      );
+
+      if (importedSheets.isEmpty) {
+        emit(state.copyWith(
+          status: SpreadsheetStatus.error,
+          errorMessage: 'XLSX file contains no sheets',
+        ));
+        return;
+      }
+
+      // Create a new spreadsheet entity
+      final now = DateTime.now();
+      final title = event.fileName
+          .replaceAll('.xlsx', '')
+          .replaceAll('.xls', '');
+
+      final entity = SpreadsheetEntity(
+        id: now.microsecondsSinceEpoch.toString(),
+        title: title,
+        content: jsonEncode(importedSheets.map(_sheetToJson).toList()),
+        sheetCount: importedSheets.length,
+        createdAt: now,
+        modifiedAt: now,
+      );
+
+      await _dao.insertSpreadsheet(entity);
+
+      emit(state.copyWith(
+        status: SpreadsheetStatus.editing,
+        currentSpreadsheet: entity,
+        sheets: importedSheets,
+        activeSheetIndex: 0,
+        hasUnsavedChanges: false,
+      ));
+    } catch (e) {
+      emit(state.copyWith(
+        status: SpreadsheetStatus.error,
+        errorMessage: 'XLSX import failed: $e',
+      ));
+    }
+  }
+
+  Future<void> _onExportXlsx(
+    ExportXlsxFile event,
+    Emitter<SpreadsheetState> emit,
+  ) async {
+    if (state.sheets.isEmpty) return;
+    emit(state.copyWith(
+      status: SpreadsheetStatus.exporting,
+    ));
+    try {
+      final title = state.currentSpreadsheet?.title ?? 'Spreadsheet';
+      final bytes = XlsxService.exportToXlsx(
+        sheets: state.sheets,
+        title: title,
+      );
+
+      final sanitizedTitle = title
+          .replaceAll(RegExp(r'[<>:"/\\|?*]'), '_')
+          .replaceAll(RegExp(r'\s+'), '_')
+          .toLowerCase();
+
+      emit(state.copyWith(
+        status: SpreadsheetStatus.exported,
+        exportedBytes: bytes,
+        exportedFileName: '$sanitizedTitle.xlsx',
+        exportedMimeType:
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      ));
+    } catch (e) {
+      emit(state.copyWith(
+        status: SpreadsheetStatus.error,
+        errorMessage: 'XLSX export failed: $e',
+      ));
+    }
+  }
+
+  void _onClearExported(
+    ClearExportedSpreadsheet event,
+    Emitter<SpreadsheetState> emit,
+  ) {
+    emit(state.copyWith(
+      status: SpreadsheetStatus.editing,
+    ));
+  }
+
   void _scheduleAutoSave() {
     _autoSaveTimer?.cancel();
     _autoSaveTimer = Timer(const Duration(seconds: 5), () {
@@ -1937,6 +2102,42 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
       hiddenCols: hiddenCols,
       mergedCells: mergedCells,
     );
+  }
+
+  // --- Conditional Formatting Handlers ---
+
+  void _onAddConditionalFormat(
+      AddConditionalFormat event, Emitter<SpreadsheetState> emit) {
+    final updated = List<ConditionalFormat>.from(state.conditionalFormats)
+      ..add(event.rule);
+    emit(state.copyWith(
+      conditionalFormats: updated,
+      hasUnsavedChanges: true,
+    ));
+    _scheduleAutoSave();
+  }
+
+  void _onRemoveConditionalFormat(
+      RemoveConditionalFormat event, Emitter<SpreadsheetState> emit) {
+    if (event.index < 0 || event.index >= state.conditionalFormats.length) {
+      return;
+    }
+    final updated = List<ConditionalFormat>.from(state.conditionalFormats)
+      ..removeAt(event.index);
+    emit(state.copyWith(
+      conditionalFormats: updated,
+      hasUnsavedChanges: true,
+    ));
+    _scheduleAutoSave();
+  }
+
+  void _onClearConditionalFormats(
+      ClearConditionalFormats event, Emitter<SpreadsheetState> emit) {
+    emit(state.copyWith(
+      conditionalFormats: const [],
+      hasUnsavedChanges: true,
+    ));
+    _scheduleAutoSave();
   }
 
   @override

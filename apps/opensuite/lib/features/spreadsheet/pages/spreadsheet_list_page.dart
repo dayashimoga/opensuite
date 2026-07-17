@@ -398,14 +398,25 @@ class _ListContentState extends State<_ListContent> {
   Future<void> _openFile(BuildContext context) async {
     final result = await fp.FilePicker.platform.pickFiles(
       type: fp.FileType.custom,
-      allowedExtensions: ['xlsx', 'xls', 'csv', 'ods'],
+      allowedExtensions: ['xlsx', 'xls', 'csv', 'tsv', 'ods', 'txt'],
       allowMultiple: false,
+      withData: true,
     );
     if (result != null && result.files.isNotEmpty && context.mounted) {
       final file = result.files.single;
-      final title = file.name.replaceAll(RegExp(r'\.(xlsx|xls|csv|ods)$'), '');
-      setState(() => _isCreating = true);
-      context.read<SpreadsheetBloc>().add(CreateSpreadsheet(title: title));
+      if (file.bytes != null) {
+        setState(() => _isCreating = true);
+        final ext = file.extension?.toLowerCase() ?? '';
+        if (ext == 'xlsx' || ext == 'xls') {
+          context.read<SpreadsheetBloc>().add(
+                ImportXlsx(file.bytes!, fileName: file.name),
+              );
+        } else {
+          context.read<SpreadsheetBloc>().add(
+                ImportCsv(file.bytes!, fileName: file.name),
+              );
+        }
+      }
     }
   }
 }

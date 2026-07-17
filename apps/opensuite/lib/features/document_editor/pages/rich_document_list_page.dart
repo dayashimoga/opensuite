@@ -220,18 +220,32 @@ class _DocumentListContentState extends State<_DocumentListContent> {
   Future<void> _openFile(BuildContext context) async {
     final result = await fp.FilePicker.platform.pickFiles(
       type: fp.FileType.custom,
-      allowedExtensions: ['docx', 'doc', 'txt', 'md', 'rtf', 'odt'],
+      allowedExtensions: ['docx', 'txt', 'md', 'markdown'],
       allowMultiple: false,
+      withData: true,
     );
     if (result != null && result.files.isNotEmpty && context.mounted) {
       final file = result.files.single;
-      final title =
-          file.name.replaceAll(RegExp(r'\.(docx|doc|txt|md|rtf|odt)$'), '');
+      if (file.bytes == null) return;
+
       setState(() => _isCreating = true);
-      context.read<DocumentEditorBloc>().add(CreateDocument(
-            title: title,
-            format: file.name.endsWith('.md') ? 'markdown' : 'rich',
-          ));
+
+      if (file.name.endsWith('.docx')) {
+        // Import DOCX with full content parsing
+        context.read<DocumentEditorBloc>().add(ImportDocx(
+              fileBytes: file.bytes!,
+              fileName: file.name,
+            ));
+      } else {
+        // Import plain text / markdown
+        final content = String.fromCharCodes(file.bytes!);
+        final ext = file.extension ?? 'txt';
+        context.read<DocumentEditorBloc>().add(ImportTextFile(
+              content: content,
+              fileName: file.name,
+              format: ext == 'md' || ext == 'markdown' ? 'md' : 'txt',
+            ));
+      }
     }
   }
 }

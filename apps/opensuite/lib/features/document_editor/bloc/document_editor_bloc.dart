@@ -1,10 +1,14 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:bloc_concurrency/bloc_concurrency.dart';
-
 import 'package:equatable/equatable.dart';
 import 'package:fileutility_storage/fileutility_storage.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../services/docx_service.dart';
+import '../services/pdf_export_service.dart';
 
 // --- Events ---
 
@@ -59,7 +63,7 @@ class UpdateDocumentTitle extends DocumentEditorEvent {
   List<Object?> get props => [title];
 }
 
-/// Update the document content.
+/// Update the document content with Quill Delta JSON.
 class UpdateDocumentContent extends DocumentEditorEvent {
   final String content;
   final String plainText;
@@ -106,28 +110,9 @@ class DuplicateDocument extends DocumentEditorEvent {
   List<Object?> get props => [documentId];
 }
 
-/// Apply text formatting.
-class ApplyFormatting extends DocumentEditorEvent {
-  final String formatType; // 'bold', 'italic', 'underline', etc.
-  const ApplyFormatting(this.formatType);
-
-  @override
-  List<Object?> get props => [formatType];
-}
-
 /// Toggle the formatting toolbar visibility.
 class ToggleToolbar extends DocumentEditorEvent {
   const ToggleToolbar();
-}
-
-/// Undo last change.
-class UndoChange extends DocumentEditorEvent {
-  const UndoChange();
-}
-
-/// Redo last undone change.
-class RedoChange extends DocumentEditorEvent {
-  const RedoChange();
 }
 
 /// Toggle find/replace bar visibility.
@@ -164,14 +149,59 @@ class NavigateFindMatch extends DocumentEditorEvent {
   List<Object?> get props => [forward];
 }
 
-/// Insert text at a specific position in the content.
-class InsertAtCursor extends DocumentEditorEvent {
-  final String text;
-  final int position;
-  const InsertAtCursor(this.text, this.position);
+/// Export the document to DOCX format.
+class ExportDocx extends DocumentEditorEvent {
+  const ExportDocx();
+}
+
+/// Export the document to PDF format.
+class ExportPdf extends DocumentEditorEvent {
+  const ExportPdf();
+}
+
+/// Import a DOCX file and load its content.
+class ImportDocx extends DocumentEditorEvent {
+  final Uint8List fileBytes;
+  final String fileName;
+  const ImportDocx({required this.fileBytes, required this.fileName});
 
   @override
-  List<Object?> get props => [text, position];
+  List<Object?> get props => [fileName, fileBytes];
+}
+
+/// Import content from a plain text or markdown file.
+class ImportTextFile extends DocumentEditorEvent {
+  final String content;
+  final String fileName;
+  final String format;
+  const ImportTextFile({
+    required this.content,
+    required this.fileName,
+    this.format = 'txt',
+  });
+
+  @override
+  List<Object?> get props => [content, fileName, format];
+}
+
+/// Set the exported bytes after a successful export operation.
+class SetExportedBytes extends DocumentEditorEvent {
+  final Uint8List bytes;
+  final String fileName;
+  final String mimeType;
+  const SetExportedBytes({
+    required this.bytes,
+    required this.fileName,
+    required this.mimeType,
+  });
+
+  @override
+  List<Object?> get props => [fileName, mimeType];
+}
+
+/// Clear exported bytes after download completes.
+class ClearExportedBytes extends DocumentEditorEvent {
+  const ClearExportedBytes();
 }
 
 // --- State ---
@@ -184,6 +214,9 @@ enum DocumentEditorStatus {
   editing,
   saving,
   saved,
+  exporting,
+  exported,
+  importing,
   error,
 }
 
@@ -207,9 +240,6 @@ class DocumentEditorState extends Equatable {
   /// Whether the formatting toolbar is visible.
   final bool showToolbar;
 
-  /// Active formatting styles at cursor position.
-  final Set<String> activeFormats;
-
   /// Error message if status is error.
   final String? errorMessage;
 
@@ -218,12 +248,6 @@ class DocumentEditorState extends Equatable {
 
   /// Character count of current document.
   final int characterCount;
-
-  /// Undo history stack.
-  final List<String> undoStack;
-
-  /// Redo history stack.
-  final List<String> redoStack;
 
   /// Whether the find/replace bar is visible.
   final bool showFindReplace;
@@ -240,6 +264,18 @@ class DocumentEditorState extends Equatable {
   /// Index of the currently highlighted match.
   final int currentFindIndex;
 
+  /// Exported file bytes ready for download.
+  final Uint8List? exportedBytes;
+
+  /// Exported file name for download.
+  final String? exportedFileName;
+
+  /// Exported file MIME type.
+  final String? exportedMimeType;
+
+  /// Status/progress message for long operations.
+  final String? progressMessage;
+
   const DocumentEditorState({
     this.status = DocumentEditorStatus.initial,
     this.documents = const [],
@@ -247,18 +283,23 @@ class DocumentEditorState extends Equatable {
     this.hasUnsavedChanges = false,
     this.searchQuery = '',
     this.showToolbar = true,
-    this.activeFormats = const {},
     this.errorMessage,
     this.wordCount = 0,
     this.characterCount = 0,
-    this.undoStack = const [],
-    this.redoStack = const [],
     this.showFindReplace = false,
     this.findQuery = '',
     this.replaceQuery = '',
     this.findMatches = const [],
     this.currentFindIndex = 0,
+    this.exportedBytes,
+    this.exportedFileName,
+    this.exportedMimeType,
+    this.progressMessage,
   });
+
+  /// The Delta JSON content of the current document, or empty Delta.
+  String get deltaJson =>
+      currentDocument?.content ?? '[{"insert":"\\n"}]';
 
   DocumentEditorState copyWith({
     DocumentEditorStatus? status,
@@ -267,36 +308,39 @@ class DocumentEditorState extends Equatable {
     bool? hasUnsavedChanges,
     String? searchQuery,
     bool? showToolbar,
-    Set<String>? activeFormats,
     String? errorMessage,
     int? wordCount,
     int? characterCount,
-    List<String>? undoStack,
-    List<String>? redoStack,
     bool? showFindReplace,
     String? findQuery,
     String? replaceQuery,
     List<int>? findMatches,
     int? currentFindIndex,
+    Uint8List? exportedBytes,
+    String? exportedFileName,
+    String? exportedMimeType,
+    String? progressMessage,
+    bool clearCurrentDocument = false,
   }) {
     return DocumentEditorState(
       status: status ?? this.status,
       documents: documents ?? this.documents,
-      currentDocument: currentDocument ?? this.currentDocument,
+      currentDocument: clearCurrentDocument ? null : (currentDocument ?? this.currentDocument),
       hasUnsavedChanges: hasUnsavedChanges ?? this.hasUnsavedChanges,
       searchQuery: searchQuery ?? this.searchQuery,
       showToolbar: showToolbar ?? this.showToolbar,
-      activeFormats: activeFormats ?? this.activeFormats,
       errorMessage: errorMessage ?? this.errorMessage,
       wordCount: wordCount ?? this.wordCount,
       characterCount: characterCount ?? this.characterCount,
-      undoStack: undoStack ?? this.undoStack,
-      redoStack: redoStack ?? this.redoStack,
       showFindReplace: showFindReplace ?? this.showFindReplace,
       findQuery: findQuery ?? this.findQuery,
       replaceQuery: replaceQuery ?? this.replaceQuery,
       findMatches: findMatches ?? this.findMatches,
       currentFindIndex: currentFindIndex ?? this.currentFindIndex,
+      exportedBytes: exportedBytes,
+      exportedFileName: exportedFileName,
+      exportedMimeType: exportedMimeType,
+      progressMessage: progressMessage,
     );
   }
 
@@ -308,16 +352,15 @@ class DocumentEditorState extends Equatable {
         hasUnsavedChanges,
         searchQuery,
         showToolbar,
-        activeFormats,
         errorMessage,
         wordCount,
         characterCount,
-        undoStack.length,
-        redoStack.length,
         showFindReplace,
         findQuery,
         findMatches.length,
         currentFindIndex,
+        exportedFileName,
+        progressMessage,
       ];
 }
 
@@ -325,14 +368,17 @@ class DocumentEditorState extends Equatable {
 
 /// BLoC managing the document editor feature.
 ///
-/// Handles document CRUD, formatting, undo/redo, and autosave.
+/// Handles document CRUD, rich text (Quill Delta) persistence,
+/// DOCX/PDF export, and autosave.
+///
+/// Undo/redo is handled by flutter_quill's built-in HistoryController,
+/// so the BLoC no longer manages an undo/redo stack.
 class DocumentEditorBloc
     extends Bloc<DocumentEditorEvent, DocumentEditorState> {
   final DocumentDao _documentDao;
 
   Timer? _autoSaveTimer;
   static const _autoSaveDelay = Duration(seconds: 5);
-  static const _maxUndoHistory = 50;
 
   /// Creates a [DocumentEditorBloc].
   DocumentEditorBloc({required DocumentDao documentDao})
@@ -349,15 +395,17 @@ class DocumentEditorBloc
     on<DeleteDocument>(_onDeleteDocument);
     on<ToggleDocumentFavorite>(_onToggleFavorite);
     on<DuplicateDocument>(_onDuplicateDocument);
-    on<ApplyFormatting>(_onApplyFormatting);
     on<ToggleToolbar>(_onToggleToolbar);
-    on<UndoChange>(_onUndo);
-    on<RedoChange>(_onRedo);
     on<ToggleFindReplace>(_onToggleFindReplace);
     on<FindInDocument>(_onFindInDocument);
     on<ReplaceInDocument>(_onReplaceInDocument);
     on<NavigateFindMatch>(_onNavigateFindMatch);
-    on<InsertAtCursor>(_onInsertAtCursor);
+    on<ExportDocx>(_onExportDocx);
+    on<ExportPdf>(_onExportPdf);
+    on<ImportDocx>(_onImportDocx);
+    on<ImportTextFile>(_onImportTextFile);
+    on<SetExportedBytes>(_onSetExportedBytes);
+    on<ClearExportedBytes>(_onClearExportedBytes);
   }
 
   Future<void> _onLoadDocuments(
@@ -405,10 +453,12 @@ class DocumentEditorBloc
     Emitter<DocumentEditorState> emit,
   ) async {
     final now = DateTime.now();
+    // Empty Quill Delta document (single newline insert)
+    const emptyDelta = '[{"insert":"\\n"}]';
     final document = DocumentEntity(
       id: now.microsecondsSinceEpoch.toString(),
       title: event.title,
-      content: '[]', // Empty Delta
+      content: emptyDelta,
       plainText: '',
       format: event.format,
       createdAt: now,
@@ -423,8 +473,6 @@ class DocumentEditorBloc
         hasUnsavedChanges: false,
         wordCount: 0,
         characterCount: 0,
-        undoStack: const [],
-        redoStack: const [],
       ));
     } catch (e) {
       emit(state.copyWith(
@@ -448,8 +496,6 @@ class DocumentEditorBloc
           hasUnsavedChanges: false,
           wordCount: document.wordCount,
           characterCount: document.characterCount,
-          undoStack: const [],
-          redoStack: const [],
         ));
       } else {
         emit(state.copyWith(
@@ -487,16 +533,7 @@ class DocumentEditorBloc
   ) {
     if (state.currentDocument == null) return;
 
-    // Push current content to undo stack
-    final newUndoStack = List<String>.from(state.undoStack);
-    if (state.currentDocument!.content != event.content) {
-      newUndoStack.add(state.currentDocument!.content);
-      if (newUndoStack.length > _maxUndoHistory) {
-        newUndoStack.removeAt(0);
-      }
-    }
-
-    // Count words and characters
+    // Count words and characters from plain text
     final words = event.plainText.trim().isEmpty
         ? 0
         : event.plainText.trim().split(RegExp(r'\s+')).length;
@@ -515,8 +552,6 @@ class DocumentEditorBloc
       hasUnsavedChanges: true,
       wordCount: words,
       characterCount: chars,
-      undoStack: newUndoStack,
-      redoStack: const [], // Clear redo on new change
     ));
     _scheduleAutoSave();
   }
@@ -565,11 +600,10 @@ class DocumentEditorBloc
       await _documentDao.deleteDocument(event.documentId);
       final updated =
           state.documents.where((d) => d.id != event.documentId).toList();
+      final isDeletedCurrent = state.currentDocument?.id == event.documentId;
       emit(state.copyWith(
         documents: updated,
-        currentDocument: state.currentDocument?.id == event.documentId
-            ? null
-            : state.currentDocument,
+        clearCurrentDocument: isDeletedCurrent,
       ));
     } catch (e) {
       emit(state.copyWith(
@@ -609,66 +643,11 @@ class DocumentEditorBloc
     }
   }
 
-  void _onApplyFormatting(
-    ApplyFormatting event,
-    Emitter<DocumentEditorState> emit,
-  ) {
-    final activeFormats = Set<String>.from(state.activeFormats);
-    if (activeFormats.contains(event.formatType)) {
-      activeFormats.remove(event.formatType);
-    } else {
-      activeFormats.add(event.formatType);
-    }
-    emit(state.copyWith(activeFormats: activeFormats));
-  }
-
   void _onToggleToolbar(
     ToggleToolbar event,
     Emitter<DocumentEditorState> emit,
   ) {
     emit(state.copyWith(showToolbar: !state.showToolbar));
-  }
-
-  void _onUndo(UndoChange event, Emitter<DocumentEditorState> emit) {
-    if (state.undoStack.isEmpty || state.currentDocument == null) return;
-
-    final newUndoStack = List<String>.from(state.undoStack);
-    final newRedoStack = List<String>.from(state.redoStack);
-    final previousContent = newUndoStack.removeLast();
-    newRedoStack.add(state.currentDocument!.content);
-
-    final updated = state.currentDocument!.copyWith(
-      content: previousContent,
-      modifiedAt: DateTime.now(),
-    );
-
-    emit(state.copyWith(
-      currentDocument: updated,
-      hasUnsavedChanges: true,
-      undoStack: newUndoStack,
-      redoStack: newRedoStack,
-    ));
-  }
-
-  void _onRedo(RedoChange event, Emitter<DocumentEditorState> emit) {
-    if (state.redoStack.isEmpty || state.currentDocument == null) return;
-
-    final newUndoStack = List<String>.from(state.undoStack);
-    final newRedoStack = List<String>.from(state.redoStack);
-    final nextContent = newRedoStack.removeLast();
-    newUndoStack.add(state.currentDocument!.content);
-
-    final updated = state.currentDocument!.copyWith(
-      content: nextContent,
-      modifiedAt: DateTime.now(),
-    );
-
-    emit(state.copyWith(
-      currentDocument: updated,
-      hasUnsavedChanges: true,
-      undoStack: newUndoStack,
-      redoStack: newRedoStack,
-    ));
   }
 
   void _scheduleAutoSave() {
@@ -729,68 +708,16 @@ class DocumentEditorBloc
     ReplaceInDocument event,
     Emitter<DocumentEditorState> emit,
   ) {
+    // Find/replace operates on plain text but the actual replacement
+    // should be done via the Quill controller in the UI layer.
+    // The BLoC only tracks match positions.
+    // The UI calls UpdateDocumentContent after performing the replacement.
     if (state.currentDocument == null || event.find.isEmpty) return;
 
-    final content = state.currentDocument!.plainText;
-    String newContent;
-
-    if (event.replaceAll) {
-      // Replace all occurrences (case-insensitive)
-      newContent = content;
-      final findLower = event.find.toLowerCase();
-      int start = 0;
-      final buffer = StringBuffer();
-      final contentLower = content.toLowerCase();
-
-      while (true) {
-        final index = contentLower.indexOf(findLower, start);
-        if (index == -1) {
-          buffer.write(content.substring(start));
-          break;
-        }
-        buffer.write(content.substring(start, index));
-        buffer.write(event.replace);
-        start = index + event.find.length;
-      }
-      newContent = buffer.toString();
-    } else {
-      // Replace only current match
-      if (state.findMatches.isEmpty) return;
-      final matchPos = state.findMatches[state.currentFindIndex];
-      newContent = content.substring(0, matchPos) +
-          event.replace +
-          content.substring(matchPos + event.find.length);
-    }
-
-    // Push undo
-    final newUndoStack = List<String>.from(state.undoStack);
-    if (newUndoStack.length >= _maxUndoHistory) {
-      newUndoStack.removeAt(0);
-    }
-    newUndoStack.add(content);
-
-    final updated = state.currentDocument!.copyWith(
-      content: newContent,
-      plainText: newContent,
-      modifiedAt: DateTime.now(),
-    );
-
-    emit(state.copyWith(
-      currentDocument: updated,
-      hasUnsavedChanges: true,
-      wordCount: _countWords(newContent),
-      characterCount: newContent.length,
-      undoStack: newUndoStack,
-      redoStack: const [],
-      findMatches: const [],
-      currentFindIndex: 0,
-    ));
-
-    // Re-run find to update matches
+    // Update find matches after replacement is applied externally
     if (state.findQuery.isNotEmpty) {
       add(FindInDocument(state.findQuery));
     }
-    _scheduleAutoSave();
   }
 
   void _onNavigateFindMatch(
@@ -808,44 +735,216 @@ class DocumentEditorBloc
     emit(state.copyWith(currentFindIndex: newIndex));
   }
 
-  void _onInsertAtCursor(
-    InsertAtCursor event,
+  // --- Import/Export ---
+
+  Future<void> _onExportDocx(
+    ExportDocx event,
+    Emitter<DocumentEditorState> emit,
+  ) async {
+    if (state.currentDocument == null) return;
+    emit(state.copyWith(
+      status: DocumentEditorStatus.exporting,
+      progressMessage: 'Generating DOCX...',
+    ));
+    try {
+      final title = state.currentDocument!.title;
+      final plainText = state.currentDocument!.plainText;
+      final deltaJson = state.currentDocument!.content;
+
+      // Generate DOCX bytes using DocxService
+      final bytes = DocxService.exportFromDelta(
+        deltaJson: deltaJson,
+        plainText: plainText,
+        title: title,
+      );
+
+      emit(state.copyWith(
+        status: DocumentEditorStatus.exported,
+        exportedBytes: bytes,
+        exportedFileName: '${_sanitizeFileName(title)}.docx',
+        exportedMimeType:
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        progressMessage: null,
+      ));
+    } catch (e) {
+      emit(state.copyWith(
+        status: DocumentEditorStatus.error,
+        errorMessage: 'DOCX export failed: $e',
+        progressMessage: null,
+      ));
+    }
+  }
+
+  Future<void> _onExportPdf(
+    ExportPdf event,
+    Emitter<DocumentEditorState> emit,
+  ) async {
+    if (state.currentDocument == null) return;
+    emit(state.copyWith(
+      status: DocumentEditorStatus.exporting,
+      progressMessage: 'Generating PDF...',
+    ));
+    try {
+      final title = state.currentDocument!.title;
+      final plainText = state.currentDocument!.plainText;
+      final deltaJson = state.currentDocument!.content;
+
+      // Generate PDF bytes using PdfExportService
+      final bytes = await PdfExportService.exportFromDelta(
+        deltaJson: deltaJson,
+        plainText: plainText,
+        title: title,
+      );
+
+      emit(state.copyWith(
+        status: DocumentEditorStatus.exported,
+        exportedBytes: bytes,
+        exportedFileName: '${_sanitizeFileName(title)}.pdf',
+        exportedMimeType: 'application/pdf',
+        progressMessage: null,
+      ));
+    } catch (e) {
+      emit(state.copyWith(
+        status: DocumentEditorStatus.error,
+        errorMessage: 'PDF export failed: $e',
+        progressMessage: null,
+      ));
+    }
+  }
+
+  Future<void> _onImportDocx(
+    ImportDocx event,
+    Emitter<DocumentEditorState> emit,
+  ) async {
+    emit(state.copyWith(
+      status: DocumentEditorStatus.importing,
+      progressMessage: 'Importing DOCX...',
+    ));
+    try {
+      final result = DocxService.importToDocument(
+        fileBytes: event.fileBytes,
+        fileName: event.fileName,
+      );
+
+      final now = DateTime.now();
+      final title = result['title'] ??
+          event.fileName.replaceAll('.docx', '');
+      final deltaJson = result['deltaJson'] as String;
+      final plainText = result['plainText'] as String;
+
+      final document = DocumentEntity(
+        id: now.microsecondsSinceEpoch.toString(),
+        title: title,
+        content: deltaJson,
+        plainText: plainText,
+        format: 'rich',
+        wordCount: _countWords(plainText),
+        characterCount: plainText.length,
+        createdAt: now,
+        modifiedAt: now,
+      );
+
+      await _documentDao.insertDocument(document);
+
+      emit(state.copyWith(
+        status: DocumentEditorStatus.editing,
+        currentDocument: document,
+        hasUnsavedChanges: false,
+        wordCount: document.wordCount,
+        characterCount: document.characterCount,
+        progressMessage: null,
+      ));
+    } catch (e) {
+      emit(state.copyWith(
+        status: DocumentEditorStatus.error,
+        errorMessage: 'DOCX import failed: $e',
+        progressMessage: null,
+      ));
+    }
+  }
+
+  Future<void> _onImportTextFile(
+    ImportTextFile event,
+    Emitter<DocumentEditorState> emit,
+  ) async {
+    emit(state.copyWith(
+      status: DocumentEditorStatus.importing,
+      progressMessage: 'Importing file...',
+    ));
+    try {
+      final now = DateTime.now();
+      final title = event.fileName
+          .replaceAll('.txt', '')
+          .replaceAll('.md', '')
+          .replaceAll('.markdown', '');
+
+      // Convert plain text to Quill Delta JSON
+      final deltaJson = jsonEncode([
+        {'insert': '${event.content}\n'}
+      ]);
+
+      final document = DocumentEntity(
+        id: now.microsecondsSinceEpoch.toString(),
+        title: title,
+        content: deltaJson,
+        plainText: event.content,
+        format: event.format == 'md' ? 'markdown' : 'rich',
+        wordCount: _countWords(event.content),
+        characterCount: event.content.length,
+        createdAt: now,
+        modifiedAt: now,
+      );
+
+      await _documentDao.insertDocument(document);
+
+      emit(state.copyWith(
+        status: DocumentEditorStatus.editing,
+        currentDocument: document,
+        hasUnsavedChanges: false,
+        wordCount: document.wordCount,
+        characterCount: document.characterCount,
+        progressMessage: null,
+      ));
+    } catch (e) {
+      emit(state.copyWith(
+        status: DocumentEditorStatus.error,
+        errorMessage: 'Import failed: $e',
+        progressMessage: null,
+      ));
+    }
+  }
+
+  void _onSetExportedBytes(
+    SetExportedBytes event,
     Emitter<DocumentEditorState> emit,
   ) {
-    if (state.currentDocument == null) return;
-
-    final content = state.currentDocument!.plainText;
-    final pos = event.position.clamp(0, content.length);
-    final newContent =
-        content.substring(0, pos) + event.text + content.substring(pos);
-
-    // Push undo
-    final newUndoStack = List<String>.from(state.undoStack);
-    if (newUndoStack.length >= _maxUndoHistory) {
-      newUndoStack.removeAt(0);
-    }
-    newUndoStack.add(content);
-
-    final updated = state.currentDocument!.copyWith(
-      content: newContent,
-      plainText: newContent,
-      modifiedAt: DateTime.now(),
-    );
-
     emit(state.copyWith(
-      currentDocument: updated,
-      hasUnsavedChanges: true,
-      wordCount: _countWords(newContent),
-      characterCount: newContent.length,
-      undoStack: newUndoStack,
-      redoStack: const [],
+      status: DocumentEditorStatus.exported,
+      exportedBytes: event.bytes,
+      exportedFileName: event.fileName,
+      exportedMimeType: event.mimeType,
     ));
-    _scheduleAutoSave();
+  }
+
+  void _onClearExportedBytes(
+    ClearExportedBytes event,
+    Emitter<DocumentEditorState> emit,
+  ) {
+    emit(state.copyWith(
+      status: DocumentEditorStatus.editing,
+    ));
   }
 
   int _countWords(String text) {
     if (text.trim().isEmpty) return 0;
     return text.trim().split(RegExp(r'\s+')).length;
+  }
+
+  String _sanitizeFileName(String name) {
+    return name
+        .replaceAll(RegExp(r'[<>:"/\\|?*]'), '_')
+        .replaceAll(RegExp(r'\s+'), '_')
+        .toLowerCase();
   }
 
   @override
@@ -854,3 +953,4 @@ class DocumentEditorBloc
     return super.close();
   }
 }
+

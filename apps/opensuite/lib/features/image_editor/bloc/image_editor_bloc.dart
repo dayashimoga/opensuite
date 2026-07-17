@@ -128,6 +128,56 @@ class SelectTool extends ImageEditorEvent {
   List<Object?> get props => [tool];
 }
 
+// --- Sprint 17: Layers, Drawing, Text, Filters ---
+
+class AddTextOverlay extends ImageEditorEvent {
+  final TextOverlayData overlay;
+  const AddTextOverlay(this.overlay);
+  @override
+  List<Object?> get props => [overlay];
+}
+
+class RemoveTextOverlay extends ImageEditorEvent {
+  final int index;
+  const RemoveTextOverlay(this.index);
+  @override
+  List<Object?> get props => [index];
+}
+
+class UpdateTextOverlay extends ImageEditorEvent {
+  final int index;
+  final TextOverlayData overlay;
+  const UpdateTextOverlay(this.index, this.overlay);
+  @override
+  List<Object?> get props => [index, overlay];
+}
+
+class AddDrawingPath extends ImageEditorEvent {
+  final DrawingPathData path;
+  const AddDrawingPath(this.path);
+  @override
+  List<Object?> get props => [path];
+}
+
+class ClearDrawings extends ImageEditorEvent {
+  const ClearDrawings();
+}
+
+class ApplyPresetFilter extends ImageEditorEvent {
+  final String presetName; // 'sepia', 'grayscale', 'invert', 'blur', 'sharpen', 'emboss', 'vignette'
+  const ApplyPresetFilter(this.presetName);
+  @override
+  List<Object?> get props => [presetName];
+}
+
+class AddWatermark extends ImageEditorEvent {
+  final String text;
+  final double opacity;
+  const AddWatermark(this.text, {this.opacity = 0.3});
+  @override
+  List<Object?> get props => [text, opacity];
+}
+
 // --- State ---
 
 enum ImageEditorStatus {
@@ -138,6 +188,66 @@ enum ImageEditorStatus {
   saving,
   saved,
   error
+}
+
+/// Text overlay data for compositing text on images.
+class TextOverlayData extends Equatable {
+  final String text;
+  final double x;
+  final double y;
+  final double fontSize;
+  final String color; // hex
+  final String fontFamily;
+  final bool bold;
+
+  const TextOverlayData({
+    required this.text,
+    this.x = 0.5,
+    this.y = 0.5,
+    this.fontSize = 24,
+    this.color = '#FFFFFF',
+    this.fontFamily = 'Inter',
+    this.bold = false,
+  });
+
+  TextOverlayData copyWith({
+    String? text,
+    double? x,
+    double? y,
+    double? fontSize,
+    String? color,
+    String? fontFamily,
+    bool? bold,
+  }) => TextOverlayData(
+    text: text ?? this.text,
+    x: x ?? this.x,
+    y: y ?? this.y,
+    fontSize: fontSize ?? this.fontSize,
+    color: color ?? this.color,
+    fontFamily: fontFamily ?? this.fontFamily,
+    bold: bold ?? this.bold,
+  );
+
+  @override
+  List<Object?> get props => [text, x, y, fontSize, color, fontFamily, bold];
+}
+
+/// Freehand drawing path data.
+class DrawingPathData extends Equatable {
+  final List<List<double>> points; // [[x, y], [x, y], ...]
+  final String color; // hex
+  final double strokeWidth;
+  final bool isEraser;
+
+  const DrawingPathData({
+    required this.points,
+    this.color = '#FF0000',
+    this.strokeWidth = 3.0,
+    this.isEraser = false,
+  });
+
+  @override
+  List<Object?> get props => [points, color, strokeWidth, isEraser];
 }
 
 class ImageAdjustments extends Equatable {
@@ -216,6 +326,13 @@ class ImageEditorState extends Equatable {
   final bool hasEdits;
   final String? errorMessage;
 
+  // Sprint 17 additions
+  final List<TextOverlayData> textOverlays;
+  final List<DrawingPathData> drawings;
+  final String? activePresetFilter;
+  final String? watermarkText;
+  final double watermarkOpacity;
+
   const ImageEditorState({
     this.status = ImageEditorStatus.initial,
     this.filePath,
@@ -229,6 +346,11 @@ class ImageEditorState extends Equatable {
     this.redoStack = const [],
     this.hasEdits = false,
     this.errorMessage,
+    this.textOverlays = const [],
+    this.drawings = const [],
+    this.activePresetFilter,
+    this.watermarkText,
+    this.watermarkOpacity = 0.3,
   });
 
   bool get canUndo => undoStack.isNotEmpty;
@@ -247,6 +369,11 @@ class ImageEditorState extends Equatable {
     List<ImageAdjustments>? redoStack,
     bool? hasEdits,
     String? errorMessage,
+    List<TextOverlayData>? textOverlays,
+    List<DrawingPathData>? drawings,
+    String? activePresetFilter,
+    String? watermarkText,
+    double? watermarkOpacity,
   }) {
     return ImageEditorState(
       status: status ?? this.status,
@@ -261,6 +388,11 @@ class ImageEditorState extends Equatable {
       redoStack: redoStack ?? this.redoStack,
       hasEdits: hasEdits ?? this.hasEdits,
       errorMessage: errorMessage ?? this.errorMessage,
+      textOverlays: textOverlays ?? this.textOverlays,
+      drawings: drawings ?? this.drawings,
+      activePresetFilter: activePresetFilter ?? this.activePresetFilter,
+      watermarkText: watermarkText ?? this.watermarkText,
+      watermarkOpacity: watermarkOpacity ?? this.watermarkOpacity,
     );
   }
 
@@ -298,6 +430,13 @@ class ImageEditorBloc extends Bloc<ImageEditorEvent, ImageEditorState> {
     on<SelectTool>(_onSelectTool);
     on<ExportImage>(_onExport);
     on<ResizeImageDimensions>(_onResize);
+    on<AddTextOverlay>(_onAddTextOverlay);
+    on<RemoveTextOverlay>(_onRemoveTextOverlay);
+    on<UpdateTextOverlay>(_onUpdateTextOverlay);
+    on<AddDrawingPath>(_onAddDrawingPath);
+    on<ClearDrawings>(_onClearDrawings);
+    on<ApplyPresetFilter>(_onApplyPresetFilter);
+    on<AddWatermark>(_onAddWatermark);
   }
 
   Future<void> _onLoad(LoadImage event, Emitter<ImageEditorState> emit) async {
@@ -509,5 +648,62 @@ class ImageEditorBloc extends Bloc<ImageEditorEvent, ImageEditorState> {
         errorMessage: 'Export failed: $e',
       ));
     }
+  }
+
+  // --- Sprint 17: Layer/Drawing/Filter Handlers ---
+
+  void _onAddTextOverlay(
+      AddTextOverlay event, Emitter<ImageEditorState> emit) {
+    _pushUndo(emit);
+    emit(state.copyWith(
+      textOverlays: [...state.textOverlays, event.overlay],
+    ));
+  }
+
+  void _onRemoveTextOverlay(
+      RemoveTextOverlay event, Emitter<ImageEditorState> emit) {
+    if (event.index < 0 || event.index >= state.textOverlays.length) return;
+    _pushUndo(emit);
+    final updated = List<TextOverlayData>.from(state.textOverlays)
+      ..removeAt(event.index);
+    emit(state.copyWith(textOverlays: updated));
+  }
+
+  void _onUpdateTextOverlay(
+      UpdateTextOverlay event, Emitter<ImageEditorState> emit) {
+    if (event.index < 0 || event.index >= state.textOverlays.length) return;
+    _pushUndo(emit);
+    final updated = List<TextOverlayData>.from(state.textOverlays)
+      ..[event.index] = event.overlay;
+    emit(state.copyWith(textOverlays: updated));
+  }
+
+  void _onAddDrawingPath(
+      AddDrawingPath event, Emitter<ImageEditorState> emit) {
+    _pushUndo(emit);
+    emit(state.copyWith(
+      drawings: [...state.drawings, event.path],
+    ));
+  }
+
+  void _onClearDrawings(
+      ClearDrawings event, Emitter<ImageEditorState> emit) {
+    _pushUndo(emit);
+    emit(state.copyWith(drawings: const []));
+  }
+
+  void _onApplyPresetFilter(
+      ApplyPresetFilter event, Emitter<ImageEditorState> emit) {
+    _pushUndo(emit);
+    emit(state.copyWith(activePresetFilter: event.presetName));
+  }
+
+  void _onAddWatermark(
+      AddWatermark event, Emitter<ImageEditorState> emit) {
+    _pushUndo(emit);
+    emit(state.copyWith(
+      watermarkText: event.text,
+      watermarkOpacity: event.opacity,
+    ));
   }
 }

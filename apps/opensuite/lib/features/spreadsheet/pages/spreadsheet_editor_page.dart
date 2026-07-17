@@ -11,6 +11,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../../di/app_module.dart';
 import '../bloc/spreadsheet_bloc.dart';
+import '../widgets/spreadsheet_chart.dart';
 
 /// Spreadsheet grid editor page.
 ///
@@ -113,6 +114,27 @@ class _EditorContentState extends State<_EditorContent> {
               duration: Duration(seconds: 1),
             ),
           );
+        }
+        if (state.status == SpreadsheetStatus.exported &&
+            state.exportedBytes != null) {
+          FileDownloadUtils.downloadBytes(
+            bytes: state.exportedBytes!,
+            fileName: state.exportedFileName ?? 'spreadsheet.xlsx',
+            mimeType: state.exportedMimeType ??
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          ).then((_) {
+            if (context.mounted) {
+              context
+                  .read<SpreadsheetBloc>()
+                  .add(const ClearExportedSpreadsheet());
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Downloaded: ${state.exportedFileName}'),
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            }
+          });
         }
         if (state.status == SpreadsheetStatus.error &&
             state.errorMessage != null) {
@@ -321,6 +343,22 @@ class _EditorContentState extends State<_EditorContent> {
               ]),
             ),
             const PopupMenuItem(
+              value: 'export_xlsx',
+              child: Row(children: [
+                Icon(Icons.table_view, size: 20),
+                SizedBox(width: 8),
+                Text('Export as XLSX'),
+              ]),
+            ),
+            const PopupMenuItem(
+              value: 'insert_chart',
+              child: Row(children: [
+                Icon(Icons.bar_chart, size: 20),
+                SizedBox(width: 8),
+                Text('Insert Chart'),
+              ]),
+            ),
+            const PopupMenuItem(
               value: 'share',
               child: Row(children: [
                 Icon(Icons.share, size: 20),
@@ -337,6 +375,10 @@ class _EditorContentState extends State<_EditorContent> {
                 context.read<SpreadsheetBloc>().add(const CreateTable());
               case 'export_csv':
                 _exportCsv(context, state);
+              case 'export_xlsx':
+                context.read<SpreadsheetBloc>().add(const ExportXlsxFile());
+              case 'insert_chart':
+                _showChartDialog(context, state);
               case 'share':
                 _shareSpreadsheet(context, state);
             }
@@ -1185,9 +1227,16 @@ class _EditorContentState extends State<_EditorContent> {
     if (result != null && result.files.isNotEmpty) {
       final file = result.files.single;
       if (file.bytes != null && context.mounted) {
-        context.read<SpreadsheetBloc>().add(
-              ImportCsv(file.bytes!, fileName: file.name),
-            );
+        final ext = file.extension?.toLowerCase() ?? '';
+        if (ext == 'xlsx' || ext == 'xls') {
+          context.read<SpreadsheetBloc>().add(
+                ImportXlsx(file.bytes!, fileName: file.name),
+              );
+        } else {
+          context.read<SpreadsheetBloc>().add(
+                ImportCsv(file.bytes!, fileName: file.name),
+              );
+        }
       }
     }
   }
@@ -1241,9 +1290,160 @@ class _EditorContentState extends State<_EditorContent> {
       subject: title,
     );
   }
+
+  void _showChartDialog(BuildContext context, SpreadsheetState state) {
+    if (state.activeSheet == null) return;
+    final sheet = state.activeSheet!;
+
+    // Use selected range or default to data-filled area
+    CellRange dataRange;
+    if (state.selectedRange != null) {
+      dataRange = state.selectedRange!;
+    } else {
+      // Auto-detect data range
+      int maxRow = 0;
+      int maxCol = 0;
+      for (final key in sheet.cells.keys) {
+        final parts = key.split(',');
+        if (parts.length == 2) {
+          final r = int.tryParse(parts[0]) ?? 0;
+          final c = int.tryParse(parts[1]) ?? 0;
+          if (r > maxRow) maxRow = r;
+          if (c > maxCol) maxCol = c;
+        }
+      }
+      dataRange = CellRange(
+        const CellPosition(0, 0),
+        CellPosition(maxRow, maxCol),
+      );
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.7,
+        maxWidth: 600,
+      ),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => _ChartBottomSheet(
+        sheet: sheet,
+        dataRange: dataRange,
+      ),
+    );
+  }
 }
 
-// --- Color Picker Button ---
+/// Bottom sheet for selecting and previewing charts.
+class _ChartBottomSheet extends StatefulWidget {
+  final SheetData sheet;
+  final CellRange dataRange;
+
+  const _ChartBottomSheet({
+    required this.sheet,
+    required this.dataRange,
+  });
+
+  @override
+  State<_ChartBottomSheet> createState() => _ChartBottomSheetState();
+}
+
+class _ChartBottomSheetState extends State<_ChartBottomSheet> {
+  SpreadsheetChartType _chartType = SpreadsheetChartType.bar;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            children: [
+              Icon(Icons.bar_chart, color: theme.colorScheme.primary),
+              const SizedBox(width: 8),
+              Text('Insert Chart',
+                  style: theme.textTheme.titleLarge
+                      ?.copyWith(fontWeight: FontWeight.w600)),
+              const Spacer(),
+              IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Chart type chips
+          Wrap(
+            spacing: 8,
+            children: SpreadsheetChartType.values.map((type) {
+              final label = switch (type) {
+                SpreadsheetChartType.bar => 'Bar',
+                SpreadsheetChartType.line => 'Line',
+                SpreadsheetChartType.pie => 'Pie',
+              };
+              final icon = switch (type) {
+                SpreadsheetChartType.bar => Icons.bar_chart,
+                SpreadsheetChartType.line => Icons.show_chart,
+                SpreadsheetChartType.pie => Icons.pie_chart,
+              };
+              return ChoiceChip(
+                label: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(icon, size: 16),
+                    const SizedBox(width: 4),
+                    Text(label),
+                  ],
+                ),
+                selected: _chartType == type,
+                onSelected: (sel) {
+                  if (sel) setState(() => _chartType = type);
+                },
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 8),
+
+          // Range info
+          Text(
+            'Data range: ${widget.dataRange.topLeft.reference}:${widget.dataRange.bottomRight.reference}',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Chart preview
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: theme.colorScheme.outlineVariant,
+                  width: 0.5,
+                ),
+              ),
+              child: SpreadsheetChart(
+                sheet: widget.sheet,
+                dataRange: widget.dataRange,
+                chartType: _chartType,
+                title: 'Chart Preview',
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _ColorPickerButton extends StatelessWidget {
   final IconData icon;

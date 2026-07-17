@@ -45,6 +45,21 @@ dependencies:
   sqflite: ^2.4.1
   path_provider: ^2.1.5
 
+  # Rich text editing
+  flutter_quill: ^10.8.5
+
+  # PDF generation
+  pdf: ^3.11.1
+  printing: ^5.13.3
+
+  # File format handling
+  archive: ^3.6.1
+  xml: ^6.5.0
+  excel: ^4.0.6
+  fl_chart: ^0.69.2
+  image: ^4.3.0
+  flutter_svg: ^2.0.10
+
   # File handling
   file_picker: ^9.2.1
   share_plus: ^10.1.4

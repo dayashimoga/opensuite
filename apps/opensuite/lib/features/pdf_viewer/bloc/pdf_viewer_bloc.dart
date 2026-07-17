@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:equatable/equatable.dart';
 import 'package:fileutility_storage/fileutility_storage.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../services/pdf_manipulation_service.dart';
 
 // --- Events ---
 
@@ -115,6 +118,57 @@ class UpdateAnnotation extends PdfViewerEvent {
   List<Object?> get props => [annotation];
 }
 
+// --- Sprint 18: PDF Manipulation Events ---
+
+class MergePdfs extends PdfViewerEvent {
+  final List<Uint8List> pdfBytesList;
+  const MergePdfs(this.pdfBytesList);
+  @override
+  List<Object?> get props => [pdfBytesList];
+}
+
+class SplitPdf extends PdfViewerEvent {
+  final Uint8List pdfBytes;
+  const SplitPdf(this.pdfBytes);
+  @override
+  List<Object?> get props => [pdfBytes];
+}
+
+class ExtractPages extends PdfViewerEvent {
+  final Uint8List pdfBytes;
+  final List<int> pageIndices;
+  const ExtractPages(this.pdfBytes, this.pageIndices);
+  @override
+  List<Object?> get props => [pdfBytes, pageIndices];
+}
+
+class DeletePages extends PdfViewerEvent {
+  final Uint8List pdfBytes;
+  final List<int> pageIndicesToDelete;
+  const DeletePages(this.pdfBytes, this.pageIndicesToDelete);
+  @override
+  List<Object?> get props => [pdfBytes, pageIndicesToDelete];
+}
+
+class AddBookmark extends PdfViewerEvent {
+  final String label;
+  final int page;
+  const AddBookmark(this.label, this.page);
+  @override
+  List<Object?> get props => [label, page];
+}
+
+class RemoveBookmark extends PdfViewerEvent {
+  final int index;
+  const RemoveBookmark(this.index);
+  @override
+  List<Object?> get props => [index];
+}
+
+class ClearPdfExport extends PdfViewerEvent {
+  const ClearPdfExport();
+}
+
 // --- Models ---
 
 class PdfAnnotation extends Equatable {
@@ -192,6 +246,9 @@ class PdfViewerState extends Equatable {
       annotationMode; // 'none', 'highlight', 'underline', 'note', 'freehand'
   final int? extractStartPage;
   final int? extractEndPage;
+  final List<PdfBookmark> bookmarks;
+  final Uint8List? exportedPdfBytes;
+  final String? exportedPdfFileName;
 
   const PdfViewerState({
     this.status = PdfViewerStatus.initial,
@@ -208,6 +265,9 @@ class PdfViewerState extends Equatable {
     this.annotationMode = 'none',
     this.extractStartPage,
     this.extractEndPage,
+    this.bookmarks = const [],
+    this.exportedPdfBytes,
+    this.exportedPdfFileName,
   });
 
   PdfViewerState copyWith({
@@ -225,6 +285,9 @@ class PdfViewerState extends Equatable {
     String? annotationMode,
     int? extractStartPage,
     int? extractEndPage,
+    List<PdfBookmark>? bookmarks,
+    Uint8List? exportedPdfBytes,
+    String? exportedPdfFileName,
   }) {
     return PdfViewerState(
       status: status ?? this.status,
@@ -241,6 +304,9 @@ class PdfViewerState extends Equatable {
       annotationMode: annotationMode ?? this.annotationMode,
       extractStartPage: extractStartPage ?? this.extractStartPage,
       extractEndPage: extractEndPage ?? this.extractEndPage,
+      bookmarks: bookmarks ?? this.bookmarks,
+      exportedPdfBytes: exportedPdfBytes,
+      exportedPdfFileName: exportedPdfFileName,
     );
   }
 
@@ -288,6 +354,13 @@ class PdfViewerBloc extends Bloc<PdfViewerEvent, PdfViewerState> {
     on<SaveAnnotations>(_onSaveAnnotations);
     on<LoadAnnotations>(_onLoadAnnotations);
     on<ToggleAnnotationMode>(_onToggleAnnotationMode);
+    on<MergePdfs>(_onMergePdfs);
+    on<SplitPdf>(_onSplitPdf);
+    on<ExtractPages>(_onExtractPages);
+    on<DeletePages>(_onDeletePages);
+    on<AddBookmark>(_onAddBookmark);
+    on<RemoveBookmark>(_onRemoveBookmark);
+    on<ClearPdfExport>(_onClearPdfExport);
   }
 
   Future<void> _onLoad(LoadPdf event, Emitter<PdfViewerState> emit) async {
@@ -459,4 +532,98 @@ class PdfViewerBloc extends Bloc<PdfViewerEvent, PdfViewerState> {
       // Silent failure
     }
   }
+
+  // --- PDF Manipulation Handlers ---
+
+  Future<void> _onMergePdfs(
+      MergePdfs event, Emitter<PdfViewerState> emit) async {
+    try {
+      final merged = await PdfManipulationService.mergePdfs(event.pdfBytesList);
+      emit(state.copyWith(
+        exportedPdfBytes: merged,
+        exportedPdfFileName: 'merged.pdf',
+      ));
+    } catch (e) {
+      emit(state.copyWith(errorMessage: 'Merge failed: $e'));
+    }
+  }
+
+  Future<void> _onSplitPdf(
+      SplitPdf event, Emitter<PdfViewerState> emit) async {
+    try {
+      final pages = await PdfManipulationService.splitPdf(event.pdfBytes);
+      // Export the first split page; full split exposes all pages
+      if (pages.isNotEmpty) {
+        emit(state.copyWith(
+          exportedPdfBytes: pages.first,
+          exportedPdfFileName: 'split_page_1.pdf',
+        ));
+      }
+    } catch (e) {
+      emit(state.copyWith(errorMessage: 'Split failed: $e'));
+    }
+  }
+
+  Future<void> _onExtractPages(
+      ExtractPages event, Emitter<PdfViewerState> emit) async {
+    try {
+      final extracted = await PdfManipulationService.extractPages(
+        event.pdfBytes,
+        event.pageIndices,
+      );
+      emit(state.copyWith(
+        exportedPdfBytes: extracted,
+        exportedPdfFileName: 'extracted_pages.pdf',
+      ));
+    } catch (e) {
+      emit(state.copyWith(errorMessage: 'Extract failed: $e'));
+    }
+  }
+
+  Future<void> _onDeletePages(
+      DeletePages event, Emitter<PdfViewerState> emit) async {
+    try {
+      final result = await PdfManipulationService.deletePages(
+        event.pdfBytes,
+        event.pageIndicesToDelete,
+      );
+      emit(state.copyWith(
+        exportedPdfBytes: result,
+        exportedPdfFileName: 'modified.pdf',
+      ));
+    } catch (e) {
+      emit(state.copyWith(errorMessage: 'Delete pages failed: $e'));
+    }
+  }
+
+  void _onAddBookmark(
+      AddBookmark event, Emitter<PdfViewerState> emit) {
+    final updated = List<PdfBookmark>.from(state.bookmarks)
+      ..add(PdfBookmark(label: event.label, page: event.page));
+    emit(state.copyWith(bookmarks: updated));
+  }
+
+  void _onRemoveBookmark(
+      RemoveBookmark event, Emitter<PdfViewerState> emit) {
+    if (event.index < 0 || event.index >= state.bookmarks.length) return;
+    final updated = List<PdfBookmark>.from(state.bookmarks)
+      ..removeAt(event.index);
+    emit(state.copyWith(bookmarks: updated));
+  }
+
+  void _onClearPdfExport(
+      ClearPdfExport event, Emitter<PdfViewerState> emit) {
+    emit(state.copyWith());
+  }
+}
+
+/// Bookmark model for PDF navigation.
+class PdfBookmark extends Equatable {
+  final String label;
+  final int page;
+
+  const PdfBookmark({required this.label, required this.page});
+
+  @override
+  List<Object?> get props => [label, page];
 }

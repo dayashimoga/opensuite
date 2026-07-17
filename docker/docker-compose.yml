@@ -17,7 +17,7 @@ services:
     volumes:
       - ..:/app
     working_dir: /app/apps/opensuite
-    command: flutter test --coverage
+    command: bash -c "cd /app && for pkg in packages/core packages/l10n packages/storage packages/ui_kit apps/opensuite; do (cd $$pkg && flutter pub get); done && cd /app/apps/opensuite && flutter test --coverage"
 
   lint:
     build:
@@ -26,7 +26,7 @@ services:
     volumes:
       - ..:/app
     working_dir: /app/apps/opensuite
-    command: flutter analyze
+    command: bash -c "cd /app && for pkg in packages/core packages/l10n packages/storage packages/ui_kit apps/opensuite; do (cd $$pkg && flutter pub get); done && cd /app/apps/opensuite && flutter analyze"
 
   format:
     build:
