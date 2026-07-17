@@ -111,9 +111,8 @@ class PresentationPdfService {
   }
 
   static pw.Widget _buildShapeWidget(SlideElement el, double w, double h) {
-    final fillColor = el.fillColor != null
-        ? _parseColor(el.fillColor!)
-        : PdfColors.grey300;
+    final fillColor =
+        el.fillColor != null ? _parseColor(el.fillColor!) : PdfColors.grey300;
 
     if (el.shapeType == 'circle') {
       return pw.Center(

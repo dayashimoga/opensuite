@@ -13,8 +13,7 @@ class PptxService {
   PptxService._();
 
   // --- OOXML Constants ---
-  static const _nsA =
-      'http://schemas.openxmlformats.org/drawingml/2006/main';
+  static const _nsA = 'http://schemas.openxmlformats.org/drawingml/2006/main';
   static const _nsR =
       'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
   static const _nsP =
@@ -57,7 +56,8 @@ class PptxService {
     archive.addFile(ArchiveFile(
       'ppt/presentation.xml',
       0,
-      utf8.encode(_buildPresentationXml(slides.length, slideWidth, slideHeight)),
+      utf8.encode(
+          _buildPresentationXml(slides.length, slideWidth, slideHeight)),
     ));
 
     // ppt/_rels/presentation.xml.rels
@@ -276,8 +276,7 @@ $elements
     String bgColor = '#FFFFFF';
 
     // Parse background
-    final bgNodes = doc.findAllElements('srgbClr',
-        namespace: _nsA);
+    final bgNodes = doc.findAllElements('srgbClr', namespace: _nsA);
     for (final bg in bgNodes) {
       // Take the first one as background if it's under bg element
       final parent = bg.parent?.parent?.parent;
@@ -345,7 +344,9 @@ $elements
         final fill = rPr.findElements('solidFill', namespace: _nsA).firstOrNull;
         if (fill != null) {
           final clr = fill.findElements('srgbClr', namespace: _nsA).firstOrNull;
-          if (clr != null) textColor = '#${clr.getAttribute('val') ?? '000000'}';
+          if (clr != null) {
+            textColor = '#${clr.getAttribute('val') ?? '000000'}';
+          }
         }
       }
 

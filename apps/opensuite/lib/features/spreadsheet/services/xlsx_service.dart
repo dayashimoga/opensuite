@@ -24,9 +24,8 @@ class XlsxService {
 
     for (int i = 0; i < sheets.length; i++) {
       final sheetData = sheets[i];
-      final sheetName = sheetData.name.isNotEmpty
-          ? sheetData.name
-          : 'Sheet${i + 1}';
+      final sheetName =
+          sheetData.name.isNotEmpty ? sheetData.name : 'Sheet${i + 1}';
 
       // Rename default sheet for first, add new sheets for rest
       if (i == 0 && defaultSheetName != null) {
@@ -65,19 +64,16 @@ class XlsxService {
             }
           } else if (rawValue.toLowerCase() == 'true' ||
               rawValue.toLowerCase() == 'false') {
-            cellValue =
-                xl.BoolCellValue(rawValue.toLowerCase() == 'true');
+            cellValue = xl.BoolCellValue(rawValue.toLowerCase() == 'true');
           } else if (rawValue.startsWith('=')) {
-            cellValue =
-                xl.FormulaCellValue(rawValue.substring(1));
+            cellValue = xl.FormulaCellValue(rawValue.substring(1));
           } else {
             cellValue = xl.TextCellValue(rawValue);
           }
 
           // Apply value and formatting in one call
           final cellStyle = _buildCellStyle(cellData);
-          sheet.updateCell(cellIndex, cellValue,
-              cellStyle: cellStyle);
+          sheet.updateCell(cellIndex, cellValue, cellStyle: cellStyle);
         }
       }
 
@@ -141,8 +137,7 @@ class XlsxService {
               displayValue = v.toString();
             case xl.DoubleCellValue(value: final v):
               rawValue = v.toString();
-              displayValue = v.toStringAsFixed(
-                  v == v.roundToDouble() ? 0 : 2);
+              displayValue = v.toStringAsFixed(v == v.roundToDouble() ? 0 : 2);
             case xl.TextCellValue(value: final v):
               rawValue = v.toString();
               displayValue = v.toString();
@@ -254,9 +249,7 @@ class XlsxService {
     return xl.CellStyle(
       bold: cellData.isBold,
       italic: cellData.isItalic,
-      underline: cellData.isUnderline
-          ? xl.Underline.Single
-          : xl.Underline.None,
+      underline: cellData.isUnderline ? xl.Underline.Single : xl.Underline.None,
       fontColorHex: cellData.textColor != null
           ? _hexToExcelColor(cellData.textColor!) ?? xl.ExcelColor.black
           : xl.ExcelColor.black,

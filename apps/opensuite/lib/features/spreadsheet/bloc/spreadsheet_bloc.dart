@@ -1948,9 +1948,8 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
 
       // Create a new spreadsheet entity
       final now = DateTime.now();
-      final title = event.fileName
-          .replaceAll('.xlsx', '')
-          .replaceAll('.xls', '');
+      final title =
+          event.fileName.replaceAll('.xlsx', '').replaceAll('.xls', '');
 
       final entity = SpreadsheetEntity(
         id: now.microsecondsSinceEpoch.toString(),

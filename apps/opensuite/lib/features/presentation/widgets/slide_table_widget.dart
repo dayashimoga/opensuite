@@ -102,9 +102,7 @@ class _SlideTableWidgetState extends State<SlideTableWidget> {
           ),
           children: List.generate(_table.rows, (row) {
             return TableRow(
-              decoration: row == 0
-                  ? BoxDecoration(color: headerColor)
-                  : null,
+              decoration: row == 0 ? BoxDecoration(color: headerColor) : null,
               children: List.generate(_table.columns, (col) {
                 return GestureDetector(
                   onDoubleTap: () => _editCell(row, col),

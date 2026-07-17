@@ -70,8 +70,7 @@ class _DocxExporter {
     _addToArchive(archive, '_rels/.rels', _relsXml());
 
     // word/_rels/document.xml.rels
-    _addToArchive(
-        archive, 'word/_rels/document.xml.rels', _documentRelsXml());
+    _addToArchive(archive, 'word/_rels/document.xml.rels', _documentRelsXml());
 
     // word/document.xml
     _addToArchive(archive, 'word/document.xml', bodyXml);
@@ -130,8 +129,7 @@ class _DocxExporter {
 
     // Section properties
     buffer.write('<w:sectPr>');
-    buffer.write(
-        '<w:pgSz w:w="12240" w:h="15840"/>'); // Letter size
+    buffer.write('<w:pgSz w:w="12240" w:h="15840"/>'); // Letter size
     buffer.write(
         '<w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/>');
     buffer.write('</w:sectPr>');
@@ -159,9 +157,10 @@ class _DocxExporter {
           }
           // Each newline terminates a paragraph
           if (i < lines.length - 1) {
-            final blockAttrs = (insert == '\n' && attrs.isNotEmpty) ? attrs : currentBlockAttrs;
-            paragraphs.add(
-                _buildParagraph(List.from(currentRuns), blockAttrs));
+            final blockAttrs = (insert == '\n' && attrs.isNotEmpty)
+                ? attrs
+                : currentBlockAttrs;
+            paragraphs.add(_buildParagraph(List.from(currentRuns), blockAttrs));
             currentRuns.clear();
             currentBlockAttrs = null;
           }
@@ -176,8 +175,8 @@ class _DocxExporter {
 
     // Flush remaining runs
     if (currentRuns.isNotEmpty) {
-      paragraphs.add(
-          _buildParagraph(List.from(currentRuns), currentBlockAttrs));
+      paragraphs
+          .add(_buildParagraph(List.from(currentRuns), currentBlockAttrs));
     }
 
     return paragraphs;
@@ -297,7 +296,8 @@ class _DocxExporter {
       if (blockAttrs.containsKey('blockquote') &&
           blockAttrs['blockquote'] == true) {
         buffer.write('<w:ind w:left="720"/>');
-        buffer.write('<w:pBdr><w:left w:val="single" w:sz="4" w:space="4" w:color="999999"/></w:pBdr>');
+        buffer.write(
+            '<w:pBdr><w:left w:val="single" w:sz="4" w:space="4" w:color="999999"/></w:pBdr>');
       }
 
       // Indent
@@ -321,7 +321,8 @@ class _DocxExporter {
 
   // --- Standard DOCX XML templates ---
 
-  static String _contentTypesXml() => '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+  static String _contentTypesXml() =>
+      '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
   <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
   <Default Extension="xml" ContentType="application/xml"/>
@@ -333,21 +334,24 @@ class _DocxExporter {
   <Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>
 </Types>''';
 
-  static String _relsXml() => '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+  static String _relsXml() =>
+      '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
   <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>
   <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>
 </Relationships>''';
 
-  static String _documentRelsXml() => '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+  static String _documentRelsXml() =>
+      '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
   <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/>
   <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/fontTable" Target="fontTable.xml"/>
 </Relationships>''';
 
-  static String _stylesXml() => '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+  static String _stylesXml() =>
+      '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
   <w:docDefaults>
     <w:rPrDefault>
@@ -390,13 +394,15 @@ class _DocxExporter {
   </w:style>
 </w:styles>''';
 
-  static String _settingsXml() => '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+  static String _settingsXml() =>
+      '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
   <w:defaultTabStop w:val="720"/>
   <w:characterSpacingControl w:val="doNotCompress"/>
 </w:settings>''';
 
-  static String _fontTableXml() => '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+  static String _fontTableXml() =>
+      '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:fonts xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
   <w:font w:name="Calibri">
     <w:panose1 w:val="020F0502020204030204"/>
@@ -424,7 +430,8 @@ class _DocxExporter {
 </cp:coreProperties>''';
   }
 
-  static String _appPropsXml() => '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+  static String _appPropsXml() =>
+      '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties">
   <Application>OpenSuite</Application>
   <AppVersion>2.0</AppVersion>
@@ -461,8 +468,7 @@ class _DocxImporter {
     // Extract title from core.xml if available
     String title = fileName.replaceAll('.docx', '');
     for (final file in archive) {
-      if (file.name == 'docProps/core.xml' ||
-          file.name.endsWith('/core.xml')) {
+      if (file.name == 'docProps/core.xml' || file.name.endsWith('/core.xml')) {
         try {
           final coreXml = utf8.decode(file.content as List<int>);
           final coreDoc = XmlDocument.parse(coreXml);
@@ -517,8 +523,7 @@ class _DocxImporter {
           final numId = _findElement(numPr, 'numId');
           final numIdVal =
               numId?.getAttribute('w:val') ?? numId?.getAttribute('val') ?? '0';
-          blockAttrs['list'] =
-              numIdVal == '1' ? 'ordered' : 'bullet';
+          blockAttrs['list'] = numIdVal == '1' ? 'ordered' : 'bullet';
           final ilvl = _findElement(numPr, 'ilvl');
           final ilvlVal = int.tryParse(
               ilvl?.getAttribute('w:val') ?? ilvl?.getAttribute('val') ?? '0');
@@ -575,8 +580,7 @@ class _DocxImporter {
 
             final sz = _findElement(rPr, 'sz');
             if (sz != null) {
-              final szVal =
-                  sz.getAttribute('w:val') ?? sz.getAttribute('val');
+              final szVal = sz.getAttribute('w:val') ?? sz.getAttribute('val');
               if (szVal != null) {
                 // Convert half-points to pixels (approximate)
                 final halfPts = int.tryParse(szVal);
@@ -635,7 +639,6 @@ class _DocxImporter {
   /// Find all child elements by local name (namespace-agnostic).
   static Iterable<XmlElement> _findElements(
       XmlElement parent, String localName) {
-    return parent.childElements
-        .where((e) => e.name.local == localName);
+    return parent.childElements.where((e) => e.name.local == localName);
   }
 }

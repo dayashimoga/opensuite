@@ -67,8 +67,7 @@ class LayerPanel extends StatelessWidget {
             padding: const EdgeInsets.all(12),
             child: Row(
               children: [
-                Icon(Icons.layers, size: 20,
-                    color: theme.colorScheme.primary),
+                Icon(Icons.layers, size: 20, color: theme.colorScheme.primary),
                 const SizedBox(width: 8),
                 Text('Layers', style: theme.textTheme.titleSmall),
                 const Spacer(),
@@ -119,8 +118,8 @@ class LayerPanel extends StatelessWidget {
                                             : Icons.visibility_off,
                                         size: 16,
                                       ),
-                                      onPressed: () => onToggleVisibility
-                                          ?.call(layer.id),
+                                      onPressed: () =>
+                                          onToggleVisibility?.call(layer.id),
                                       padding: EdgeInsets.zero,
                                       constraints: const BoxConstraints(
                                           minWidth: 28, minHeight: 28),
@@ -148,10 +147,9 @@ class LayerPanel extends StatelessWidget {
                                     if (layer.locked)
                                       const Icon(Icons.lock, size: 14),
                                     IconButton(
-                                      icon: const Icon(
-                                          Icons.delete_outline, size: 16),
-                                      onPressed: () =>
-                                          onDelete?.call(layer.id),
+                                      icon: const Icon(Icons.delete_outline,
+                                          size: 16),
+                                      onPressed: () => onDelete?.call(layer.id),
                                       padding: EdgeInsets.zero,
                                       constraints: const BoxConstraints(
                                           minWidth: 28, minHeight: 28),
@@ -168,9 +166,8 @@ class LayerPanel extends StatelessWidget {
                                           value: layer.opacity,
                                           min: 0,
                                           max: 1,
-                                          onChanged: (v) =>
-                                              onOpacityChanged
-                                                  ?.call(layer.id, v),
+                                          onChanged: (v) => onOpacityChanged
+                                              ?.call(layer.id, v),
                                         ),
                                       ),
                                       Text(

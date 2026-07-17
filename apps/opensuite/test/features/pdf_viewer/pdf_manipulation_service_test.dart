@@ -12,8 +12,7 @@ Future<Uint8List> _generateTestPdf(int pages) async {
   for (int i = 0; i < pages; i++) {
     doc.addPage(pw.Page(
       pageFormat: PdfPageFormat.a4,
-      build: (context) =>
-          pw.Center(child: pw.Text('Page ${i + 1}')),
+      build: (context) => pw.Center(child: pw.Text('Page ${i + 1}')),
     ));
   }
   return doc.save();
@@ -32,8 +31,7 @@ void main() {
         final pdf1 = await _generateTestPdf(2);
         final pdf2 = await _generateTestPdf(3);
 
-        final merged =
-            await PdfManipulationService.mergePdfs([pdf1, pdf2]);
+        final merged = await PdfManipulationService.mergePdfs([pdf1, pdf2]);
 
         expect(merged, isA<Uint8List>());
         expect(merged.length, greaterThan(0));
@@ -62,8 +60,7 @@ void main() {
     group('extractPages', () {
       test('extracts specific pages', () async {
         final pdf = await _generateTestPdf(5);
-        final result =
-            await PdfManipulationService.extractPages(pdf, [0, 2]);
+        final result = await PdfManipulationService.extractPages(pdf, [0, 2]);
         expect(result, isA<Uint8List>());
         expect(result.length, greaterThan(0));
       });
@@ -72,8 +69,7 @@ void main() {
     group('deletePages', () {
       test('deletes specified pages', () async {
         final pdf = await _generateTestPdf(3);
-        final result =
-            await PdfManipulationService.deletePages(pdf, [1]);
+        final result = await PdfManipulationService.deletePages(pdf, [1]);
         expect(result, isA<Uint8List>());
         expect(result.length, greaterThan(0));
       });
@@ -93,8 +89,7 @@ void main() {
 
     group('generateBlankPdf', () {
       test('generates blank PDF with specified pages', () async {
-        final pdf =
-            await PdfManipulationService.generateBlankPdf(pages: 5);
+        final pdf = await PdfManipulationService.generateBlankPdf(pages: 5);
         expect(pdf, isA<Uint8List>());
         expect(pdf.length, greaterThan(0));
       });

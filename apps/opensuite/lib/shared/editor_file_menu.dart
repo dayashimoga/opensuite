@@ -137,8 +137,7 @@ class EditorFileMenu extends StatelessWidget {
             child: ListTile(
               leading: Icon(Icons.save_as, size: 20),
               title: Text('Save As'),
-              subtitle:
-                  Text('Ctrl+Shift+S', style: TextStyle(fontSize: 11)),
+              subtitle: Text('Ctrl+Shift+S', style: TextStyle(fontSize: 11)),
               dense: true,
               contentPadding: EdgeInsets.zero,
             ),
@@ -198,8 +197,7 @@ class EditorFileMenu extends StatelessWidget {
                 autosaveEnabled ? Icons.timer : Icons.timer_off,
                 size: 20,
               ),
-              title: Text(
-                  autosaveEnabled ? 'Autosave On' : 'Autosave Off'),
+              title: Text(autosaveEnabled ? 'Autosave On' : 'Autosave Off'),
               dense: true,
               contentPadding: EdgeInsets.zero,
             ),

@@ -162,12 +162,10 @@ void main() {
           when(() => mockDao.insertDocument(any())).thenAnswer((_) async {});
           return bloc;
         },
-        act: (bloc) =>
-            bloc.add(const CreateDocument(title: 'My Custom Doc')),
+        act: (bloc) => bloc.add(const CreateDocument(title: 'My Custom Doc')),
         expect: () => [
-          isA<DocumentEditorState>()
-              .having(
-                  (s) => s.currentDocument?.title, 'title', 'My Custom Doc'),
+          isA<DocumentEditorState>().having(
+              (s) => s.currentDocument?.title, 'title', 'My Custom Doc'),
         ],
       );
     });
@@ -425,9 +423,8 @@ void main() {
         build: () => bloc,
         act: (bloc) => bloc.add(const ExportDocx()),
         expect: () => [
-          isA<DocumentEditorState>()
-              .having(
-                  (s) => s.status, 'status', DocumentEditorStatus.exporting),
+          isA<DocumentEditorState>().having(
+              (s) => s.status, 'status', DocumentEditorStatus.exporting),
           isA<DocumentEditorState>()
               .having((s) => s.status, 'status', DocumentEditorStatus.exported)
               .having((s) => s.exportedBytes, 'bytes', isNotNull)
@@ -454,15 +451,13 @@ void main() {
         build: () => bloc,
         act: (bloc) => bloc.add(const ExportPdf()),
         expect: () => [
-          isA<DocumentEditorState>()
-              .having(
-                  (s) => s.status, 'status', DocumentEditorStatus.exporting),
+          isA<DocumentEditorState>().having(
+              (s) => s.status, 'status', DocumentEditorStatus.exporting),
           isA<DocumentEditorState>()
               .having((s) => s.status, 'status', DocumentEditorStatus.exported)
               .having((s) => s.exportedBytes, 'bytes', isNotNull)
               .having((s) => s.exportedFileName, 'name', endsWith('.pdf'))
-              .having(
-                  (s) => s.exportedMimeType, 'mime', 'application/pdf'),
+              .having((s) => s.exportedMimeType, 'mime', 'application/pdf'),
         ],
       );
     });
@@ -479,9 +474,8 @@ void main() {
           fileName: 'readme.txt',
         )),
         expect: () => [
-          isA<DocumentEditorState>()
-              .having((s) => s.status, 'status',
-                  DocumentEditorStatus.importing),
+          isA<DocumentEditorState>().having(
+              (s) => s.status, 'status', DocumentEditorStatus.importing),
           isA<DocumentEditorState>()
               .having((s) => s.status, 'status', DocumentEditorStatus.editing)
               .having((s) => s.currentDocument?.title, 'title', 'readme')
@@ -546,8 +540,7 @@ void main() {
       blocTest<DocumentEditorBloc, DocumentEditorState>(
         'toggles favorite and reloads',
         build: () {
-          when(() => mockDao.toggleFavorite('doc-1'))
-              .thenAnswer((_) async {});
+          when(() => mockDao.toggleFavorite('doc-1')).thenAnswer((_) async {});
           when(() => mockDao.getAllDocuments())
               .thenAnswer((_) async => [testDoc]);
           return bloc;

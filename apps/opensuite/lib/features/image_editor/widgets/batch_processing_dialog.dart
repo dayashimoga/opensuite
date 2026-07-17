@@ -82,8 +82,8 @@ class _BatchProcessingDialogState extends State<BatchProcessingDialog> {
                   border: OutlineInputBorder(),
                 ),
                 items: _formats
-                    .map((f) =>
-                        DropdownMenuItem(value: f, child: Text(f.toUpperCase())))
+                    .map((f) => DropdownMenuItem(
+                        value: f, child: Text(f.toUpperCase())))
                     .toList(),
                 onChanged: (v) => setState(() => _outputFormat = v!),
               ),
@@ -123,8 +123,8 @@ class _BatchProcessingDialogState extends State<BatchProcessingDialog> {
                   border: OutlineInputBorder(),
                 ),
                 items: _filters
-                    .map((f) =>
-                        DropdownMenuItem(value: f.$1, child: Text(f.$2)))
+                    .map(
+                        (f) => DropdownMenuItem(value: f.$1, child: Text(f.$2)))
                     .toList(),
                 onChanged: (v) => setState(() => _selectedFilter = v),
               ),
@@ -139,8 +139,7 @@ class _BatchProcessingDialogState extends State<BatchProcessingDialog> {
                       max: 100,
                       divisions: 9,
                       label: '$_quality%',
-                      onChanged: (v) =>
-                          setState(() => _quality = v.round()),
+                      onChanged: (v) => setState(() => _quality = v.round()),
                     ),
                   ),
                   Text('$_quality%'),

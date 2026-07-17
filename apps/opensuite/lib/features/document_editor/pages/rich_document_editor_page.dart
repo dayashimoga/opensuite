@@ -267,9 +267,7 @@ class _EditorContentState extends State<_EditorContent> {
         return CallbackShortcuts(
           bindings: {
             const SingleActivator(LogicalKeyboardKey.keyS, control: true): () =>
-                context
-                    .read<DocumentEditorBloc>()
-                    .add(const SaveDocument()),
+                context.read<DocumentEditorBloc>().add(const SaveDocument()),
             const SingleActivator(LogicalKeyboardKey.keyF, control: true): () =>
                 context
                     .read<DocumentEditorBloc>()
@@ -279,9 +277,7 @@ class _EditorContentState extends State<_EditorContent> {
                     .read<DocumentEditorBloc>()
                     .add(const ToggleFindReplace()),
             const SingleActivator(LogicalKeyboardKey.keyN, control: true): () =>
-                context
-                    .read<DocumentEditorBloc>()
-                    .add(const CreateDocument()),
+                context.read<DocumentEditorBloc>().add(const CreateDocument()),
             const SingleActivator(LogicalKeyboardKey.keyO, control: true): () =>
                 _importDocx(),
           },
@@ -401,9 +397,7 @@ class _EditorContentState extends State<_EditorContent> {
           ),
           style: theme.textTheme.titleMedium,
           onChanged: (value) {
-            context
-                .read<DocumentEditorBloc>()
-                .add(UpdateDocumentTitle(value));
+            context.read<DocumentEditorBloc>().add(UpdateDocumentTitle(value));
           },
         ),
       ),
@@ -411,17 +405,15 @@ class _EditorContentState extends State<_EditorContent> {
         // Undo
         IconButton(
           icon: const Icon(Icons.undo),
-          onPressed: _quillController.hasUndo
-              ? () => _quillController.undo()
-              : null,
+          onPressed:
+              _quillController.hasUndo ? () => _quillController.undo() : null,
           tooltip: 'Undo (Ctrl+Z)',
         ),
         // Redo
         IconButton(
           icon: const Icon(Icons.redo),
-          onPressed: _quillController.hasRedo
-              ? () => _quillController.redo()
-              : null,
+          onPressed:
+              _quillController.hasRedo ? () => _quillController.redo() : null,
           tooltip: 'Redo (Ctrl+Shift+Z)',
         ),
         // Find & Replace
@@ -430,9 +422,8 @@ class _EditorContentState extends State<_EditorContent> {
             Icons.search,
             color: state.showFindReplace ? theme.colorScheme.primary : null,
           ),
-          onPressed: () => context
-              .read<DocumentEditorBloc>()
-              .add(const ToggleFindReplace()),
+          onPressed: () =>
+              context.read<DocumentEditorBloc>().add(const ToggleFindReplace()),
           tooltip: 'Find & Replace (Ctrl+F)',
         ),
         // Save indicator
@@ -521,9 +512,7 @@ class _EditorContentState extends State<_EditorContent> {
           onSelected: (value) {
             switch (value) {
               case 'new':
-                context
-                    .read<DocumentEditorBloc>()
-                    .add(const CreateDocument());
+                context.read<DocumentEditorBloc>().add(const CreateDocument());
                 _isInitialized = false;
               case 'import_docx':
                 _importDocx();
@@ -769,14 +758,11 @@ class _FindReplaceBarState extends State<_FindReplaceBar> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  suffixText: matchCount > 0
-                      ? '${currentIdx + 1}/$matchCount'
-                      : null,
+                  suffixText:
+                      matchCount > 0 ? '${currentIdx + 1}/$matchCount' : null,
                 ),
                 onChanged: (value) {
-                  context
-                      .read<DocumentEditorBloc>()
-                      .add(FindInDocument(value));
+                  context.read<DocumentEditorBloc>().add(FindInDocument(value));
                 },
                 onSubmitted: (_) {
                   context

@@ -165,12 +165,10 @@ class _ConditionalFormatDialogState extends State<ConditionalFormatDialog> {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  const Text('Background:',
-                      style: TextStyle(fontSize: 12)),
+                  const Text('Background:', style: TextStyle(fontSize: 12)),
                   const SizedBox(width: 8),
                   ..._presetBgColors.map((c) => GestureDetector(
-                        onTap: () =>
-                            setState(() => _bgColor = c.shade100),
+                        onTap: () => setState(() => _bgColor = c.shade100),
                         child: Container(
                           width: 24,
                           height: 24,
@@ -179,11 +177,8 @@ class _ConditionalFormatDialogState extends State<ConditionalFormatDialog> {
                             color: c.shade100,
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: _bgColor == c.shade100
-                                  ? c
-                                  : Colors.grey,
-                              width:
-                                  _bgColor == c.shade100 ? 2 : 1,
+                              color: _bgColor == c.shade100 ? c : Colors.grey,
+                              width: _bgColor == c.shade100 ? 2 : 1,
                             ),
                           ),
                         ),
@@ -198,16 +193,14 @@ class _ConditionalFormatDialogState extends State<ConditionalFormatDialog> {
                         color: _bold
                             ? Theme.of(context).colorScheme.primary
                             : null),
-                    onPressed: () =>
-                        setState(() => _bold = !_bold),
+                    onPressed: () => setState(() => _bold = !_bold),
                   ),
                   IconButton(
                     icon: Icon(Icons.format_italic,
                         color: _italic
                             ? Theme.of(context).colorScheme.primary
                             : null),
-                    onPressed: () =>
-                        setState(() => _italic = !_italic),
+                    onPressed: () => setState(() => _italic = !_italic),
                   ),
                 ],
               ),
@@ -223,8 +216,7 @@ class _ConditionalFormatDialogState extends State<ConditionalFormatDialog> {
                   style: TextStyle(
                     color: _textColor,
                     fontWeight: _bold ? FontWeight.bold : FontWeight.normal,
-                    fontStyle:
-                        _italic ? FontStyle.italic : FontStyle.normal,
+                    fontStyle: _italic ? FontStyle.italic : FontStyle.normal,
                   ),
                 ),
               ),
@@ -244,9 +236,8 @@ class _ConditionalFormatDialogState extends State<ConditionalFormatDialog> {
               range: widget.selectedRange,
               value1: double.tryParse(_value1Controller.text),
               value2: double.tryParse(_value2Controller.text),
-              textValue: _textController.text.isEmpty
-                  ? null
-                  : _textController.text,
+              textValue:
+                  _textController.text.isEmpty ? null : _textController.text,
               style: ConditionalStyle(
                 backgroundColor: _bgColor,
                 textColor: _textColor,

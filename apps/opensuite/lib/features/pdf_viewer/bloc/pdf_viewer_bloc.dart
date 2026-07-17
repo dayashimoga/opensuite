@@ -548,8 +548,7 @@ class PdfViewerBloc extends Bloc<PdfViewerEvent, PdfViewerState> {
     }
   }
 
-  Future<void> _onSplitPdf(
-      SplitPdf event, Emitter<PdfViewerState> emit) async {
+  Future<void> _onSplitPdf(SplitPdf event, Emitter<PdfViewerState> emit) async {
     try {
       final pages = await PdfManipulationService.splitPdf(event.pdfBytes);
       // Export the first split page; full split exposes all pages
@@ -596,23 +595,20 @@ class PdfViewerBloc extends Bloc<PdfViewerEvent, PdfViewerState> {
     }
   }
 
-  void _onAddBookmark(
-      AddBookmark event, Emitter<PdfViewerState> emit) {
+  void _onAddBookmark(AddBookmark event, Emitter<PdfViewerState> emit) {
     final updated = List<PdfBookmark>.from(state.bookmarks)
       ..add(PdfBookmark(label: event.label, page: event.page));
     emit(state.copyWith(bookmarks: updated));
   }
 
-  void _onRemoveBookmark(
-      RemoveBookmark event, Emitter<PdfViewerState> emit) {
+  void _onRemoveBookmark(RemoveBookmark event, Emitter<PdfViewerState> emit) {
     if (event.index < 0 || event.index >= state.bookmarks.length) return;
     final updated = List<PdfBookmark>.from(state.bookmarks)
       ..removeAt(event.index);
     emit(state.copyWith(bookmarks: updated));
   }
 
-  void _onClearPdfExport(
-      ClearPdfExport event, Emitter<PdfViewerState> emit) {
+  void _onClearPdfExport(ClearPdfExport event, Emitter<PdfViewerState> emit) {
     emit(state.copyWith());
   }
 }

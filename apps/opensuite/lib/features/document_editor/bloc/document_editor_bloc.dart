@@ -298,8 +298,7 @@ class DocumentEditorState extends Equatable {
   });
 
   /// The Delta JSON content of the current document, or empty Delta.
-  String get deltaJson =>
-      currentDocument?.content ?? '[{"insert":"\\n"}]';
+  String get deltaJson => currentDocument?.content ?? '[{"insert":"\\n"}]';
 
   DocumentEditorState copyWith({
     DocumentEditorStatus? status,
@@ -325,7 +324,9 @@ class DocumentEditorState extends Equatable {
     return DocumentEditorState(
       status: status ?? this.status,
       documents: documents ?? this.documents,
-      currentDocument: clearCurrentDocument ? null : (currentDocument ?? this.currentDocument),
+      currentDocument: clearCurrentDocument
+          ? null
+          : (currentDocument ?? this.currentDocument),
       hasUnsavedChanges: hasUnsavedChanges ?? this.hasUnsavedChanges,
       searchQuery: searchQuery ?? this.searchQuery,
       showToolbar: showToolbar ?? this.showToolbar,
@@ -827,8 +828,7 @@ class DocumentEditorBloc
       );
 
       final now = DateTime.now();
-      final title = result['title'] ??
-          event.fileName.replaceAll('.docx', '');
+      final title = result['title'] ?? event.fileName.replaceAll('.docx', '');
       final deltaJson = result['deltaJson'] as String;
       final plainText = result['plainText'] as String;
 
@@ -953,4 +953,3 @@ class DocumentEditorBloc
     return super.close();
   }
 }
-

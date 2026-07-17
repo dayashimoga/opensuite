@@ -194,8 +194,7 @@ class SpreadsheetChart extends StatelessWidget {
           touchTooltipData: LineTouchTooltipData(
             getTooltipItems: (spots) => spots.map((spot) {
               final index = spot.x.toInt();
-              final label =
-                  index < data.length ? data[index].label : '';
+              final label = index < data.length ? data[index].label : '';
               return LineTooltipItem(
                 '$label\n${spot.y.toStringAsFixed(1)}',
                 TextStyle(
@@ -260,10 +259,9 @@ class SpreadsheetChart extends StatelessWidget {
         borderData: FlBorderData(
           show: true,
           border: Border(
-            left: BorderSide(
-                color: theme.colorScheme.outlineVariant, width: 1),
-            bottom: BorderSide(
-                color: theme.colorScheme.outlineVariant, width: 1),
+            left: BorderSide(color: theme.colorScheme.outlineVariant, width: 1),
+            bottom:
+                BorderSide(color: theme.colorScheme.outlineVariant, width: 1),
           ),
         ),
         lineBarsData: [

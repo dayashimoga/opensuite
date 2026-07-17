@@ -458,14 +458,11 @@ void main() {
         act: (bloc) => bloc.add(const ExportXlsxFile()),
         expect: () => [
           isA<SpreadsheetState>()
-              .having(
-                  (s) => s.status, 'status', SpreadsheetStatus.exporting),
+              .having((s) => s.status, 'status', SpreadsheetStatus.exporting),
           isA<SpreadsheetState>()
-              .having(
-                  (s) => s.status, 'status', SpreadsheetStatus.exported)
+              .having((s) => s.status, 'status', SpreadsheetStatus.exported)
               .having((s) => s.exportedBytes, 'bytes', isNotNull)
-              .having((s) => s.exportedFileName, 'fileName',
-                  contains('.xlsx')),
+              .having((s) => s.exportedFileName, 'fileName', contains('.xlsx')),
         ],
       );
 
@@ -496,8 +493,7 @@ void main() {
               id: 'test',
               name: 'ImportTest',
               cells: {
-                '0,0': CellData(
-                    rawValue: 'Hello', displayValue: 'Hello'),
+                '0,0': CellData(rawValue: 'Hello', displayValue: 'Hello'),
               },
             ),
           ];
@@ -519,8 +515,8 @@ void main() {
         build: () => bloc,
         act: (bloc) => bloc.add(const ClearExportedSpreadsheet()),
         expect: () => [
-          isA<SpreadsheetState>().having(
-              (s) => s.status, 'status', SpreadsheetStatus.editing),
+          isA<SpreadsheetState>()
+              .having((s) => s.status, 'status', SpreadsheetStatus.editing),
         ],
       );
     });

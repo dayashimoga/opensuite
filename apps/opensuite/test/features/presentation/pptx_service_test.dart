@@ -99,10 +99,9 @@ void main() {
 
         // Verify slide XML contains the shape
         final archive = ZipDecoder().decodeBytes(bytes);
-        final slideFile = archive.files
-            .firstWhere((f) => f.name == 'ppt/slides/slide1.xml');
-        final slideXml =
-            utf8.decode(slideFile.content as List<int>);
+        final slideFile =
+            archive.files.firstWhere((f) => f.name == 'ppt/slides/slide1.xml');
+        final slideXml = utf8.decode(slideFile.content as List<int>);
         expect(slideXml, contains('ellipse'));
       });
 
@@ -121,10 +120,9 @@ void main() {
         );
 
         final archive = ZipDecoder().decodeBytes(bytes);
-        final slideFile = archive.files
-            .firstWhere((f) => f.name == 'ppt/slides/slide1.xml');
-        final slideXml =
-            utf8.decode(slideFile.content as List<int>);
+        final slideFile =
+            archive.files.firstWhere((f) => f.name == 'ppt/slides/slide1.xml');
+        final slideXml = utf8.decode(slideFile.content as List<int>);
         expect(slideXml, contains('336699'));
       });
     });

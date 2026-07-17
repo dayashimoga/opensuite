@@ -173,8 +173,7 @@ void main() {
         expect(imported['plainText'], contains('Hello World'));
 
         // Verify Delta JSON is valid
-        final deltaOps =
-            jsonDecode(imported['deltaJson']!) as List<dynamic>;
+        final deltaOps = jsonDecode(imported['deltaJson']!) as List<dynamic>;
         expect(deltaOps, isNotEmpty);
       });
 
@@ -203,8 +202,7 @@ void main() {
           fileName: 'format_test.docx',
         );
 
-        final deltaOps =
-            jsonDecode(imported['deltaJson']!) as List<dynamic>;
+        final deltaOps = jsonDecode(imported['deltaJson']!) as List<dynamic>;
 
         // Find bold operation
         final boldOp = deltaOps.firstWhere(

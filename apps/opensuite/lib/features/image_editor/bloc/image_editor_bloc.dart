@@ -164,7 +164,8 @@ class ClearDrawings extends ImageEditorEvent {
 }
 
 class ApplyPresetFilter extends ImageEditorEvent {
-  final String presetName; // 'sepia', 'grayscale', 'invert', 'blur', 'sharpen', 'emboss', 'vignette'
+  final String
+      presetName; // 'sepia', 'grayscale', 'invert', 'blur', 'sharpen', 'emboss', 'vignette'
   const ApplyPresetFilter(this.presetName);
   @override
   List<Object?> get props => [presetName];
@@ -218,15 +219,16 @@ class TextOverlayData extends Equatable {
     String? color,
     String? fontFamily,
     bool? bold,
-  }) => TextOverlayData(
-    text: text ?? this.text,
-    x: x ?? this.x,
-    y: y ?? this.y,
-    fontSize: fontSize ?? this.fontSize,
-    color: color ?? this.color,
-    fontFamily: fontFamily ?? this.fontFamily,
-    bold: bold ?? this.bold,
-  );
+  }) =>
+      TextOverlayData(
+        text: text ?? this.text,
+        x: x ?? this.x,
+        y: y ?? this.y,
+        fontSize: fontSize ?? this.fontSize,
+        color: color ?? this.color,
+        fontFamily: fontFamily ?? this.fontFamily,
+        bold: bold ?? this.bold,
+      );
 
   @override
   List<Object?> get props => [text, x, y, fontSize, color, fontFamily, bold];
@@ -652,8 +654,7 @@ class ImageEditorBloc extends Bloc<ImageEditorEvent, ImageEditorState> {
 
   // --- Sprint 17: Layer/Drawing/Filter Handlers ---
 
-  void _onAddTextOverlay(
-      AddTextOverlay event, Emitter<ImageEditorState> emit) {
+  void _onAddTextOverlay(AddTextOverlay event, Emitter<ImageEditorState> emit) {
     _pushUndo(emit);
     emit(state.copyWith(
       textOverlays: [...state.textOverlays, event.overlay],
@@ -678,16 +679,14 @@ class ImageEditorBloc extends Bloc<ImageEditorEvent, ImageEditorState> {
     emit(state.copyWith(textOverlays: updated));
   }
 
-  void _onAddDrawingPath(
-      AddDrawingPath event, Emitter<ImageEditorState> emit) {
+  void _onAddDrawingPath(AddDrawingPath event, Emitter<ImageEditorState> emit) {
     _pushUndo(emit);
     emit(state.copyWith(
       drawings: [...state.drawings, event.path],
     ));
   }
 
-  void _onClearDrawings(
-      ClearDrawings event, Emitter<ImageEditorState> emit) {
+  void _onClearDrawings(ClearDrawings event, Emitter<ImageEditorState> emit) {
     _pushUndo(emit);
     emit(state.copyWith(drawings: const []));
   }
@@ -698,8 +697,7 @@ class ImageEditorBloc extends Bloc<ImageEditorEvent, ImageEditorState> {
     emit(state.copyWith(activePresetFilter: event.presetName));
   }
 
-  void _onAddWatermark(
-      AddWatermark event, Emitter<ImageEditorState> emit) {
+  void _onAddWatermark(AddWatermark event, Emitter<ImageEditorState> emit) {
     _pushUndo(emit);
     emit(state.copyWith(
       watermarkText: event.text,

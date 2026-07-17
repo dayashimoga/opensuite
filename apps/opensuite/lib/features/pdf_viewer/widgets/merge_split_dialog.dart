@@ -124,8 +124,8 @@ class _MergeSplitDialogState extends State<MergeSplitDialog>
         ),
         FilledButton(
           onPressed: () {
-            final mode = MergeSplitMode
-                .values[_tabController.index + 1]; // skip merge
+            final mode =
+                MergeSplitMode.values[_tabController.index + 1]; // skip merge
             final pages = _parsePageRange(_rangeController.text);
             if (pages.isEmpty) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -151,8 +151,7 @@ class _MergeSplitDialogState extends State<MergeSplitDialog>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(description,
-              style: Theme.of(context).textTheme.bodySmall),
+          Text(description, style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(height: 8),
           Text('Total pages: ${widget.totalPages}',
               style: Theme.of(context).textTheme.bodySmall),
@@ -175,8 +174,7 @@ class _MergeSplitDialogState extends State<MergeSplitDialog>
                   final page = idx + 1;
                   final selected = _selectedPages.contains(page);
                   return FilterChip(
-                    label: Text('$page',
-                        style: const TextStyle(fontSize: 11)),
+                    label: Text('$page', style: const TextStyle(fontSize: 11)),
                     selected: selected,
                     onSelected: (v) {
                       setState(() {
@@ -185,8 +183,10 @@ class _MergeSplitDialogState extends State<MergeSplitDialog>
                         } else {
                           _selectedPages.remove(page);
                         }
-                        _rangeController.text =
-                            _selectedPages.toList().sorted((a, b) => a.compareTo(b)).join(', ');
+                        _rangeController.text = _selectedPages
+                            .toList()
+                            .sorted((a, b) => a.compareTo(b))
+                            .join(', ');
                       });
                     },
                   );

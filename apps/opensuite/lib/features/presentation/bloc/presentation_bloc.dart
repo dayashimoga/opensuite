@@ -1081,8 +1081,7 @@ class PresentationBloc extends Bloc<PresentationEvent, PresentationState> {
       ));
     } catch (e) {
       emit(state.copyWith(
-          status: PresentationStatus.error,
-          errorMessage: 'Export failed: $e'));
+          status: PresentationStatus.error, errorMessage: 'Export failed: $e'));
     }
   }
 
@@ -1117,9 +1116,8 @@ class PresentationBloc extends Bloc<PresentationEvent, PresentationState> {
           PptxService.importFromPptx(fileBytes: event.fileBytes);
 
       final now = DateTime.now();
-      final title = event.fileName
-          .replaceAll('.pptx', '')
-          .replaceAll('.ppt', '');
+      final title =
+          event.fileName.replaceAll('.pptx', '').replaceAll('.ppt', '');
 
       final entity = PresentationEntity(
         id: now.microsecondsSinceEpoch.toString(),
@@ -1140,8 +1138,7 @@ class PresentationBloc extends Bloc<PresentationEvent, PresentationState> {
       ));
     } catch (e) {
       emit(state.copyWith(
-          status: PresentationStatus.error,
-          errorMessage: 'Import failed: $e'));
+          status: PresentationStatus.error, errorMessage: 'Import failed: $e'));
     }
   }
 

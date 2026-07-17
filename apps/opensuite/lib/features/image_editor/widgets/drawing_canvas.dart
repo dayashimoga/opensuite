@@ -115,8 +115,8 @@ class _DrawingPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     for (final stroke in strokes) {
-      _drawStroke(canvas, stroke.points, stroke.color, stroke.width,
-          stroke.isEraser);
+      _drawStroke(
+          canvas, stroke.points, stroke.color, stroke.width, stroke.isEraser);
     }
     if (currentPoints.isNotEmpty) {
       _drawStroke(canvas, currentPoints, currentColor, currentWidth, isEraser);

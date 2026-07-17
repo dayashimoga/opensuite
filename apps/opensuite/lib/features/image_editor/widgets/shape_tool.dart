@@ -138,7 +138,8 @@ class _ShapeToolState extends State<ShapeTool> {
                         ),
                       ),
                       child: c == Colors.transparent
-                          ? const Icon(Icons.block, size: 14, color: Colors.grey)
+                          ? const Icon(Icons.block,
+                              size: 14, color: Colors.grey)
                           : null,
                     ),
                   )),

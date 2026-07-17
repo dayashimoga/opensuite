@@ -97,8 +97,7 @@ class AnimationPanel extends StatelessWidget {
               const SizedBox(height: 12),
               TextFormField(
                 initialValue: '$duration',
-                decoration:
-                    const InputDecoration(labelText: 'Duration (ms)'),
+                decoration: const InputDecoration(labelText: 'Duration (ms)'),
                 keyboardType: TextInputType.number,
                 onChanged: (v) => duration = int.tryParse(v) ?? 500,
               ),
@@ -148,11 +147,10 @@ class AnimationPanel extends StatelessWidget {
             padding: const EdgeInsets.all(12),
             child: Row(
               children: [
-                Icon(Icons.animation, size: 20,
-                    color: theme.colorScheme.primary),
+                Icon(Icons.animation,
+                    size: 20, color: theme.colorScheme.primary),
                 const SizedBox(width: 8),
-                Text('Animations',
-                    style: theme.textTheme.titleSmall),
+                Text('Animations', style: theme.textTheme.titleSmall),
                 const Spacer(),
                 IconButton(
                   icon: const Icon(Icons.add, size: 20),

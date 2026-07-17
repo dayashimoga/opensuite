@@ -159,9 +159,8 @@ class _TextOverlayToolState extends State<TextOverlayTool> {
                     color: c,
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: _color == c
-                          ? theme.colorScheme.primary
-                          : Colors.grey,
+                      color:
+                          _color == c ? theme.colorScheme.primary : Colors.grey,
                       width: _color == c ? 2 : 1,
                     ),
                   ),

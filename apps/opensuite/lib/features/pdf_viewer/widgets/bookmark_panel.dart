@@ -94,8 +94,8 @@ class BookmarkPanel extends StatelessWidget {
             padding: const EdgeInsets.all(12),
             child: Row(
               children: [
-                Icon(Icons.bookmark, size: 20,
-                    color: theme.colorScheme.primary),
+                Icon(Icons.bookmark,
+                    size: 20, color: theme.colorScheme.primary),
                 const SizedBox(width: 8),
                 Text('Bookmarks', style: theme.textTheme.titleSmall),
                 const Spacer(),
@@ -158,11 +158,9 @@ class _BookmarkTile extends StatelessWidget {
       children: [
         ListTile(
           dense: true,
-          contentPadding:
-              EdgeInsets.only(left: 12.0 + indent * 16.0, right: 4),
+          contentPadding: EdgeInsets.only(left: 12.0 + indent * 16.0, right: 4),
           leading: const Icon(Icons.bookmark_outline, size: 18),
-          title: Text(bookmark.title,
-              style: const TextStyle(fontSize: 13)),
+          title: Text(bookmark.title, style: const TextStyle(fontSize: 13)),
           subtitle: Text('Page ${bookmark.page + 1}',
               style: const TextStyle(fontSize: 11)),
           trailing: IconButton(

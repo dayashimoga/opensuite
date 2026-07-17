@@ -95,8 +95,7 @@ class PdfExportService {
     return pdf.save();
   }
 
-  static List<pw.Widget> _deltaOpsToWidgets(
-      List<dynamic> ops, String title) {
+  static List<pw.Widget> _deltaOpsToWidgets(List<dynamic> ops, String title) {
     final widgets = <pw.Widget>[];
     final currentSpans = <_RichSpan>[];
     Map<String, dynamic>? pendingBlockAttrs;
@@ -145,8 +144,7 @@ class PdfExportService {
   ) {
     // Determine block type
     final isHeading = blockAttrs?.containsKey('header') == true;
-    final headingLevel =
-        isHeading ? (blockAttrs!['header'] as int?) ?? 1 : 0;
+    final headingLevel = isHeading ? (blockAttrs!['header'] as int?) ?? 1 : 0;
     final isList = blockAttrs?.containsKey('list') == true;
     final listType = isList ? blockAttrs!['list'] as String : '';
     final isBlockquote = blockAttrs?['blockquote'] == true;
@@ -218,8 +216,7 @@ class PdfExportService {
         if (sizeVal is num) {
           fontSize = sizeVal.toDouble();
         } else if (sizeVal is String) {
-          fontSize =
-              double.tryParse(sizeVal.replaceAll('px', '')) ?? fontSize;
+          fontSize = double.tryParse(sizeVal.replaceAll('px', '')) ?? fontSize;
         }
       }
 
@@ -251,7 +248,8 @@ class PdfExportService {
 
     // Apply list styling
     if (isList) {
-      final bullet = listType == 'ordered' ? '•' : '•'; // Both use bullet for now
+      final bullet =
+          listType == 'ordered' ? '•' : '•'; // Both use bullet for now
       paragraphWidget = pw.Padding(
         padding: pw.EdgeInsets.only(left: 20.0 + indent * 20.0),
         child: pw.Row(
