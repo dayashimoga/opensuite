@@ -378,5 +378,107 @@ void main() {
         ],
       );
     });
+
+    group('Animations', () {
+      final initialSlide = SlideData(id: '1', backgroundColor: '#FFFFFF');
+      final testAnim = SlideAnimation(
+        id: 'anim-1',
+        targetElementId: 'el-1',
+        type: 'fadeIn',
+        durationMs: 500,
+        trigger: 'onClick',
+        order: 0,
+      );
+      final testAnim2 = SlideAnimation(
+        id: 'anim-2',
+        targetElementId: 'el-2',
+        type: 'fadeOut',
+        durationMs: 600,
+        trigger: 'withPrevious',
+        order: 1,
+      );
+
+      blocTest<PresentationBloc, PresentationState>(
+        'AddAnimation adds animation to active slide',
+        seed: () => PresentationState(
+          status: PresentationStatus.editing,
+          slides: [initialSlide],
+          activeSlideIndex: 0,
+        ),
+        build: () => bloc,
+        act: (bloc) => bloc.add(AddAnimation(testAnim)),
+        expect: () => [
+          isA<PresentationState>().having(
+            (s) => s.activeSlide?.animations,
+            'animations',
+            [testAnim],
+          ),
+        ],
+      );
+
+      blocTest<PresentationBloc, PresentationState>(
+        'RemoveAnimation removes animation from active slide',
+        seed: () => PresentationState(
+          status: PresentationStatus.editing,
+          slides: [
+            initialSlide.copyWith(animations: [testAnim, testAnim2])
+          ],
+          activeSlideIndex: 0,
+        ),
+        build: () => bloc,
+        act: (bloc) => bloc.add(const RemoveAnimation('anim-1')),
+        expect: () => [
+          isA<PresentationState>().having(
+            (s) => s.activeSlide?.animations,
+            'animations',
+            [testAnim2],
+          ),
+        ],
+      );
+
+      blocTest<PresentationBloc, PresentationState>(
+        'UpdateAnimation updates animation in active slide',
+        seed: () => PresentationState(
+          status: PresentationStatus.editing,
+          slides: [
+            initialSlide.copyWith(animations: [testAnim])
+          ],
+          activeSlideIndex: 0,
+        ),
+        build: () => bloc,
+        act: (bloc) => bloc.add(
+            UpdateAnimation('anim-1', testAnim.copyWith(durationMs: 1000))),
+        expect: () => [
+          isA<PresentationState>().having(
+            (s) => s.activeSlide?.animations.first.durationMs,
+            'durationMs',
+            1000,
+          ),
+        ],
+      );
+
+      blocTest<PresentationBloc, PresentationState>(
+        'ReorderAnimations reorders animations in active slide',
+        seed: () => PresentationState(
+          status: PresentationStatus.editing,
+          slides: [
+            initialSlide.copyWith(animations: [testAnim, testAnim2])
+          ],
+          activeSlideIndex: 0,
+        ),
+        build: () => bloc,
+        act: (bloc) => bloc.add(const ReorderAnimations(0, 2)),
+        expect: () => [
+          isA<PresentationState>().having(
+            (s) => s.activeSlide?.animations,
+            'animations',
+            [
+              testAnim2.copyWith(order: 0),
+              testAnim.copyWith(order: 1),
+            ],
+          ),
+        ],
+      );
+    });
   });
 }

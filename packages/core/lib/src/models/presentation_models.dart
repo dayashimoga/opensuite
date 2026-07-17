@@ -204,6 +204,9 @@ class SlideData extends Equatable {
   /// Slide layout name.
   final String layout;
 
+  /// Animations on this slide.
+  final List<SlideAnimation> animations;
+
   const SlideData({
     required this.id,
     this.backgroundColor = '#FFFFFF',
@@ -212,6 +215,7 @@ class SlideData extends Equatable {
     this.speakerNotes = '',
     this.transition = 'none',
     this.layout = 'blank',
+    this.animations = const [],
   });
 
   SlideData copyWith({
@@ -221,6 +225,7 @@ class SlideData extends Equatable {
     String? speakerNotes,
     String? transition,
     String? layout,
+    List<SlideAnimation>? animations,
   }) {
     return SlideData(
       id: id,
@@ -230,6 +235,7 @@ class SlideData extends Equatable {
       speakerNotes: speakerNotes ?? this.speakerNotes,
       transition: transition ?? this.transition,
       layout: layout ?? this.layout,
+      animations: animations ?? this.animations,
     );
   }
 
@@ -241,6 +247,7 @@ class SlideData extends Equatable {
         'speakerNotes': speakerNotes,
         'transition': transition,
         'layout': layout,
+        'animations': animations.map((a) => a.toMap()).toList(),
       };
 
   factory SlideData.fromMap(Map<String, dynamic> map) => SlideData(
@@ -254,11 +261,15 @@ class SlideData extends Equatable {
         speakerNotes: (map['speakerNotes'] as String?) ?? '',
         transition: (map['transition'] as String?) ?? 'none',
         layout: (map['layout'] as String?) ?? 'blank',
+        animations: (map['animations'] as List?)
+                ?.map((a) => SlideAnimation.fromMap(a as Map<String, dynamic>))
+                .toList() ??
+            [],
       );
 
   @override
   List<Object?> get props =>
-      [id, backgroundColor, elements, speakerNotes, transition];
+      [id, backgroundColor, elements, speakerNotes, transition, animations];
 }
 
 /// Represents a table element within a slide.

@@ -12,6 +12,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../../di/app_module.dart';
 import '../bloc/presentation_bloc.dart';
 import '../widgets/slide_table_widget.dart';
+import '../widgets/animation_panel.dart';
 
 /// Slide editor page with canvas, slide panel, and speaker notes.
 class PresentationEditorPage extends StatelessWidget {
@@ -43,6 +44,8 @@ class _EditorContent extends StatefulWidget {
 }
 
 class _EditorContentState extends State<_EditorContent> {
+  bool _showAnimationPanel = false;
+
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<PresentationBloc, PresentationState>(
@@ -58,6 +61,7 @@ class _EditorContentState extends State<_EditorContent> {
         }
       },
       builder: (context, state) {
+        final theme = Theme.of(context);
         if (state.status == PresentationStatus.loading) {
           return const Scaffold(
               body: Center(child: CircularProgressIndicator()));
@@ -233,6 +237,20 @@ class _EditorContentState extends State<_EditorContent> {
                     onPressed: () => _addImagePlaceholder(context),
                     tooltip: 'Add Image',
                   ),
+                  IconButton(
+                    icon: Icon(
+                      _showAnimationPanel
+                          ? Icons.animation
+                          : Icons.animation_outlined,
+                      size: 20,
+                      color: _showAnimationPanel
+                          ? theme.colorScheme.primary
+                          : null,
+                    ),
+                    onPressed: () => setState(
+                        () => _showAnimationPanel = !_showAnimationPanel),
+                    tooltip: 'Animations Panel',
+                  ),
                   const SizedBox(width: 8),
                   // Present button
                   FilledButton.tonalIcon(
@@ -324,6 +342,24 @@ class _EditorContentState extends State<_EditorContent> {
                       ],
                     ),
                   ),
+                  if (_showAnimationPanel)
+                    AnimationPanel(
+                      animations: state.activeSlide?.animations ?? const [],
+                      elements: state.activeSlide?.elements ?? const [],
+                      selectedElementId: state.selectedElementId,
+                      onAdd: (anim) => context
+                          .read<PresentationBloc>()
+                          .add(AddAnimation(anim)),
+                      onRemove: (id) => context
+                          .read<PresentationBloc>()
+                          .add(RemoveAnimation(id)),
+                      onUpdate: (id, anim) => context
+                          .read<PresentationBloc>()
+                          .add(UpdateAnimation(id, anim)),
+                      onReorder: (oldIdx, newIdx) => context
+                          .read<PresentationBloc>()
+                          .add(ReorderAnimations(oldIdx, newIdx)),
+                    ),
                 ],
               ),
             ),
