@@ -11,6 +11,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../../di/app_module.dart';
 import '../bloc/presentation_bloc.dart';
+import '../widgets/slide_table_widget.dart';
 
 /// Slide editor page with canvas, slide panel, and speaker notes.
 class PresentationEditorPage extends StatelessWidget {
@@ -223,6 +224,11 @@ class _EditorContentState extends State<_EditorContent> {
                     onSelected: (shapeType) => _addShape(context, shapeType),
                   ),
                   IconButton(
+                    icon: const Icon(Icons.table_chart_outlined, size: 20),
+                    onPressed: () => _addTable(context),
+                    tooltip: 'Insert Table',
+                  ),
+                  IconButton(
                     icon: const Icon(Icons.image_outlined, size: 20),
                     onPressed: () => _addImagePlaceholder(context),
                     tooltip: 'Add Image',
@@ -363,6 +369,28 @@ class _EditorContentState extends State<_EditorContent> {
           height: 0.4,
           content: 'Image placeholder',
           fillColor: '#E0E0E0',
+        )));
+  }
+
+  void _addTable(BuildContext context) {
+    // Encode table data as JSON in content field (3x3 default)
+    final tableData = jsonEncode({
+      'rows': 3,
+      'cols': 3,
+      'cells': [
+        ['Header 1', 'Header 2', 'Header 3'],
+        ['Cell 1', 'Cell 2', 'Cell 3'],
+        ['Cell 4', 'Cell 5', 'Cell 6'],
+      ],
+    });
+    context.read<PresentationBloc>().add(AddElement(SlideElement(
+          id: 'table_${DateTime.now().microsecondsSinceEpoch}',
+          type: 'table',
+          x: 0.1,
+          y: 0.25,
+          width: 0.8,
+          height: 0.45,
+          content: tableData,
         )));
   }
 }
@@ -718,6 +746,7 @@ class _SlidePanel extends StatelessWidget {
   }
 
   void _showAddSlideLayoutDialog(BuildContext context) {
+    final bloc = context.read<PresentationBloc>();
     showDialog(
       context: context,
       builder: (_) => SimpleDialog(
@@ -726,34 +755,34 @@ class _SlidePanel extends StatelessWidget {
           SimpleDialogOption(
             onPressed: () {
               Navigator.pop(context);
-              context.read<PresentationBloc>().add(AddSlide(
-                    layout: 'title',
-                    initialElements: [
-                      SlideElement(
-                        id: 'title_${DateTime.now().microsecondsSinceEpoch}',
-                        type: 'text',
-                        x: 0.15,
-                        y: 0.25,
-                        width: 0.7,
-                        height: 0.2,
-                        content: 'Presentation Title',
-                        fontSize: 36,
-                        fontWeight: 'bold',
-                        textAlign: 'center',
-                      ),
-                      SlideElement(
-                        id: 'sub_${DateTime.now().microsecondsSinceEpoch}',
-                        type: 'text',
-                        x: 0.2,
-                        y: 0.5,
-                        width: 0.6,
-                        height: 0.15,
-                        content: 'Subtitle or Presenter Name',
-                        fontSize: 20,
-                        textAlign: 'center',
-                      ),
-                    ],
-                  ));
+              bloc.add(AddSlide(
+                layout: 'title',
+                initialElements: [
+                  SlideElement(
+                    id: 'title_${DateTime.now().microsecondsSinceEpoch}',
+                    type: 'text',
+                    x: 0.15,
+                    y: 0.25,
+                    width: 0.7,
+                    height: 0.2,
+                    content: 'Presentation Title',
+                    fontSize: 36,
+                    fontWeight: 'bold',
+                    textAlign: 'center',
+                  ),
+                  SlideElement(
+                    id: 'sub_${DateTime.now().microsecondsSinceEpoch}',
+                    type: 'text',
+                    x: 0.2,
+                    y: 0.5,
+                    width: 0.6,
+                    height: 0.15,
+                    content: 'Subtitle or Presenter Name',
+                    fontSize: 20,
+                    textAlign: 'center',
+                  ),
+                ],
+              ));
             },
             child: const Row(children: [
               Icon(Icons.title),
@@ -764,33 +793,33 @@ class _SlidePanel extends StatelessWidget {
           SimpleDialogOption(
             onPressed: () {
               Navigator.pop(context);
-              context.read<PresentationBloc>().add(AddSlide(
-                    layout: 'title_content',
-                    initialElements: [
-                      SlideElement(
-                        id: 'title_${DateTime.now().microsecondsSinceEpoch}',
-                        type: 'text',
-                        x: 0.1,
-                        y: 0.1,
-                        width: 0.8,
-                        height: 0.15,
-                        content: 'Slide Header',
-                        fontSize: 28,
-                        fontWeight: 'bold',
-                      ),
-                      SlideElement(
-                        id: 'body_${DateTime.now().microsecondsSinceEpoch}',
-                        type: 'text',
-                        x: 0.1,
-                        y: 0.3,
-                        width: 0.8,
-                        height: 0.55,
-                        content:
-                            '• First key bullet point\n• Second key bullet point\n• Summary detail',
-                        fontSize: 20,
-                      ),
-                    ],
-                  ));
+              bloc.add(AddSlide(
+                layout: 'title_content',
+                initialElements: [
+                  SlideElement(
+                    id: 'title_${DateTime.now().microsecondsSinceEpoch}',
+                    type: 'text',
+                    x: 0.1,
+                    y: 0.1,
+                    width: 0.8,
+                    height: 0.15,
+                    content: 'Slide Header',
+                    fontSize: 28,
+                    fontWeight: 'bold',
+                  ),
+                  SlideElement(
+                    id: 'body_${DateTime.now().microsecondsSinceEpoch}',
+                    type: 'text',
+                    x: 0.1,
+                    y: 0.3,
+                    width: 0.8,
+                    height: 0.55,
+                    content:
+                        '• First key bullet point\n• Second key bullet point\n• Summary detail',
+                    fontSize: 20,
+                  ),
+                ],
+              ));
             },
             child: const Row(children: [
               Icon(Icons.view_headline),
@@ -801,9 +830,9 @@ class _SlidePanel extends StatelessWidget {
           SimpleDialogOption(
             onPressed: () {
               Navigator.pop(context);
-              context.read<PresentationBloc>().add(const AddSlide(
-                    layout: 'blank',
-                  ));
+              bloc.add(const AddSlide(
+                layout: 'blank',
+              ));
             },
             child: const Row(children: [
               Icon(Icons.crop_free),
@@ -1233,6 +1262,58 @@ class _CanvasElementState extends State<_CanvasElement> {
                       ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
             ],
           ),
+        );
+      case 'table':
+        SlideTable table;
+        try {
+          final data =
+              jsonDecode(widget.element.content) as Map<String, dynamic>;
+          final cells = <String, String>{};
+          final cellsData = data['cells'] as List?;
+          if (cellsData != null) {
+            for (int r = 0; r < cellsData.length; r++) {
+              final row = cellsData[r] as List;
+              for (int c = 0; c < row.length; c++) {
+                cells['$r,$c'] = row[c].toString();
+              }
+            }
+          }
+          table = SlideTable(
+            id: widget.element.id,
+            rows: (data['rows'] as int?) ?? 3,
+            columns: (data['cols'] as int?) ?? 3,
+            cells: cells,
+            headerColor: '#4A90D9',
+          );
+        } catch (_) {
+          table = SlideTable(
+            id: widget.element.id,
+            rows: 3,
+            columns: 3,
+            headerColor: '#4A90D9',
+          );
+        }
+        return SlideTableWidget(
+          table: table,
+          onChanged: (updated) {
+            // Serialize table back to JSON content
+            final cells = <List<String>>[];
+            for (int r = 0; r < updated.rows; r++) {
+              final row = <String>[];
+              for (int c = 0; c < updated.columns; c++) {
+                row.add(updated.getCell(r, c));
+              }
+              cells.add(row);
+            }
+            final content = jsonEncode({
+              'rows': updated.rows,
+              'cols': updated.columns,
+              'cells': cells,
+            });
+            context
+                .read<PresentationBloc>()
+                .add(UpdateElementContent(widget.element.id, content));
+          },
         );
       default:
         return const SizedBox.expand();

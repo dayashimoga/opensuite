@@ -477,5 +477,21 @@
 - [x] 100% test coverage pass for all 134 suite test cases in Docker
 - [x] Production web build succeeded
 
+---
 
+## Sprint 20 — Critical Bug Fixes & Feature Wiring (v2.1.0) ✅
 
+### Presentation — Crash Fixes
+- [x] **Fix "Add Slide" crash**: Captured BLoC reference before `Navigator.pop()` in `_showAddSlideLayoutDialog` — previously, `context.read<PresentationBloc>()` was called after the dialog was popped from the navigator, referencing a potentially dismounted widget tree.
+- [x] **Wire Insert Table**: Added "Insert Table" toolbar button that creates a `SlideElement(type: 'table')` with JSON-encoded cell data.
+- [x] **Table Canvas Rendering**: Added `'table'` case to `_CanvasElement._buildContent()` that deserializes JSON content into a `SlideTable` model and renders via `SlideTableWidget` with bidirectional serialization.
+
+### Spreadsheet — Multi-Cell Selection
+- [x] **Grid-Level Drag Selection**: Replaced per-cell `onPanUpdate` (which only reported its own position) with a grid-level `Listener` that tracks `onPointerMove` during drag and calculates the target cell from pointer coordinates using scroll offsets and column/row dimensions.
+- [x] **Pointer-to-Cell Mapping**: Added `_cellFromGlobalOffset()` helper that converts global pointer coordinates to `CellPosition` accounting for header dimensions, horizontal scroll offset, vertical scroll offset, hidden columns, and custom column widths.
+- [x] **Shift+Click Range Extension**: Added `HardwareKeyboard.instance.isShiftPressed` check in `onCellTap` to extend selection from current cell to clicked cell via `SetCellRange`.
+
+### Quality Control
+- [x] Static analysis: 0 issues
+- [x] All 236 test cases pass (100%)
+- [x] `dart format` clean (0 changes)

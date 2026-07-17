@@ -204,7 +204,14 @@ class _EditorContentState extends State<_EditorContent> {
                     verticalController: _verticalController,
                     horizontalController: _horizontalController,
                     onCellTap: (pos) {
-                      context.read<SpreadsheetBloc>().add(SelectCell(pos));
+                      // Shift+Click extends selection range
+                      if (HardwareKeyboard.instance.isShiftPressed &&
+                          state.selectedCell != null) {
+                        context.read<SpreadsheetBloc>().add(
+                            SetCellRange(CellRange(state.selectedCell!, pos)));
+                      } else {
+                        context.read<SpreadsheetBloc>().add(SelectCell(pos));
+                      }
                       // Ensure grid has focus for keyboard events on web
                       _gridFocusNode.requestFocus();
                     },
@@ -1653,9 +1660,12 @@ class _VirtualSpreadsheetGrid extends StatefulWidget {
 
 class _VirtualSpreadsheetGridState extends State<_VirtualSpreadsheetGrid> {
   CellPosition? _dragStartCell;
+  bool _isDragging = false;
+  final GlobalKey _gridKey = GlobalKey();
 
   void _handleCellDragStart(CellPosition pos) {
     _dragStartCell = pos;
+    _isDragging = true;
     widget.onCellTap(pos);
   }
 
@@ -1663,6 +1673,51 @@ class _VirtualSpreadsheetGridState extends State<_VirtualSpreadsheetGrid> {
     if (_dragStartCell != null) {
       widget.onRangeSelect(CellRange(_dragStartCell!, pos));
     }
+  }
+
+  /// Calculate which cell a global pointer offset falls on.
+  CellPosition? _cellFromGlobalOffset(Offset global) {
+    final box = _gridKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null) return null;
+    final local = box.globalToLocal(global);
+
+    // Account for horizontal scroll
+    final hScroll = widget.horizontalController.hasClients
+        ? widget.horizontalController.offset
+        : 0.0;
+    final xInGrid = local.dx + hScroll;
+
+    // Account for header row height and vertical scroll
+    final headerH = _VirtualSpreadsheetGrid._headerHeight;
+    final vScroll = widget.verticalController.hasClients
+        ? widget.verticalController.offset
+        : 0.0;
+    final yInGrid = local.dy - headerH + vScroll;
+
+    if (yInGrid < 0 || xInGrid < _VirtualSpreadsheetGrid._headerWidth) {
+      return null;
+    }
+
+    // Determine column
+    double acc = _VirtualSpreadsheetGrid._headerWidth;
+    int col = 0;
+    for (int c = 0; c < widget.sheet.colCount; c++) {
+      if (widget.sheet.hiddenCols.contains(c)) continue;
+      final w = widget.sheet.columnWidths[c] ??
+          _VirtualSpreadsheetGrid._defaultColWidth;
+      if (xInGrid < acc + w) {
+        col = c;
+        break;
+      }
+      acc += w;
+      col = c;
+    }
+
+    // Determine row
+    int row = (yInGrid / _VirtualSpreadsheetGrid._defaultRowHeight).floor();
+    row = row.clamp(0, widget.sheet.rowCount - 1);
+
+    return CellPosition(row, col);
   }
 
   @override
@@ -1678,28 +1733,42 @@ class _VirtualSpreadsheetGridState extends State<_VirtualSpreadsheetGrid> {
       }
     }
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      controller: widget.horizontalController,
-      child: SizedBox(
-        width: totalWidth,
-        child: Column(
-          children: [
-            _buildColumnHeaders(theme, visibleCols),
-            Expanded(
-              child: ListView.builder(
-                controller: widget.verticalController,
-                itemCount: widget.sheet.rowCount,
-                itemExtent: _VirtualSpreadsheetGrid._defaultRowHeight,
-                itemBuilder: (context, row) {
-                  if (widget.sheet.hiddenRows.contains(row)) {
-                    return const SizedBox.shrink();
-                  }
-                  return _buildDataRow(theme, row, visibleCols);
-                },
+    return Listener(
+      onPointerMove: (event) {
+        if (_isDragging && _dragStartCell != null) {
+          final pos = _cellFromGlobalOffset(event.position);
+          if (pos != null) {
+            _handleCellDragUpdate(pos);
+          }
+        }
+      },
+      onPointerUp: (_) {
+        _isDragging = false;
+      },
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        controller: widget.horizontalController,
+        child: SizedBox(
+          width: totalWidth,
+          child: Column(
+            key: _gridKey,
+            children: [
+              _buildColumnHeaders(theme, visibleCols),
+              Expanded(
+                child: ListView.builder(
+                  controller: widget.verticalController,
+                  itemCount: widget.sheet.rowCount,
+                  itemExtent: _VirtualSpreadsheetGrid._defaultRowHeight,
+                  itemBuilder: (context, row) {
+                    if (widget.sheet.hiddenRows.contains(row)) {
+                      return const SizedBox.shrink();
+                    }
+                    return _buildDataRow(theme, row, visibleCols);
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
