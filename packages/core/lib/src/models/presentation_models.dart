@@ -260,3 +260,204 @@ class SlideData extends Equatable {
   List<Object?> get props =>
       [id, backgroundColor, elements, speakerNotes, transition];
 }
+
+/// Represents a table element within a slide.
+class SlideTable extends Equatable {
+  final String id;
+  final int rows;
+  final int columns;
+  final Map<String, String> cells; // 'row,col' -> content
+  final Map<String, String> cellStyles; // 'row,col' -> JSON style
+  final double cellPadding;
+  final String borderColor;
+  final double borderWidth;
+  final String? headerColor;
+
+  const SlideTable({
+    required this.id,
+    this.rows = 3,
+    this.columns = 3,
+    this.cells = const {},
+    this.cellStyles = const {},
+    this.cellPadding = 8.0,
+    this.borderColor = '#333333',
+    this.borderWidth = 1.0,
+    this.headerColor,
+  });
+
+  String getCell(int row, int col) => cells['$row,$col'] ?? '';
+
+  SlideTable copyWith({
+    int? rows,
+    int? columns,
+    Map<String, String>? cells,
+    Map<String, String>? cellStyles,
+    double? cellPadding,
+    String? borderColor,
+    double? borderWidth,
+    String? headerColor,
+  }) {
+    return SlideTable(
+      id: id,
+      rows: rows ?? this.rows,
+      columns: columns ?? this.columns,
+      cells: cells ?? this.cells,
+      cellStyles: cellStyles ?? this.cellStyles,
+      cellPadding: cellPadding ?? this.cellPadding,
+      borderColor: borderColor ?? this.borderColor,
+      borderWidth: borderWidth ?? this.borderWidth,
+      headerColor: headerColor ?? this.headerColor,
+    );
+  }
+
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'rows': rows,
+        'columns': columns,
+        'cells': cells,
+        'cellStyles': cellStyles,
+        'cellPadding': cellPadding,
+        'borderColor': borderColor,
+        'borderWidth': borderWidth,
+        if (headerColor != null) 'headerColor': headerColor,
+      };
+
+  factory SlideTable.fromMap(Map<String, dynamic> map) => SlideTable(
+        id: map['id'] as String,
+        rows: (map['rows'] as int?) ?? 3,
+        columns: (map['columns'] as int?) ?? 3,
+        cells: Map<String, String>.from(map['cells'] as Map? ?? {}),
+        cellStyles: Map<String, String>.from(map['cellStyles'] as Map? ?? {}),
+        cellPadding: (map['cellPadding'] as num?)?.toDouble() ?? 8.0,
+        borderColor: (map['borderColor'] as String?) ?? '#333333',
+        borderWidth: (map['borderWidth'] as num?)?.toDouble() ?? 1.0,
+        headerColor: map['headerColor'] as String?,
+      );
+
+  @override
+  List<Object?> get props =>
+      [id, rows, columns, cells, borderColor, headerColor];
+}
+
+/// Represents an animation applied to a slide element.
+class SlideAnimation extends Equatable {
+  final String id;
+  final String targetElementId;
+
+  /// Animation type: 'fadeIn', 'fadeOut', 'slideLeft', 'slideRight',
+  /// 'slideUp', 'slideDown', 'zoomIn', 'zoomOut', 'bounce', 'spin'.
+  final String type;
+
+  /// Duration in milliseconds.
+  final int durationMs;
+
+  /// Delay before animation starts in milliseconds.
+  final int delayMs;
+
+  /// Trigger: 'onClick', 'afterPrevious', 'withPrevious'.
+  final String trigger;
+
+  /// Order in the animation sequence.
+  final int order;
+
+  const SlideAnimation({
+    required this.id,
+    required this.targetElementId,
+    this.type = 'fadeIn',
+    this.durationMs = 500,
+    this.delayMs = 0,
+    this.trigger = 'onClick',
+    this.order = 0,
+  });
+
+  SlideAnimation copyWith({
+    String? targetElementId,
+    String? type,
+    int? durationMs,
+    int? delayMs,
+    String? trigger,
+    int? order,
+  }) {
+    return SlideAnimation(
+      id: id,
+      targetElementId: targetElementId ?? this.targetElementId,
+      type: type ?? this.type,
+      durationMs: durationMs ?? this.durationMs,
+      delayMs: delayMs ?? this.delayMs,
+      trigger: trigger ?? this.trigger,
+      order: order ?? this.order,
+    );
+  }
+
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'targetElementId': targetElementId,
+        'type': type,
+        'durationMs': durationMs,
+        'delayMs': delayMs,
+        'trigger': trigger,
+        'order': order,
+      };
+
+  factory SlideAnimation.fromMap(Map<String, dynamic> map) => SlideAnimation(
+        id: map['id'] as String,
+        targetElementId: map['targetElementId'] as String,
+        type: (map['type'] as String?) ?? 'fadeIn',
+        durationMs: (map['durationMs'] as int?) ?? 500,
+        delayMs: (map['delayMs'] as int?) ?? 0,
+        trigger: (map['trigger'] as String?) ?? 'onClick',
+        order: (map['order'] as int?) ?? 0,
+      );
+
+  @override
+  List<Object?> get props =>
+      [id, targetElementId, type, durationMs, delayMs, trigger, order];
+}
+
+/// Represents a slide master/layout template.
+class SlideMaster extends Equatable {
+  final String id;
+  final String name;
+
+  /// Layout type: 'title', 'titleContent', 'twoColumn', 'blank',
+  /// 'sectionHeader', 'comparison', 'titleOnly', 'captionedContent'.
+  final String layoutType;
+  final String backgroundColor;
+  final String? backgroundImage;
+
+  /// Placeholder positions as SlideElements.
+  final List<SlideElement> placeholders;
+
+  const SlideMaster({
+    required this.id,
+    required this.name,
+    this.layoutType = 'blank',
+    this.backgroundColor = '#FFFFFF',
+    this.backgroundImage,
+    this.placeholders = const [],
+  });
+
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'name': name,
+        'layoutType': layoutType,
+        'backgroundColor': backgroundColor,
+        if (backgroundImage != null) 'backgroundImage': backgroundImage,
+        'placeholders': placeholders.map((e) => e.toMap()).toList(),
+      };
+
+  factory SlideMaster.fromMap(Map<String, dynamic> map) => SlideMaster(
+        id: map['id'] as String,
+        name: map['name'] as String,
+        layoutType: (map['layoutType'] as String?) ?? 'blank',
+        backgroundColor: (map['backgroundColor'] as String?) ?? '#FFFFFF',
+        backgroundImage: map['backgroundImage'] as String?,
+        placeholders: (map['placeholders'] as List?)
+                ?.map((e) => SlideElement.fromMap(e as Map<String, dynamic>))
+                .toList() ??
+            [],
+      );
+
+  @override
+  List<Object?> get props => [id, name, layoutType, backgroundColor];
+}

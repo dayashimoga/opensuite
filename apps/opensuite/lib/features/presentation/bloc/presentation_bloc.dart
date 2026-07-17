@@ -1,11 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:equatable/equatable.dart';
 import 'package:fileutility_core/fileutility_core.dart';
 import 'package:fileutility_storage/fileutility_storage.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../services/pptx_service.dart';
+import '../services/presentation_pdf_service.dart';
 
 // --- Events ---
 
@@ -282,6 +286,28 @@ class UngroupElements extends PresentationEvent {
   List<Object?> get props => [groupId];
 }
 
+// --- Sprint 16: PPTX / PDF Export/Import ---
+
+class ExportPptx extends PresentationEvent {
+  const ExportPptx();
+}
+
+class ExportPresentationPdf extends PresentationEvent {
+  const ExportPresentationPdf();
+}
+
+class ImportPptx extends PresentationEvent {
+  final Uint8List fileBytes;
+  final String fileName;
+  const ImportPptx(this.fileBytes, {this.fileName = 'presentation.pptx'});
+  @override
+  List<Object?> get props => [fileBytes, fileName];
+}
+
+class ClearExportedPresentation extends PresentationEvent {
+  const ClearExportedPresentation();
+}
+
 // --- State ---
 
 enum PresentationStatus {
@@ -292,6 +318,9 @@ enum PresentationStatus {
   presenting,
   saving,
   saved,
+  exporting,
+  exported,
+  importing,
   error
 }
 
@@ -313,6 +342,11 @@ class PresentationState extends Equatable {
   final String searchQuery;
   final String? errorMessage;
 
+  // Export state
+  final Uint8List? exportedBytes;
+  final String? exportedFileName;
+  final String? exportedMimeType;
+
   const PresentationState({
     this.status = PresentationStatus.initial,
     this.presentations = const [],
@@ -327,6 +361,9 @@ class PresentationState extends Equatable {
     this.canRedo = false,
     this.searchQuery = '',
     this.errorMessage,
+    this.exportedBytes,
+    this.exportedFileName,
+    this.exportedMimeType,
   });
 
   SlideData? get activeSlide =>
@@ -346,6 +383,9 @@ class PresentationState extends Equatable {
     bool? canRedo,
     String? searchQuery,
     String? errorMessage,
+    Uint8List? exportedBytes,
+    String? exportedFileName,
+    String? exportedMimeType,
   }) {
     return PresentationState(
       status: status ?? this.status,
@@ -363,6 +403,9 @@ class PresentationState extends Equatable {
       canRedo: canRedo ?? this.canRedo,
       searchQuery: searchQuery ?? this.searchQuery,
       errorMessage: errorMessage ?? this.errorMessage,
+      exportedBytes: exportedBytes,
+      exportedFileName: exportedFileName,
+      exportedMimeType: exportedMimeType,
     );
   }
 
@@ -426,6 +469,10 @@ class PresentationBloc extends Bloc<PresentationEvent, PresentationState> {
     on<DuplicateElement>(_onDuplicateElement);
     on<GroupElements>(_onGroupElements);
     on<UngroupElements>(_onUngroupElements);
+    on<ExportPptx>(_onExportPptx);
+    on<ExportPresentationPdf>(_onExportPdf);
+    on<ImportPptx>(_onImportPptx);
+    on<ClearExportedPresentation>(_onClearExported);
   }
 
   Future<void> _onLoad(
@@ -1011,6 +1058,93 @@ class PresentationBloc extends Bloc<PresentationEvent, PresentationState> {
     }).toList();
 
     _updateCurrentSlide(emit, slide.copyWith(elements: elements));
+  }
+
+  // --- PPTX / PDF Export/Import Handlers ---
+
+  Future<void> _onExportPptx(
+      ExportPptx event, Emitter<PresentationState> emit) async {
+    if (state.slides.isEmpty) return;
+    emit(state.copyWith(status: PresentationStatus.exporting));
+    try {
+      final title = state.currentPresentation?.title ?? 'Presentation';
+      final bytes = PptxService.exportToPptx(
+        slides: state.slides,
+        title: title,
+      );
+      emit(state.copyWith(
+        status: PresentationStatus.exported,
+        exportedBytes: bytes,
+        exportedFileName: '$title.pptx',
+        exportedMimeType:
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      ));
+    } catch (e) {
+      emit(state.copyWith(
+          status: PresentationStatus.error, errorMessage: 'Export failed: $e'));
+    }
+  }
+
+  Future<void> _onExportPdf(
+      ExportPresentationPdf event, Emitter<PresentationState> emit) async {
+    if (state.slides.isEmpty) return;
+    emit(state.copyWith(status: PresentationStatus.exporting));
+    try {
+      final title = state.currentPresentation?.title ?? 'Presentation';
+      final bytes = await PresentationPdfService.exportToPdf(
+        slides: state.slides,
+        title: title,
+      );
+      emit(state.copyWith(
+        status: PresentationStatus.exported,
+        exportedBytes: bytes,
+        exportedFileName: '$title.pdf',
+        exportedMimeType: 'application/pdf',
+      ));
+    } catch (e) {
+      emit(state.copyWith(
+          status: PresentationStatus.error,
+          errorMessage: 'PDF export failed: $e'));
+    }
+  }
+
+  Future<void> _onImportPptx(
+      ImportPptx event, Emitter<PresentationState> emit) async {
+    emit(state.copyWith(status: PresentationStatus.importing));
+    try {
+      final importedSlides =
+          PptxService.importFromPptx(fileBytes: event.fileBytes);
+
+      final now = DateTime.now();
+      final title =
+          event.fileName.replaceAll('.pptx', '').replaceAll('.ppt', '');
+
+      final entity = PresentationEntity(
+        id: now.microsecondsSinceEpoch.toString(),
+        title: title,
+        content: jsonEncode(importedSlides.map((s) => s.toMap()).toList()),
+        slideCount: importedSlides.length,
+        createdAt: now,
+        modifiedAt: now,
+      );
+
+      await _dao.insertPresentation(entity);
+
+      emit(state.copyWith(
+        status: PresentationStatus.editing,
+        currentPresentation: entity,
+        slides: importedSlides,
+        activeSlideIndex: 0,
+      ));
+    } catch (e) {
+      emit(state.copyWith(
+          status: PresentationStatus.error, errorMessage: 'Import failed: $e'));
+    }
+  }
+
+  void _onClearExported(
+      ClearExportedPresentation event, Emitter<PresentationState> emit) {
+    emit(state.copyWith(status: PresentationStatus.editing));
   }
 
   void _scheduleAutoSave() {

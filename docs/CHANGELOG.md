@@ -5,6 +5,64 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0+14] - 2026-07-17
+
+### Added — Sprint 14: Document Editor Rich Text Engine
+- **Rich Text Editor**: Replaced plain `TextField` with `flutter_quill` QuillEditor + full formatting toolbar (headings, bold, italic, underline, strike, colors, alignment, bullets, numbering)
+- **DOCX Export/Import**: `DocxService` — full OOXML ZIP export with styles, headings, lists, tables; import with Delta JSON conversion
+- **PDF Export**: `PdfExportService` — multi-page PDF generation with rich text formatting
+- **Delta-based BLoC**: Rewrote `DocumentEditorBloc` for Quill Delta JSON serialization and Quill's built-in undo/redo
+
+### Added — Sprint 15: Spreadsheet XLSX I/O + Charts + Conditional Formatting
+- **XLSX Import/Export**: `XlsxService` using `excel` v4.x — cell values, formatting, merged cells, formulas, sheet names
+- **Charts**: `SpreadsheetChart` widget (Bar, Line, Pie) using `fl_chart` with theme-aware colors
+- **Conditional Formatting**: BLoC events/handlers + `ConditionalFormatDialog` rule builder UI
+- **Chart Insert UI**: Bottom sheet dialog with chart type chips and live preview
+
+### Added — Sprint 16: Presentation PPTX I/O + Tables + Animations
+- **PPTX Export/Import**: `PptxService` — full OOXML ZIP serialization with text boxes, shapes, images, backgrounds
+- **Presentation PDF Export**: `PresentationPdfService` — landscape PDF generation from slides
+- **SlideTable model + widget**: Editable table element on slide canvas with add row/column, double-tap cell editing
+- **SlideAnimation model + AnimationPanel**: Sidebar for managing element animations (fadeIn, slideLeft, zoomIn, bounce, etc.)
+- **SlideMaster model**: Layout templates (title, titleContent, twoColumn, blank, etc.)
+
+### Added — Sprint 17: Image Editor Layers + Drawing + Filters
+- **Drawing Canvas**: Freehand drawing overlay with pen/eraser tool and stroke tracking
+- **Text Overlay Tool**: Add text with font size, color, bold/italic controls
+- **Shape Tool**: Rectangle, circle, triangle, line, arrow, star shape overlays
+- **Layer Panel**: Sidebar with visibility toggle, opacity slider, reorder, merge
+- **Filter Gallery**: Horizontal scrollable preset filters (grayscale, sepia, blur, sharpen, emboss, edge detect, etc.)
+- **Batch Processing Dialog**: Multi-file operations with format, resize, filter, quality, watermark options
+- **BLoC Events**: AddTextOverlay, AddDrawingPath, ApplyPresetFilter, AddWatermark with undo support
+
+### Added — Sprint 18: PDF Merge/Split + Bookmarks + OCR Framework
+- **PDF Manipulation**: `PdfManipulationService` — merge, split, extract, delete, watermark, rotate
+- **Bookmark Panel**: Sidebar for PDF bookmark navigation with add/remove and hierarchical display
+- **Signature Pad**: Touch/mouse signature capture widget with stroke tracking
+- **Merge/Split Dialog**: Tabbed dialog for PDF split/extract/delete with page range and chip selectors
+- **OCR Framework**: Pluggable `OcrEngine` interface with `StubOcrEngine` — ready for Tesseract/Google Vision/ML Kit
+
+### Added — Sprint 19: Infrastructure + Polish
+- **Docker**: Fixed volume mount dependency resolution — `pub get` for all packages before analyze/test
+- **Dependency Fix**: Resolved `archive` version conflict (downgraded to ^3.6.1 for excel compatibility)
+- **Models**: Added `SlideTable`, `SlideAnimation`, `SlideMaster` to presentation_models.dart
+
+### Fixed
+- `DocxService` paragraph block attributes mapping (headings not generated in DOCX)
+- `DocumentEditorState.copyWith` nullability (current document not cleared on delete)
+- `XlsxService` Excel v4.x API migration (TextSpan, spannedItems, ExcelColor)
+- `SpreadsheetChart` fl_chart 0.69.x `axisSide` API compatibility
+- `PptxService` XmlNode→XmlElement parent casting
+- `RichDocumentEditorPage` missing imports (storage, quill_delta)
+- Unit test seeding issues (FindInDocument empty query)
+
+## [1.9.0+13] - 2026-07-16
+
+### Fixed & Enhanced — Image Editor Interactive Crop, Pixel Resize & Multi-Tile Photo Generator
+- **Interactive Free & Constrained Aspect Ratio Crop**: Implemented `_InteractiveCropBox` with 8 corner/edge drag handles, custom darkened overlay mask, aspect ratio preset chips (`Free`, `16:9`, `4:3`, `1:1`, `Passport 3.5:4.5`, `3:2`), and **Apply Crop** / **Reset** controls dispatching pixel-accurate cropping to `ImageEditorBloc`.
+- **Numerical Pixel & Preset Resizing**: Added `Width` and `Height` px `TextField`s with auto aspect-ratio calculation, scale sliders (`25%` to `200%`), and preset buttons (`1080p`, `720p`, `50%`), coupled with responsive canvas scaling matching image dimensions.
+- **Multi-Tile Photo Sheet Layout Generator**: Created `PhotoTileGenerator` supporting international paper size formats (`A4`, `A3`, `B4`, `B5`, `Letter`, `Legal`) and photo size standards (`Passport 35×45mm`, `US/India Passport 2×2in`, `Stamp 20×25mm`, `Schengen Visa`, `Postcard 4×6in`, `Wallet 64×89mm`). Automatically calculates max photo capacity per sheet (e.g. 35 tiles on A4) with cut outlines toggle and instant Blob file downloads (`FileDownloadUtils`).
+
 ## [1.8.0+12] - 2026-07-16
 
 ### Fixed & Enhanced — Presentation Canvas Direct Inline Editing, 8-Point Handles & Layout Templates

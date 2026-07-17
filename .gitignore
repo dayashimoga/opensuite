@@ -51,3 +51,19 @@ docker/.env
 **/*.rpm
 **/*.snap
 **/*.AppImage
+
+# Flutter plugin files
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/pubspec_overrides.yaml
+
+# Platform-specific generated plugins
+**/generated_plugin_registrant.cc
+**/generated_plugin_registrant.h
+**/generated_plugin_registrant.dart
+**/generated_plugins.cmake
+**/GeneratedPluginRegistrant.h
+**/GeneratedPluginRegistrant.m
+**/GeneratedPluginRegistrant.swift
+**/GeneratedPluginRegistrant.java
+

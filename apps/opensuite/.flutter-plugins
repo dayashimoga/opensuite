@@ -1,5 +1,11 @@
 # This is a generated file; do not edit or check into version control.
 file_picker=/root/.pub-cache/hosted/pub.dev/file_picker-9.2.3/
+file_selector_linux=/root/.pub-cache/hosted/pub.dev/file_selector_linux-0.9.3+2/
+file_selector_windows=/root/.pub-cache/hosted/pub.dev/file_selector_windows-0.9.3+4/
+flutter_keyboard_visibility_linux=/root/.pub-cache/hosted/pub.dev/flutter_keyboard_visibility_linux-1.0.0/
+flutter_keyboard_visibility_macos=/root/.pub-cache/hosted/pub.dev/flutter_keyboard_visibility_macos-1.0.0/
+flutter_keyboard_visibility_temp_fork=/root/.pub-cache/hosted/pub.dev/flutter_keyboard_visibility_temp_fork-0.1.5/
+flutter_keyboard_visibility_windows=/root/.pub-cache/hosted/pub.dev/flutter_keyboard_visibility_windows-1.0.0/
 flutter_plugin_android_lifecycle=/root/.pub-cache/hosted/pub.dev/flutter_plugin_android_lifecycle-2.0.29/
 path_provider=/root/.pub-cache/hosted/pub.dev/path_provider-2.1.5/
 path_provider_android=/root/.pub-cache/hosted/pub.dev/path_provider_android-2.2.17/
@@ -7,6 +13,14 @@ path_provider_foundation=/root/.pub-cache/hosted/pub.dev/path_provider_foundatio
 path_provider_linux=/root/.pub-cache/hosted/pub.dev/path_provider_linux-2.2.1/
 path_provider_windows=/root/.pub-cache/hosted/pub.dev/path_provider_windows-2.3.0/
 pdfrx=/root/.pub-cache/hosted/pub.dev/pdfrx-1.0.103/
+printing=/root/.pub-cache/hosted/pub.dev/printing-5.14.3/
+quill_native_bridge=/root/.pub-cache/hosted/pub.dev/quill_native_bridge-10.7.11/
+quill_native_bridge_android=/root/.pub-cache/hosted/pub.dev/quill_native_bridge_android-0.0.1+2/
+quill_native_bridge_ios=/root/.pub-cache/hosted/pub.dev/quill_native_bridge_ios-0.0.1/
+quill_native_bridge_linux=/root/.pub-cache/hosted/pub.dev/quill_native_bridge_linux-0.0.2/
+quill_native_bridge_macos=/root/.pub-cache/hosted/pub.dev/quill_native_bridge_macos-0.0.1/
+quill_native_bridge_web=/root/.pub-cache/hosted/pub.dev/quill_native_bridge_web-0.0.2/
+quill_native_bridge_windows=/root/.pub-cache/hosted/pub.dev/quill_native_bridge_windows-0.0.2/
 share_plus=/root/.pub-cache/hosted/pub.dev/share_plus-10.1.4/
 sqflite=/root/.pub-cache/hosted/pub.dev/sqflite-2.4.1/
 sqflite_android=/root/.pub-cache/hosted/pub.dev/sqflite_android-2.4.0/

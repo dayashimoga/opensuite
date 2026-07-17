@@ -7,7 +7,7 @@
 | Notes | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Production |
 | File Manager | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Production |
 | Text Editor | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Production |
-| Document Editor | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Needs Quill |
+| Document Editor | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Production (Quill) |
 | Spreadsheet | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Production |
 | Presentation | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Production |
 | PDF Viewer | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Production |
@@ -68,22 +68,26 @@
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| Text Editing | ✅ | Plain TextField (needs flutter_quill) |
-| Bold/Italic/Underline/Strikethrough | ⚠️ | Markdown syntax, not visual |
-| Headings (H1–H3) | ⚠️ | Markdown syntax |
-| Lists (ordered/unordered) | ⚠️ | Markdown syntax |
-| Blockquotes | ⚠️ | Markdown syntax |
-| Code Blocks | ⚠️ | Markdown syntax |
-| Links | ⚠️ | Markdown syntax |
+| Rich Text Editing (flutter_quill) | ✅ v2.0.0 | QuillEditor with Delta JSON |
+| Bold/Italic/Underline/Strikethrough | ✅ v2.0.0 | Visual WYSIWYG toolbar |
+| Headings (H1–H6) | ✅ v2.0.0 | Quill heading attributes |
+| Lists (ordered/unordered) | ✅ v2.0.0 | Quill list attributes |
+| Blockquotes | ✅ v2.0.0 | Quill blockquote |
+| Code Blocks | ✅ v2.0.0 | Quill code block |
+| Links / Hyperlinks | ✅ v2.0.0 | Inline link attribute |
+| Text Color / Highlight | ✅ v2.0.0 | Color picker in toolbar |
+| Text Alignment | ✅ v2.0.0 | Left/Center/Right/Justify |
+| Indentation | ✅ v2.0.0 | Indent/outdent |
 | Word/Char Count | ✅ | |
-| Undo/Redo | ✅ | |
+| Undo/Redo | ✅ v2.0.0 | Quill built-in history |
 | Autosave | ✅ | |
-| Share/Export | ✅ | TXT, Markdown |
+| Share/Export | ✅ | TXT, Markdown, DOCX, PDF |
 | Open File | ✅ | |
-| Keyboard Shortcuts | ✅ | |
-| DOCX Import | ❌ | Planned |
-| DOCX Export | ❌ | Planned |
-| Images in Documents | ❌ | Planned |
+| Keyboard Shortcuts | ✅ v2.0.0 | Ctrl+S/N/O/F/H |
+| DOCX Import | ✅ v2.0.0 | ZIP+XML → Delta JSON |
+| DOCX Export | ✅ v2.0.0 | Delta → OOXML ZIP |
+| PDF Export | ✅ v2.0.0 | Multi-page with formatting |
+| Images in Documents | ✅ v2.0.0 | Via Quill embed |
 
 ## Spreadsheet Features
 
@@ -109,9 +113,9 @@
 | Comments | ✅ | ✅ | ✅ | v1.0.0 |
 | Hyperlinks | ✅ | ✅ | ✅ | v1.0.0 |
 | Autosave | ✅ | ✅ | ✅ | v1.0.0 |
-| XLSX Import/Export | ❌ | ❌ | ❌ | Planned |
-| Conditional Formatting | ❌ | ❌ | ❌ | Planned |
-| Charts | ❌ | ❌ | ❌ | Planned |
+| XLSX Import/Export | ✅ v2.0.0 | ✅ | ✅ | Production |
+| Conditional Formatting | ✅ v2.0.0 | ✅ | ✅ | BLoC + Dialog UI |
+| Charts (Bar/Line/Pie) | ✅ v2.0.0 | ✅ | ✅ | fl_chart |
 
 ## Presentation Features
 
@@ -135,8 +139,11 @@
 | Bring to Front/Send to Back | ✅ |
 | Autosave | ✅ |
 | Share | ✅ |
-| PPTX Import/Export | ❌ Planned |
-| Tables in Slides | ❌ Planned |
+| PPTX Import/Export | ✅ v2.0.0 | ZIP+XML OOXML |
+| PDF Export | ✅ v2.0.0 | Landscape slide → PDF |
+| Tables in Slides | ✅ v2.0.0 | SlideTable widget |
+| Slide Animations | ✅ v2.0.0 | 10 types, AnimationPanel |
+| Slide Master Templates | ✅ v2.0.0 | 8 layout types |
 
 ## PDF Viewer Features
 
@@ -155,8 +162,13 @@
 | Page Range Selection | ✅ Fixed v1.5.0 |
 | Share | ✅ |
 | Open File | ✅ |
-| PDF Merge | ❌ Planned |
-| PDF Compress | ❌ Planned |
+| PDF Merge | ✅ v2.0.0 | PdfManipulationService |
+| PDF Split / Extract | ✅ v2.0.0 | MergeSplitDialog |
+| PDF Delete / Reorder Pages | ✅ v2.0.0 | BLoC events |
+| PDF Watermark | ✅ v2.0.0 | Text watermark overlay |
+| Bookmarks | ✅ v2.0.0 | BookmarkPanel sidebar |
+| Signature Capture | ✅ v2.0.0 | SignaturePad widget |
+| OCR Framework | ✅ v2.0.0 | Pluggable OcrEngine |
 | Form Fill | ❌ Planned |
 
 ## Image Editor Features
@@ -176,6 +188,13 @@
 | Real Dimension Detection | ✅ v1.5.0 |
 | Full-Fidelity Canvas | ✅ |
 | Open File | ✅ |
+| Drawing Canvas | ✅ v2.0.0 | Freehand pen/eraser |
+| Text Overlays | ✅ v2.0.0 | Font/size/color/bold/italic |
+| Shape Overlays | ✅ v2.0.0 | Rect/circle/triangle/line/arrow/star |
+| Layer Panel | ✅ v2.0.0 | Visibility/opacity/reorder/merge |
+| Filter Gallery | ✅ v2.0.0 | 12 preset filters |
+| Batch Processing | ✅ v2.0.0 | Multi-file format/resize/filter |
+| Watermark Tool | ✅ v2.0.0 | Text/image watermark |
 
 ## Text Editor Features
 
