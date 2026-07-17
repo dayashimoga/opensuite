@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0+15] - 2026-07-17
+
+### Added — Sprint 20: Presentation Animations Sidebar & Spreadsheet Range Selection fixes
+- **Presentation Animations Panel**: Imported and wired `AnimationPanel` right-side sidebar toggle button in Presentation editor with events `AddAnimation`, `RemoveAnimation`, `UpdateAnimation`, `ReorderAnimations`. Added unit tests for all animation events with 100% test passing (240/240).
+- **Spreadsheet Drag Selection**: Refactored drag selection to use a grid-level `Listener` that calculates targeted cells based on pointer positions, scroll offsets, and cell bounds, completely fixing range selections.
+- **Spreadsheet Shift+Click Selection**: Enabled range extension using Shift + Click to select multiple cells seamlessly.
+- **Presentation SlideTable rendering**: Deserialized JSON table elements dynamically on the slide canvas and wired double-tap cell editing callbacks back to PresentationBloc.
+- **CellData isEmpty Fix**: Prevented silent cell deletion by updating `CellData.isEmpty` to verify formatting properties alongside `rawValue` checks.
+- **Keyboard focus restoration**: Fixed keyboard event listeners by programmatically restoring focus to the spreadsheet grid after completing cell edits.
+
 ## [2.0.0+14] - 2026-07-17
 
 ### Added — Sprint 14: Document Editor Rich Text Engine
