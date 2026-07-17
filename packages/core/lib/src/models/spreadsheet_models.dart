@@ -86,8 +86,26 @@ class CellData extends Equatable {
     this.errorMessage,
   });
 
-  /// Whether this cell is empty.
-  bool get isEmpty => rawValue.isEmpty;
+  /// Whether this cell has no value and no non-default formatting.
+  bool get isEmpty =>
+      rawValue.isEmpty &&
+      !isBold &&
+      !isItalic &&
+      !isUnderline &&
+      !isStrikethrough &&
+      textColor == null &&
+      backgroundColor == null &&
+      borders == null &&
+      comment == null &&
+      hyperlink == null &&
+      numberFormat == NumberFormatType.general &&
+      fontSize == 12.0 &&
+      fontFamily == 'Inter' &&
+      alignment == 'left' &&
+      !wrapText;
+
+  /// Whether this cell has no text value (ignoring formatting).
+  bool get hasNoValue => rawValue.isEmpty;
 
   /// Whether this cell contains a formula.
   bool get isFormula => rawValue.startsWith('=');

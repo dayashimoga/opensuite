@@ -231,6 +231,7 @@ class _EditorContentState extends State<_EditorContent> {
                           .read<SpreadsheetBloc>()
                           .add(ResizeColumn(col, width));
                     },
+                    onEditComplete: () => _gridFocusNode.requestFocus(),
                   ),
                 ),
 
@@ -1633,6 +1634,7 @@ class _VirtualSpreadsheetGrid extends StatefulWidget {
   final ValueChanged<CellRange> onRangeSelect;
   final void Function(CellPosition, Offset) onContextMenu;
   final void Function(int col, double width) onColumnResize;
+  final VoidCallback onEditComplete;
 
   const _VirtualSpreadsheetGrid({
     required this.sheet,
@@ -1646,6 +1648,7 @@ class _VirtualSpreadsheetGrid extends StatefulWidget {
     required this.onRangeSelect,
     required this.onContextMenu,
     required this.onColumnResize,
+    required this.onEditComplete,
   });
 
   static const double _defaultColWidth = 100;
@@ -1888,6 +1891,7 @@ class _VirtualSpreadsheetGridState extends State<_VirtualSpreadsheetGrid> {
                     widget.onCellEdit(CellPosition(row, col), value),
                 onContextMenu: (offset) =>
                     widget.onContextMenu(CellPosition(row, col), offset),
+                onEditComplete: widget.onEditComplete,
               ),
         ],
       ),
@@ -1909,6 +1913,7 @@ class _GridCell extends StatefulWidget {
   final ValueChanged<CellPosition> onDragUpdate;
   final ValueChanged<String> onEdit;
   final ValueChanged<Offset> onContextMenu;
+  final VoidCallback onEditComplete;
 
   const _GridCell({
     required this.position,
@@ -1922,6 +1927,7 @@ class _GridCell extends StatefulWidget {
     required this.onDragUpdate,
     required this.onEdit,
     required this.onContextMenu,
+    required this.onEditComplete,
   });
 
   @override
@@ -2029,10 +2035,12 @@ class _GridCellState extends State<_GridCell> {
                   onSubmitted: (value) {
                     widget.onEdit(value);
                     setState(() => _isEditing = false);
+                    widget.onEditComplete();
                   },
                   onTapOutside: (_) {
                     widget.onEdit(_controller.text);
                     setState(() => _isEditing = false);
+                    widget.onEditComplete();
                   },
                 )
               : _buildCellContent(theme),

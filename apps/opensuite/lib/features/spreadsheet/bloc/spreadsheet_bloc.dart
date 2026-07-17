@@ -1260,10 +1260,8 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
 
     for (final pos in range.positions) {
       final cell = state.activeSheet!.getCell(pos);
-      if (!cell.isEmpty) {
-        final relKey = '${pos.row - tl.row},${pos.col - tl.col}';
-        _clipboardCells![relKey] = cell;
-      }
+      final relKey = '${pos.row - tl.row},${pos.col - tl.col}';
+      _clipboardCells![relKey] = cell;
     }
 
     // Also copy plain text to system clipboard
