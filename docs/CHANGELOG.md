@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.0+22] - 2026-07-20
+
+### Fixed — Sprint 27: AGP 8.9.1 Upgrade & Android Build Fix
+
+- **Android Gradle Plugin (AGP) Upgrade**: Upgraded AGP from `8.3.0` to `8.9.1` in `android/settings.gradle` to resolve `checkReleaseAarMetadata` requirement for `androidx.browser:1.9.0` and `androidx.core:1.17.0`.
+- **Gradle Wrapper Upgrade**: Upgraded `distributionUrl` in `gradle-wrapper.properties` to `gradle-8.11.1-all.zip` for AGP 8.9.1+ compatibility.
+- **Icon Tree-Shaking Guard**: Added `--no-tree-shake-icons` flag to `flutter build apk --release` in `.github/workflows/ci.yml`.
+
 ## [2.7.0+21] - 2026-07-20
 
 ### Fixed & Enhanced — Sprint 26: Spreadsheet Font Engine & Toolbar Alignment Fixes

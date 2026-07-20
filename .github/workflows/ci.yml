@@ -176,7 +176,7 @@ jobs:
           done
 
       - name: Build APK
-        run: cd apps/opensuite && flutter build apk --release --android-skip-build-dependency-validation
+        run: cd apps/opensuite && flutter build apk --release --no-tree-shake-icons --android-skip-build-dependency-validation
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
