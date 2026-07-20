@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../di/app_module.dart';
@@ -207,6 +208,11 @@ class _EditorContentState extends State<_EditorContent> {
                     verticalController: _verticalController,
                     horizontalController: _horizontalController,
                     onCellTap: (pos) {
+                      final targetCell = activeSheet.getCell(pos);
+                      setState(() {
+                        _selectedFont = targetCell.fontFamily;
+                        _selectedFontSize = targetCell.fontSize;
+                      });
                       // Shift+Click extends selection range
                       if (HardwareKeyboard.instance.isShiftPressed &&
                           state.selectedCell != null) {
@@ -760,76 +766,22 @@ class _EditorContentState extends State<_EditorContent> {
             const VerticalDivider(width: 12, indent: 6, endIndent: 6),
 
             // Font Family
-            SizedBox(
-              width: 100,
-              height: 28,
-              child: DropdownButtonFormField<String>(
-                initialValue: _selectedFont,
-                isDense: true,
-                isExpanded: true,
-                decoration: InputDecoration(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(4),
-                    borderSide: BorderSide(
-                        color: theme.colorScheme.outlineVariant, width: 0.5),
-                  ),
-                ),
-                style: theme.textTheme.bodySmall,
-                items: const [
-                  DropdownMenuItem(value: 'Inter', child: Text('Inter')),
-                  DropdownMenuItem(value: 'Roboto', child: Text('Roboto')),
-                  DropdownMenuItem(
-                      value: 'monospace', child: Text('Monospace')),
-                  DropdownMenuItem(value: 'serif', child: Text('Serif')),
-                ],
-                onChanged: (v) {
-                  if (v != null) {
-                    setState(() => _selectedFont = v);
-                    context.read<SpreadsheetBloc>().add(SetFontFamily(v));
-                  }
-                },
-              ),
+            _FontFamilyPicker(
+              selectedFont: _selectedFont,
+              onFontSelected: (v) {
+                setState(() => _selectedFont = v);
+                context.read<SpreadsheetBloc>().add(SetFontFamily(v));
+              },
             ),
             const SizedBox(width: 4),
 
             // Font Size
-            SizedBox(
-              width: 58,
-              height: 28,
-              child: DropdownButtonFormField<double>(
-                initialValue: _selectedFontSize,
-                isDense: true,
-                isExpanded: true,
-                decoration: InputDecoration(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(4),
-                    borderSide: BorderSide(
-                        color: theme.colorScheme.outlineVariant, width: 0.5),
-                  ),
-                ),
-                style: theme.textTheme.bodySmall,
-                items: const [
-                  DropdownMenuItem(value: 8.0, child: Text('8')),
-                  DropdownMenuItem(value: 10.0, child: Text('10')),
-                  DropdownMenuItem(value: 11.0, child: Text('11')),
-                  DropdownMenuItem(value: 12.0, child: Text('12')),
-                  DropdownMenuItem(value: 14.0, child: Text('14')),
-                  DropdownMenuItem(value: 16.0, child: Text('16')),
-                  DropdownMenuItem(value: 18.0, child: Text('18')),
-                  DropdownMenuItem(value: 20.0, child: Text('20')),
-                  DropdownMenuItem(value: 24.0, child: Text('24')),
-                ],
-                onChanged: (v) {
-                  if (v != null) {
-                    setState(() => _selectedFontSize = v);
-                    context.read<SpreadsheetBloc>().add(SetFontSize(v));
-                  }
-                },
-              ),
+            _FontSizePicker(
+              selectedFontSize: _selectedFontSize,
+              onSizeSelected: (v) {
+                setState(() => _selectedFontSize = v);
+                context.read<SpreadsheetBloc>().add(SetFontSize(v));
+              },
             ),
             const VerticalDivider(width: 12, indent: 6, endIndent: 6),
 
@@ -2369,15 +2321,27 @@ class _GridCellState extends State<_GridCell> {
   }
 
   TextStyle _getCellTextStyle(ThemeData theme) {
-    return theme.textTheme.bodySmall!.copyWith(
+    TextStyle style = theme.textTheme.bodySmall!.copyWith(
       fontWeight: widget.cell.isBold ? FontWeight.bold : FontWeight.normal,
       fontStyle: widget.cell.isItalic ? FontStyle.italic : FontStyle.normal,
       fontSize: widget.cell.fontSize,
-      fontFamily: widget.cell.fontFamily,
       color: widget.cell.textColor != null
           ? _parseColor(widget.cell.textColor!)
           : null,
     );
+
+    final family = widget.cell.fontFamily;
+    if (family.isNotEmpty) {
+      try {
+        style = GoogleFonts.getFont(
+          family,
+          textStyle: style,
+        );
+      } catch (_) {
+        style = style.copyWith(fontFamily: family);
+      }
+    }
+    return style;
   }
 
   Alignment _getAlignment(String alignment) {
@@ -2640,6 +2604,167 @@ class _SheetTabs extends StatelessWidget {
             child: const Text('Rename'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _FontFamilyPicker extends StatelessWidget {
+  final String selectedFont;
+  final ValueChanged<String> onFontSelected;
+
+  static const List<String> fontFamilies = [
+    'Inter',
+    'Roboto',
+    'Arial',
+    'Calibri',
+    'Comic Sans MS',
+    'Courier New',
+    'Georgia',
+    'Impact',
+    'Lora',
+    'Merriweather',
+    'Montserrat',
+    'Open Sans',
+    'Oswald',
+    'Poppins',
+    'Source Sans Pro',
+    'Times New Roman',
+    'Trebuchet MS',
+    'Verdana',
+  ];
+
+  const _FontFamilyPicker({
+    required this.selectedFont,
+    required this.onFontSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return PopupMenuButton<String>(
+      onSelected: onFontSelected,
+      tooltip: 'Font Family',
+      itemBuilder: (context) {
+        return fontFamilies.map((font) {
+          return PopupMenuItem<String>(
+            value: font,
+            height: 32,
+            child: Text(
+              font,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight:
+                    font == selectedFont ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          );
+        }).toList();
+      },
+      child: Container(
+        height: 28,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        decoration: BoxDecoration(
+          border:
+              Border.all(color: theme.colorScheme.outlineVariant, width: 0.5),
+          borderRadius: BorderRadius.circular(4),
+          color:
+              theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              selectedFont,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(width: 4),
+            const Icon(Icons.arrow_drop_down, size: 16),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FontSizePicker extends StatelessWidget {
+  final double selectedFontSize;
+  final ValueChanged<double> onSizeSelected;
+
+  static const List<double> fontSizes = [
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    14,
+    18,
+    24,
+    30,
+    36,
+    48,
+    60,
+    72,
+    96,
+  ];
+
+  const _FontSizePicker({
+    required this.selectedFontSize,
+    required this.onSizeSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final displaySize = selectedFontSize.toInt() == selectedFontSize
+        ? selectedFontSize.toInt().toString()
+        : selectedFontSize.toString();
+
+    return PopupMenuButton<double>(
+      onSelected: onSizeSelected,
+      tooltip: 'Font Size',
+      itemBuilder: (context) {
+        return fontSizes.map((size) {
+          final sizeText =
+              size.toInt() == size ? size.toInt().toString() : size.toString();
+          return PopupMenuItem<double>(
+            value: size,
+            height: 32,
+            child: Text(
+              sizeText,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: size == selectedFontSize
+                    ? FontWeight.bold
+                    : FontWeight.normal,
+              ),
+            ),
+          );
+        }).toList();
+      },
+      child: Container(
+        height: 28,
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        decoration: BoxDecoration(
+          border:
+              Border.all(color: theme.colorScheme.outlineVariant, width: 0.5),
+          borderRadius: BorderRadius.circular(4),
+          color:
+              theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              displaySize,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(width: 2),
+            const Icon(Icons.arrow_drop_down, size: 16),
+          ],
+        ),
       ),
     );
   }

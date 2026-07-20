@@ -1,5 +1,21 @@
 # OpenSuite Implementation Status
 
+## Sprint 26 — Spreadsheet Font Engine & Toolbar Alignment Fixes (v2.7.0+21) ✅
+
+### Verification Results
+| Check | Status |
+|-------|--------|
+| `flutter analyze` | ✅ 0 issues |
+| `dart format` | ✅ 0 files changed |
+| `flutter test test/features/spreadsheet` | ✅ 38/38 passed |
+| `flutter build web --release` | ✅ Built (`build/web` updated) |
+
+### Key Improvements
+- Resolved dropdown text clipping and misalignment with custom `_FontFamilyPicker` and `_FontSizePicker`
+- Expanded Font Family choices to 18 Google Sheets / Excel fonts and Font Sizes to 16 standard sizes
+- Enabled dynamic `GoogleFonts` rendering for grid cells
+- Synchronized toolbar dropdown values with selected cell properties
+
 ## Sprint 25 — Android Build Fix & Gradle 8.7 Upgrade (v2.6.0+20) ✅
 
 ### Verification Results

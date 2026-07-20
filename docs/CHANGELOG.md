@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.0+21] - 2026-07-20
+
+### Fixed & Enhanced — Sprint 26: Spreadsheet Font Engine & Toolbar Alignment Fixes
+
+- **Eliminated Dropdown Text Clipping & Misalignment**: Replaced default `DropdownButtonFormField` controls with custom popup controls (`_FontFamilyPicker` and `_FontSizePicker`), eliminating text clipping (e.g. `1` over `6` for font size `16`) and vertical box misalignments.
+- **Expanded Font Options**: Added 18 Google Sheets / MS Excel standard font families (`Inter`, `Roboto`, `Arial`, `Calibri`, `Comic Sans MS`, `Courier New`, `Georgia`, `Impact`, `Lora`, `Merriweather`, `Montserrat`, `Open Sans`, `Oswald`, `Poppins`, `Source Sans Pro`, `Times New Roman`, `Trebuchet MS`, `Verdana`).
+- **Expanded Font Sizes**: Added 16 standard font sizes (`6`, `7`, `8`, `9`, `10`, `11`, `12`, `14`, `18`, `24`, `30`, `36`, `48`, `60`, `72`, `96`).
+- **Dynamic Google Fonts Cell Rendering**: Updated `_getCellTextStyle` to apply `GoogleFonts.getFont(family)` with fallback, ensuring formatted text immediately updates on spreadsheet cells.
+- **Cell Selection Toolbar Sync**: Automatically syncs active font family and size in the formatting toolbar when clicking any cell.
+
 ## [2.6.0+20] - 2026-07-20
 
 ### Fixed — Sprint 25: Android Build Fix & Gradle 8.7 Upgrade
