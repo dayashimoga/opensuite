@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0+16] - 2026-07-20
+
+### Fixed — Sprint 21: Platform & Build Foundation
+
+- **Flutter SDK Upgrade**: Upgraded from Flutter 3.27.4 to 3.44.6 (Dart 3.12.2) across all environments (local, CI, Docker)
+- **flutter_quill v11 Migration**: Upgraded `flutter_quill` from ^10.8.5 to ^11.5.1, fixing:
+  - `intl` version conflict with Flutter SDK's pinned `intl 0.20.2`
+  - `quill_native_bridge_windows` GMEM_MOVEABLE compilation error (GitHub Actions CI)
+  - API migration: `QuillEditorConfigurations` → `QuillEditorConfig`, `configurations:` → `config:`
+- **22 Static Analysis Issues Resolved**: Fixed all deprecated APIs for Flutter 3.44 compatibility:
+  - `DropdownButtonFormField.value` → `initialValue` (8 files)
+  - `Matrix4.scale()` → `scaleByDouble()` / `scaleByVector3()` (2 files)
+  - `RadioListTile.groupValue/onChanged` → `RadioGroup` wrapper (1 file)
+  - `ReorderableListView.onReorder` → `onReorderItem` (2 files)
+- **CI/CD Pipeline**: Updated all 7 GitHub Actions jobs to Flutter 3.44.6, added Developer Mode step for Windows builds, added iOS project auto-generation step
+- **Docker**: Updated Flutter image from 3.27 to 3.44
+- **Build Verification**: `flutter analyze` 0 issues, `dart format` clean, 240/240 tests passing, web release build successful
+
 ## [2.1.0+15] - 2026-07-17
 
 ### Added — Sprint 20: Presentation Animations Sidebar & Spreadsheet Range Selection fixes

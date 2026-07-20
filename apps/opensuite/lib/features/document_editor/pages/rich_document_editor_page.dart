@@ -314,7 +314,7 @@ class _EditorContentState extends State<_EditorContent> {
                           controller: _quillController,
                           focusNode: _editorFocusNode,
                           scrollController: _scrollController,
-                          configurations: QuillEditorConfigurations(
+                          config: QuillEditorConfig(
                             placeholder: 'Start writing...',
                             padding: const EdgeInsets.all(16),
                             autoFocus: false,
@@ -553,7 +553,7 @@ class _EditorContentState extends State<_EditorContent> {
       ),
       child: QuillSimpleToolbar(
         controller: _quillController,
-        configurations: const QuillSimpleToolbarConfigurations(
+        config: const QuillSimpleToolbarConfig(
           multiRowsDisplay: false,
           showDividers: true,
           showFontFamily: true,

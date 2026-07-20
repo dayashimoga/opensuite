@@ -68,7 +68,7 @@ class AnimationPanel extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               DropdownButtonFormField<String>(
-                value: type,
+                initialValue: type,
                 decoration: const InputDecoration(labelText: 'Type'),
                 items: _animationTypes
                     .map((t) => DropdownMenuItem(
@@ -84,7 +84,7 @@ class AnimationPanel extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: trigger,
+                initialValue: trigger,
                 decoration: const InputDecoration(labelText: 'Trigger'),
                 items: _triggerTypes
                     .map((t) => DropdownMenuItem(
@@ -175,7 +175,7 @@ class AnimationPanel extends StatelessWidget {
                 : ReorderableListView.builder(
                     padding: const EdgeInsets.all(8),
                     itemCount: animations.length,
-                    onReorder: (oldIdx, newIdx) =>
+                    onReorderItem: (oldIdx, newIdx) =>
                         onReorder?.call(oldIdx, newIdx),
                     itemBuilder: (ctx, idx) {
                       final anim = animations[idx];

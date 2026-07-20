@@ -547,7 +547,7 @@ class _ElementFormatBarState extends State<_ElementFormatBar> {
               width: 56,
               height: 28,
               child: DropdownButtonFormField<double>(
-                value: element.fontSize,
+                initialValue: element.fontSize,
                 isDense: true,
                 isExpanded: true,
                 decoration: InputDecoration(

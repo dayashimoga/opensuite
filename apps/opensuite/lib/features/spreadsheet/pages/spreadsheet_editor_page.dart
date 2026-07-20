@@ -407,7 +407,7 @@ class _EditorContentState extends State<_EditorContent> {
               width: 100,
               height: 28,
               child: DropdownButtonFormField<String>(
-                value: _selectedFont,
+                initialValue: _selectedFont,
                 isDense: true,
                 isExpanded: true,
                 decoration: InputDecoration(
@@ -445,7 +445,7 @@ class _EditorContentState extends State<_EditorContent> {
               width: 56,
               height: 28,
               child: DropdownButtonFormField<double>(
-                value: _selectedFontSize,
+                initialValue: _selectedFontSize,
                 isDense: true,
                 isExpanded: true,
                 decoration: InputDecoration(
@@ -575,7 +575,7 @@ class _EditorContentState extends State<_EditorContent> {
               width: 100,
               height: 28,
               child: DropdownButtonFormField<NumberFormatType>(
-                value: _getCellNumberFormat(state),
+                initialValue: _getCellNumberFormat(state),
                 isDense: true,
                 isExpanded: true,
                 decoration: InputDecoration(
