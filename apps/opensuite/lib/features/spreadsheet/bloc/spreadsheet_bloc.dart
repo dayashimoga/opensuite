@@ -705,14 +705,14 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
 
     var sheet = state.activeSheet!;
 
-    if (state.selectedRange != null && !state.selectedRange!.isSingleCell) {
-      // Apply to range
+    if (state.selectedRange != null) {
+      // Apply to range (single cell, multi-cell range, full row, full column)
       for (final pos in state.selectedRange!.positions) {
         final cell = sheet.getCell(pos);
         sheet = sheet.setCell(pos, transform(cell));
       }
     } else if (state.selectedCell != null) {
-      // Apply to single cell
+      // Apply to single cell fallback
       final cell = sheet.getCell(state.selectedCell!);
       sheet = sheet.setCell(state.selectedCell!, transform(cell));
     } else {
@@ -768,6 +768,7 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
               backgroundColor: '#1F4E79',
               textColor: '#FFFFFF',
               alignment: 'center',
+              borders: CellBorders.all('#D0D5DD'),
             ),
           );
         } else {
@@ -776,6 +777,7 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
             pos,
             cell.copyWith(
               backgroundColor: rowBg,
+              borders: CellBorders.all('#D0D5DD'),
             ),
           );
         }
@@ -1108,9 +1110,26 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
       }
     }
 
+    // Shift row heights
+    final newRowHeights = <int, double>{};
+    for (final entry in sheet.rowHeights.entries) {
+      if (entry.key > event.afterRow) {
+        newRowHeights[entry.key + 1] = entry.value;
+      } else {
+        newRowHeights[entry.key] = entry.value;
+      }
+    }
+
+    // Shift hidden rows
+    final newHiddenRows = sheet.hiddenRows.map((r) {
+      return r > event.afterRow ? r + 1 : r;
+    }).toSet();
+
     final updatedSheet = sheet.copyWith(
       cells: newCells,
       rowCount: sheet.rowCount + 1,
+      rowHeights: newRowHeights,
+      hiddenRows: newHiddenRows,
     );
     _emitWithUndo(emit, sheets: _replaceActiveSheet(updatedSheet));
   }
@@ -1134,9 +1153,26 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
       }
     }
 
+    final newRowHeights = <int, double>{};
+    for (final entry in sheet.rowHeights.entries) {
+      if (entry.key == event.row) continue;
+      if (entry.key > event.row) {
+        newRowHeights[entry.key - 1] = entry.value;
+      } else {
+        newRowHeights[entry.key] = entry.value;
+      }
+    }
+
+    final newHiddenRows = sheet.hiddenRows
+        .where((r) => r != event.row)
+        .map((r) => r > event.row ? r - 1 : r)
+        .toSet();
+
     final updatedSheet = sheet.copyWith(
       cells: newCells,
       rowCount: sheet.rowCount > 1 ? sheet.rowCount - 1 : 1,
+      rowHeights: newRowHeights,
+      hiddenRows: newHiddenRows,
     );
     _emitWithUndo(emit, sheets: _replaceActiveSheet(updatedSheet));
   }
@@ -1159,9 +1195,24 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
       }
     }
 
+    final newColWidths = <int, double>{};
+    for (final entry in sheet.columnWidths.entries) {
+      if (entry.key > event.afterCol) {
+        newColWidths[entry.key + 1] = entry.value;
+      } else {
+        newColWidths[entry.key] = entry.value;
+      }
+    }
+
+    final newHiddenCols = sheet.hiddenCols.map((c) {
+      return c > event.afterCol ? c + 1 : c;
+    }).toSet();
+
     final updatedSheet = sheet.copyWith(
       cells: newCells,
       colCount: sheet.colCount + 1,
+      columnWidths: newColWidths,
+      hiddenCols: newHiddenCols,
     );
     _emitWithUndo(emit, sheets: _replaceActiveSheet(updatedSheet));
   }
@@ -1185,9 +1236,26 @@ class SpreadsheetBloc extends Bloc<SpreadsheetEvent, SpreadsheetState> {
       }
     }
 
+    final newColWidths = <int, double>{};
+    for (final entry in sheet.columnWidths.entries) {
+      if (entry.key == event.col) continue;
+      if (entry.key > event.col) {
+        newColWidths[entry.key - 1] = entry.value;
+      } else {
+        newColWidths[entry.key] = entry.value;
+      }
+    }
+
+    final newHiddenCols = sheet.hiddenCols
+        .where((c) => c != event.col)
+        .map((c) => c > event.col ? c - 1 : c)
+        .toSet();
+
     final updatedSheet = sheet.copyWith(
       cells: newCells,
       colCount: sheet.colCount > 1 ? sheet.colCount - 1 : 1,
+      columnWidths: newColWidths,
+      hiddenCols: newHiddenCols,
     );
     _emitWithUndo(emit, sheets: _replaceActiveSheet(updatedSheet));
   }
