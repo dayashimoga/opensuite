@@ -621,6 +621,12 @@ class _EditorContentState extends State<_EditorContent> {
           // Cell operations group
           RibbonGroup(label: 'Cells', children: [
             RibbonButton(
+              icon: Icons.table_chart,
+              tooltip: 'Format as Table',
+              onPressed: () =>
+                  context.read<SpreadsheetBloc>().add(const CreateTable()),
+            ),
+            RibbonButton(
               icon: Icons.merge_type,
               tooltip: 'Merge Cells',
               onPressed: state.selectedRange != null &&
@@ -640,9 +646,25 @@ class _EditorContentState extends State<_EditorContent> {
           ]),
         ]),
         RibbonTab(label: 'Insert', groups: [
+          RibbonGroup(label: 'Tables', children: [
+            RibbonButton(
+              icon: Icons.table_chart,
+              tooltip: 'Insert Table',
+              onPressed: () =>
+                  context.read<SpreadsheetBloc>().add(const CreateTable()),
+            ),
+          ]),
           RibbonGroup(label: 'Rows & Columns', children: [
             RibbonButton(
-              icon: Icons.table_rows,
+              icon: Icons.north,
+              tooltip: 'Insert Row Above',
+              onPressed: () {
+                final row = state.selectedCell?.row ?? 0;
+                context.read<SpreadsheetBloc>().add(InsertRow(row - 1));
+              },
+            ),
+            RibbonButton(
+              icon: Icons.south,
               tooltip: 'Insert Row Below',
               onPressed: () {
                 final row = state.selectedCell?.row ?? 0;
@@ -650,7 +672,15 @@ class _EditorContentState extends State<_EditorContent> {
               },
             ),
             RibbonButton(
-              icon: Icons.view_column,
+              icon: Icons.west,
+              tooltip: 'Insert Column Left',
+              onPressed: () {
+                final col = state.selectedCell?.col ?? 0;
+                context.read<SpreadsheetBloc>().add(InsertColumn(col - 1));
+              },
+            ),
+            RibbonButton(
+              icon: Icons.east,
               tooltip: 'Insert Column Right',
               onPressed: () {
                 final col = state.selectedCell?.col ?? 0;
@@ -949,32 +979,50 @@ class _EditorContentState extends State<_EditorContent> {
       }
     }
 
+    final isShiftPressed = HardwareKeyboard.instance.isShiftPressed;
+
     if (key == LogicalKeyboardKey.delete) {
       context.read<SpreadsheetBloc>().add(const ClearSelection());
       return KeyEventResult.handled;
     }
     if (key == LogicalKeyboardKey.arrowDown) {
-      _navigateCell(context, state, 1, 0);
+      if (isShiftPressed) {
+        _expandRangeSelection(context, state, 1, 0);
+      } else {
+        _navigateCell(context, state, 1, 0);
+      }
       return KeyEventResult.handled;
     }
     if (key == LogicalKeyboardKey.arrowUp) {
-      _navigateCell(context, state, -1, 0);
+      if (isShiftPressed) {
+        _expandRangeSelection(context, state, -1, 0);
+      } else {
+        _navigateCell(context, state, -1, 0);
+      }
       return KeyEventResult.handled;
     }
     if (key == LogicalKeyboardKey.arrowRight) {
-      _navigateCell(context, state, 0, 1);
+      if (isShiftPressed) {
+        _expandRangeSelection(context, state, 0, 1);
+      } else {
+        _navigateCell(context, state, 0, 1);
+      }
       return KeyEventResult.handled;
     }
     if (key == LogicalKeyboardKey.arrowLeft) {
-      _navigateCell(context, state, 0, -1);
+      if (isShiftPressed) {
+        _expandRangeSelection(context, state, 0, -1);
+      } else {
+        _navigateCell(context, state, 0, -1);
+      }
       return KeyEventResult.handled;
     }
     if (key == LogicalKeyboardKey.tab) {
-      _navigateCell(context, state, 0, 1);
+      _navigateCell(context, state, 0, isShiftPressed ? -1 : 1);
       return KeyEventResult.handled;
     }
     if (key == LogicalKeyboardKey.enter) {
-      _navigateCell(context, state, 1, 0);
+      _navigateCell(context, state, isShiftPressed ? -1 : 1, 0);
       return KeyEventResult.handled;
     }
 
@@ -1014,6 +1062,19 @@ class _EditorContentState extends State<_EditorContent> {
         .add(SelectCell(CellPosition(newRow, newCol)));
   }
 
+  void _expandRangeSelection(
+      BuildContext context, SpreadsheetState state, int dRow, int dCol) {
+    if (state.selectedCell == null || state.activeSheet == null) return;
+    final currentEnd = state.selectedRange?.end ?? state.selectedCell!;
+    final newEndRow =
+        (currentEnd.row + dRow).clamp(0, state.activeSheet!.rowCount - 1);
+    final newEndCol =
+        (currentEnd.col + dCol).clamp(0, state.activeSheet!.colCount - 1);
+    final newRange =
+        CellRange(state.selectedCell!, CellPosition(newEndRow, newEndCol));
+    context.read<SpreadsheetBloc>().add(SetCellRange(newRange));
+  }
+
   // --- Context Menu ---
 
   void _showCellContextMenu(
@@ -1041,9 +1102,17 @@ class _EditorContentState extends State<_EditorContent> {
           padding: EdgeInsets.zero,
           child: Divider(height: 1),
         ),
-        _contextItem(Icons.table_rows, 'Insert Row Below', null, 'insertRow'),
-        _contextItem(
-            Icons.view_column, 'Insert Column Right', null, 'insertCol'),
+        _contextItem(Icons.table_chart, 'Format as Table', null, 'createTable'),
+        const PopupMenuItem<String>(
+          enabled: false,
+          height: 9,
+          padding: EdgeInsets.zero,
+          child: Divider(height: 1),
+        ),
+        _contextItem(Icons.north, 'Insert Row Above', null, 'insertRowAbove'),
+        _contextItem(Icons.south, 'Insert Row Below', null, 'insertRowBelow'),
+        _contextItem(Icons.west, 'Insert Column Left', null, 'insertColLeft'),
+        _contextItem(Icons.east, 'Insert Column Right', null, 'insertColRight'),
         _contextItem(Icons.delete_sweep, 'Delete Row', null, 'deleteRow'),
         _contextItem(
             Icons.remove_circle_outline, 'Delete Column', null, 'deleteCol'),
@@ -1067,9 +1136,15 @@ class _EditorContentState extends State<_EditorContent> {
           bloc.add(const CopySelection());
         case 'paste':
           bloc.add(const PasteSelection());
-        case 'insertRow':
+        case 'createTable':
+          bloc.add(const CreateTable());
+        case 'insertRowAbove':
+          bloc.add(InsertRow(pos.row - 1));
+        case 'insertRowBelow':
           bloc.add(InsertRow(pos.row));
-        case 'insertCol':
+        case 'insertColLeft':
+          bloc.add(InsertColumn(pos.col - 1));
+        case 'insertColRight':
           bloc.add(InsertColumn(pos.col));
         case 'deleteRow':
           bloc.add(DeleteRow(pos.row));
@@ -1684,13 +1759,7 @@ class _VirtualSpreadsheetGridState extends State<_VirtualSpreadsheetGrid> {
     if (box == null) return null;
     final local = box.globalToLocal(global);
 
-    // Account for horizontal scroll
-    final hScroll = widget.horizontalController.hasClients
-        ? widget.horizontalController.offset
-        : 0.0;
-    final xInGrid = local.dx + hScroll;
-
-    // Account for header row height and vertical scroll
+    final xInGrid = local.dx;
     final headerH = _VirtualSpreadsheetGrid._headerHeight;
     final vScroll = widget.verticalController.hasClients
         ? widget.verticalController.offset
@@ -1737,6 +1806,19 @@ class _VirtualSpreadsheetGridState extends State<_VirtualSpreadsheetGrid> {
     }
 
     return Listener(
+      onPointerDown: (event) {
+        if (event.buttons == 1) {
+          final pos = _cellFromGlobalOffset(event.position);
+          if (pos != null) {
+            final isShift = HardwareKeyboard.instance.isShiftPressed;
+            if (isShift && widget.selectedCell != null) {
+              widget.onRangeSelect(CellRange(widget.selectedCell!, pos));
+            } else {
+              _handleCellDragStart(pos);
+            }
+          }
+        }
+      },
       onPointerMove: (event) {
         if (_isDragging && _dragStartCell != null) {
           final pos = _cellFromGlobalOffset(event.position);
@@ -1992,13 +2074,6 @@ class _GridCellState extends State<_GridCell> {
       child: GestureDetector(
         onTap: () {
           widget.onTap();
-          if (_isEditing) return;
-        },
-        onPanStart: (_) {
-          widget.onTap();
-        },
-        onPanUpdate: (_) {
-          widget.onDragUpdate(widget.position);
         },
         onDoubleTap: () {
           setState(() => _isEditing = true);

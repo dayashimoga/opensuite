@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0+17] - 2026-07-20
+
+### Fixed — Sprint 22: Spreadsheet Engine & UI Enhancements
+
+- **Multi-Cell Selection**:
+  - Grid-level pointer Listener calculating target cell offsets continuously during drag gestures for smooth range selection.
+  - Shift + Click range expansion: holding Shift while clicking a cell extends the selection range from anchor cell to clicked cell.
+  - Shift + Arrow keys range selection expansion in grid.
+  - Row & Column header click selection for full-row and full-column operations.
+- **Keyboard Navigation**:
+  - `Tab` moves cell selection right (`col + 1`), `Shift + Tab` moves left (`col - 1`).
+  - `Enter` moves cell selection down (`row + 1`), `Shift + Enter` moves up (`row - 1`).
+  - Arrow keys navigate active grid cells when not editing.
+- **Row & Column Operations**:
+  - Added explicit options for "Insert Row Above" (`InsertRow(row - 1)`), "Insert Row Below" (`InsertRow(row)`), "Insert Column Left" (`InsertColumn(col - 1)`), and "Insert Column Right" (`InsertColumn(col)`).
+  - Preserved `rowHeights`, `columnWidths`, `hiddenRows`, `hiddenCols`, and cell keys when inserting or deleting rows and columns.
+- **Table Creation & Formatting**:
+  - Enhanced `CreateTable` with blue header styling, white text, bold formatting, alternating row background colors (zebra striping), and visible cell borders (`CellBorders.all('#D0D5DD')`).
+  - Added Table creation options to Ribbon bar (Home & Insert tabs) and Context Menu ("Format as Table").
+- **Multi-Cell & Range Formatting**:
+  - Updated `_applyFormatToSelection` in `SpreadsheetBloc` to format all cells within any active `selectedRange` (single cell, range, full row, full column).
+
 ## [2.2.0+16] - 2026-07-20
 
 ### Fixed — Sprint 21: Platform & Build Foundation
