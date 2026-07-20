@@ -135,23 +135,30 @@ class SettingsPage extends StatelessWidget {
       context: context,
       builder: (_) => SimpleDialog(
         title: const Text(AppLocalizations.language),
-        children: SupportedLocales.all.map((locale) {
-          final code = locale.languageCode;
-          final isSelected = code == currentCode;
-          return RadioListTile<String>(
-            title: Text(SupportedLocales.getDisplayName(locale)),
-            subtitle: Text(locale.toString()),
-            value: code,
+        children: [
+          RadioGroup<String>(
             groupValue: currentCode,
-            selected: isSelected,
             onChanged: (value) {
               if (value != null) {
                 context.read<SettingsBloc>().add(ChangeLocale(value));
                 Navigator.pop(context);
               }
             },
-          );
-        }).toList(),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: SupportedLocales.all.map((locale) {
+                final code = locale.languageCode;
+                final isSelected = code == currentCode;
+                return RadioListTile<String>(
+                  title: Text(SupportedLocales.getDisplayName(locale)),
+                  subtitle: Text(locale.toString()),
+                  value: code,
+                  selected: isSelected,
+                );
+              }).toList(),
+            ),
+          ),
+        ],
       ),
     );
   }

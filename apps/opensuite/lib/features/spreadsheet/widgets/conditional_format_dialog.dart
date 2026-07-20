@@ -114,7 +114,7 @@ class _ConditionalFormatDialogState extends State<ConditionalFormatDialog> {
                   style: Theme.of(context).textTheme.bodySmall),
               const SizedBox(height: 12),
               DropdownButtonFormField<ConditionalFormatType>(
-                value: _type,
+                initialValue: _type,
                 decoration: const InputDecoration(
                   labelText: 'Condition',
                   border: OutlineInputBorder(),

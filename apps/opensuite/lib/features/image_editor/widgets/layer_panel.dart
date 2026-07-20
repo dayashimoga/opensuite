@@ -91,7 +91,7 @@ class LayerPanel extends StatelessWidget {
                 : ReorderableListView.builder(
                     padding: const EdgeInsets.all(4),
                     itemCount: layers.length,
-                    onReorder: (o, n) => onReorder?.call(o, n),
+                    onReorderItem: (o, n) => onReorder?.call(o, n),
                     itemBuilder: (ctx, idx) {
                       final layer = layers[idx];
                       final selected = selectedLayerId == layer.id;

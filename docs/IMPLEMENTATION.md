@@ -1,5 +1,32 @@
 # OpenSuite Implementation Status
 
+## Sprint 21 — Platform & Build Foundation (v2.2.0+16) ✅
+
+### Build Environment
+- **Flutter SDK**: 3.44.6 (Dart 3.12.2)
+- **CI/CD**: GitHub Actions 7 jobs (analyze, test, build-web, build-android, build-linux, build-windows, build-ios)
+- **Docker**: instrumentisto/flutter:3.44
+
+### Verification Results
+| Check | Status |
+|-------|--------|
+| `flutter analyze` | ✅ 0 issues |
+| `dart format` | ✅ 0 files changed |
+| `flutter test` | ✅ 240/240 passed |
+| `flutter build web --release` | ✅ Built |
+| `flutter build apk` | ⏳ CI-only (no Android SDK locally) |
+| `flutter build windows` | ⏳ CI-only (no Visual Studio locally) |
+| `flutter build linux` | ⏳ CI-only (Linux runner) |
+| `flutter build ios` | ⏳ CI-only (macOS runner) |
+
+### Key Fixes
+- Resolved `flutter_quill` ^10.8.5 → ^11.5.1 (`intl` conflict, `quill_native_bridge_windows` GMEM_MOVEABLE)
+- Fixed 22 deprecated API usages for Flutter 3.44 compatibility
+- iOS project auto-generation in CI pipeline
+- Developer Mode enablement for Windows CI builds
+
+---
+
 ## Architectural Root Cause Analysis & Permanent System Fixes (v1.6.1+8) 🚀
 
 ### Root Causes Identified & Permanently Resolved
@@ -477,5 +504,21 @@
 - [x] 100% test coverage pass for all 134 suite test cases in Docker
 - [x] Production web build succeeded
 
+---
 
+## Sprint 20 — Critical Bug Fixes & Feature Wiring (v2.1.0) ✅
 
+### Presentation — Crash Fixes
+- [x] **Fix "Add Slide" crash**: Captured BLoC reference before `Navigator.pop()` in `_showAddSlideLayoutDialog` — previously, `context.read<PresentationBloc>()` was called after the dialog was popped from the navigator, referencing a potentially dismounted widget tree.
+- [x] **Wire Insert Table**: Added "Insert Table" toolbar button that creates a `SlideElement(type: 'table')` with JSON-encoded cell data.
+- [x] **Table Canvas Rendering**: Added `'table'` case to `_CanvasElement._buildContent()` that deserializes JSON content into a `SlideTable` model and renders via `SlideTableWidget` with bidirectional serialization.
+
+### Spreadsheet — Multi-Cell Selection
+- [x] **Grid-Level Drag Selection**: Replaced per-cell `onPanUpdate` (which only reported its own position) with a grid-level `Listener` that tracks `onPointerMove` during drag and calculates the target cell from pointer coordinates using scroll offsets and column/row dimensions.
+- [x] **Pointer-to-Cell Mapping**: Added `_cellFromGlobalOffset()` helper that converts global pointer coordinates to `CellPosition` accounting for header dimensions, horizontal scroll offset, vertical scroll offset, hidden columns, and custom column widths.
+- [x] **Shift+Click Range Extension**: Added `HardwareKeyboard.instance.isShiftPressed` check in `onCellTap` to extend selection from current cell to clicked cell via `SetCellRange`.
+
+### Quality Control
+- [x] Static analysis: 0 issues
+- [x] All 236 test cases pass (100%)
+- [x] `dart format` clean (0 changes)

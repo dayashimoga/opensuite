@@ -1,4 +1,4 @@
-FROM instrumentisto/flutter:3.27
+FROM instrumentisto/flutter:3.44
 
 # Set working directory
 WORKDIR /app

@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.27.4'
+          flutter-version: '3.44.6'
           channel: 'stable'
           cache: true
 
@@ -57,7 +57,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.27.4'
+          flutter-version: '3.44.6'
           channel: 'stable'
           cache: true
 
@@ -116,7 +116,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.27.4'
+          flutter-version: '3.44.6'
           channel: 'stable'
           cache: true
 
@@ -156,7 +156,7 @@ jobs:
           java-version: '17'
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.27.4'
+          flutter-version: '3.44.6'
           channel: 'stable'
           cache: true
 
@@ -192,7 +192,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.27.4'
+          flutter-version: '3.44.6'
           channel: 'stable'
           cache: true
 
@@ -235,7 +235,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.27.4'
+          flutter-version: '3.44.6'
           channel: 'stable'
           cache: true
 
@@ -258,6 +258,11 @@ jobs:
             Pop-Location
           }
 
+      - name: Enable Developer Mode
+        shell: pwsh
+        run: |
+          reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" /v AllowDevelopmentWithoutDevLicense /t REG_DWORD /d 1 /f
+
       - name: Build Windows
         run: cd apps/opensuite && flutter build windows --release
 
@@ -276,7 +281,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.27.4'
+          flutter-version: '3.44.6'
           channel: 'stable'
           cache: true
 
@@ -294,6 +299,15 @@ jobs:
           for pkg in packages/core packages/l10n packages/storage packages/ui_kit apps/opensuite; do
             (cd "$pkg" && flutter pub get)
           done
+
+      - name: Generate iOS project if missing
+        run: |
+          if [ ! -d "apps/opensuite/ios" ]; then
+            cd apps/opensuite && flutter create --platforms=ios --org com.opensuite .
+          fi
+
+      - name: Install CocoaPods
+        run: cd apps/opensuite/ios && pod install --repo-update || true
 
       - name: Build iOS (no codesign)
         run: cd apps/opensuite && flutter build ios --release --no-codesign

@@ -393,8 +393,8 @@ class _ViewerContentState extends State<_ViewerContent> {
       state.filePath!,
       controller: _pdfViewerController,
       params: PdfViewerParams(
-        enableTextSelection: true,
-        maxScale: 5.0,
+        sizeDelegateProvider:
+            const PdfViewerSizeDelegateProviderLegacy(maxScale: 5.0),
         pagePaintCallbacks: [_pdfTextSearcher.pageTextMatchPaintCallback],
         onDocumentChanged: (document) {
           if (document != null && context.mounted) {

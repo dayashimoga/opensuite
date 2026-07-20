@@ -76,7 +76,7 @@ class _BatchProcessingDialogState extends State<BatchProcessingDialog> {
                   style: Theme.of(context).textTheme.bodySmall),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: _outputFormat,
+                initialValue: _outputFormat,
                 decoration: const InputDecoration(
                   labelText: 'Output Format',
                   border: OutlineInputBorder(),
@@ -117,7 +117,7 @@ class _BatchProcessingDialogState extends State<BatchProcessingDialog> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String?>(
-                value: _selectedFilter,
+                initialValue: _selectedFilter,
                 decoration: const InputDecoration(
                   labelText: 'Apply Filter',
                   border: OutlineInputBorder(),

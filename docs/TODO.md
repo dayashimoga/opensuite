@@ -1,5 +1,15 @@
 # OpenSuite — TODO
 
+## Sprint 20 — Presentation Animations Sidebar & Spreadsheet Range Selection fixes (v2.1.0) — COMPLETED ✅
+
+### ✅ Completed in Sprint 20
+- [x] **Presentation Animations Sidebar**: Wired `AnimationPanel` right-side sidebar toggle button in Presentation editor with events `AddAnimation`, `RemoveAnimation`, `UpdateAnimation`, `ReorderAnimations`. Added BLoC unit tests.
+- [x] **Spreadsheet Drag Selection**: Refactored drag selection to use a grid-level `Listener` that calculates targeted cells based on pointer positions, scroll offsets, and cell bounds.
+- [x] **Spreadsheet Shift+Click Selection**: Enabled range extension using Shift + Click to select multiple cells.
+- [x] **Presentation SlideTable rendering**: Deserialized JSON table elements dynamically on the slide canvas and wired double-tap cell editing callbacks back to PresentationBloc.
+- [x] **CellData isEmpty Fix**: Prevented silent cell deletion by updating `CellData.isEmpty` to verify formatting properties alongside `rawValue` checks.
+- [x] **Keyboard focus restoration**: Fixed keyboard event listeners by programmatically restoring focus to the spreadsheet grid after completing cell edits.
+
 ## Sprint Completion & Architectural Systems Overhaul (v1.6.1+8) — COMPLETED ✅
 
 ### ✅ Completed System Fixes & Sprints

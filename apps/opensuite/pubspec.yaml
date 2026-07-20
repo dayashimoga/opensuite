@@ -1,6 +1,6 @@
 name: opensuite
 description: Open-source cross-platform Office & Productivity Suite.
-version: 1.9.0+13
+version: 2.2.0+16
 publish_to: none
 
 environment:
@@ -40,24 +40,24 @@ dependencies:
   collection: any
   path: any
   url_launcher: ^6.3.1
+  vector_math: any
 
   # Storage
   sqflite: ^2.4.1
   path_provider: ^2.1.5
 
   # Rich text editing
-  flutter_quill: ^10.8.5
+  flutter_quill: ^11.5.1
 
   # PDF generation
   pdf: ^3.11.1
   printing: ^5.13.3
 
-  # File format handling
-  archive: ^3.6.1
-  xml: ^6.5.0
+  archive: any
+  xml: any
   excel: ^4.0.6
   fl_chart: ^0.69.2
-  image: ^4.3.0
+  image: any
   flutter_svg: ^2.0.10
 
   # File handling
@@ -65,7 +65,7 @@ dependencies:
   share_plus: ^10.1.4
   cross_file: any
   csv: ^6.0.0
-  pdfrx: ^1.0.0
+  pdfrx: ^2.0.0
 
 dev_dependencies:
   flutter_test:

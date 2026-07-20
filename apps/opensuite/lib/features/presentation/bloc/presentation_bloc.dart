@@ -308,6 +308,36 @@ class ClearExportedPresentation extends PresentationEvent {
   const ClearExportedPresentation();
 }
 
+class AddAnimation extends PresentationEvent {
+  final SlideAnimation animation;
+  const AddAnimation(this.animation);
+  @override
+  List<Object?> get props => [animation];
+}
+
+class RemoveAnimation extends PresentationEvent {
+  final String animationId;
+  const RemoveAnimation(this.animationId);
+  @override
+  List<Object?> get props => [animationId];
+}
+
+class UpdateAnimation extends PresentationEvent {
+  final String animationId;
+  final SlideAnimation animation;
+  const UpdateAnimation(this.animationId, this.animation);
+  @override
+  List<Object?> get props => [animationId, animation];
+}
+
+class ReorderAnimations extends PresentationEvent {
+  final int oldIndex;
+  final int newIndex;
+  const ReorderAnimations(this.oldIndex, this.newIndex);
+  @override
+  List<Object?> get props => [oldIndex, newIndex];
+}
+
 // --- State ---
 
 enum PresentationStatus {
@@ -473,6 +503,10 @@ class PresentationBloc extends Bloc<PresentationEvent, PresentationState> {
     on<ExportPresentationPdf>(_onExportPdf);
     on<ImportPptx>(_onImportPptx);
     on<ClearExportedPresentation>(_onClearExported);
+    on<AddAnimation>(_onAddAnimation);
+    on<RemoveAnimation>(_onRemoveAnimation);
+    on<UpdateAnimation>(_onUpdateAnimation);
+    on<ReorderAnimations>(_onReorderAnimations);
   }
 
   Future<void> _onLoad(
@@ -1145,6 +1179,60 @@ class PresentationBloc extends Bloc<PresentationEvent, PresentationState> {
   void _onClearExported(
       ClearExportedPresentation event, Emitter<PresentationState> emit) {
     emit(state.copyWith(status: PresentationStatus.editing));
+  }
+
+  void _onAddAnimation(AddAnimation event, Emitter<PresentationState> emit) {
+    if (state.activeSlide == null) return;
+    final animations = [...state.activeSlide!.animations, event.animation];
+    _updateCurrentSlide(
+        emit, state.activeSlide!.copyWith(animations: animations));
+  }
+
+  void _onRemoveAnimation(
+      RemoveAnimation event, Emitter<PresentationState> emit) {
+    if (state.activeSlide == null) return;
+    final animations = state.activeSlide!.animations
+        .where((a) => a.id != event.animationId)
+        .toList();
+    _updateCurrentSlide(
+        emit, state.activeSlide!.copyWith(animations: animations));
+  }
+
+  void _onUpdateAnimation(
+      UpdateAnimation event, Emitter<PresentationState> emit) {
+    if (state.activeSlide == null) return;
+    final animations = state.activeSlide!.animations.map((a) {
+      return a.id == event.animationId ? event.animation : a;
+    }).toList();
+    _updateCurrentSlide(
+        emit, state.activeSlide!.copyWith(animations: animations));
+  }
+
+  void _onReorderAnimations(
+      ReorderAnimations event, Emitter<PresentationState> emit) {
+    if (state.activeSlide == null) return;
+    final animations = List<SlideAnimation>.from(state.activeSlide!.animations);
+    if (event.oldIndex < 0 ||
+        event.oldIndex >= animations.length ||
+        event.newIndex < 0 ||
+        event.newIndex > animations.length) {
+      return;
+    }
+
+    var newIdx = event.newIndex;
+    if (event.oldIndex < newIdx) {
+      newIdx -= 1;
+    }
+    final item = animations.removeAt(event.oldIndex);
+    animations.insert(newIdx, item);
+
+    // Update order values
+    for (int i = 0; i < animations.length; i++) {
+      animations[i] = animations[i].copyWith(order: i);
+    }
+
+    _updateCurrentSlide(
+        emit, state.activeSlide!.copyWith(animations: animations));
   }
 
   void _scheduleAutoSave() {

@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'package:vector_math/vector_math_64.dart' show Vector3;
+
 import 'package:file_picker/file_picker.dart' as fp;
 import 'package:fileutility_core/fileutility_core.dart';
 import 'package:fileutility_ui_kit/fileutility_ui_kit.dart';
@@ -512,10 +514,11 @@ class _ImageCanvas extends StatelessWidget {
                 alignment: Alignment.center,
                 transform: Matrix4.identity()
                   ..rotateZ(state.adjustments.rotation * math.pi / 180)
-                  ..scale(
+                  ..scaleByVector3(Vector3(
                     state.adjustments.flipHorizontal ? -1.0 : 1.0,
                     state.adjustments.flipVertical ? -1.0 : 1.0,
-                  ),
+                    1.0,
+                  )),
                 child: SizedBox(
                   width: dispW,
                   height: dispH,
@@ -1136,7 +1139,7 @@ class _AdjustmentsPanelState extends State<_AdjustmentsPanel> {
               const SizedBox(height: 16),
               // Paper Format Selector
               DropdownButtonFormField<PaperFormat>(
-                value: widget.selectedPaper,
+                initialValue: widget.selectedPaper,
                 decoration: const InputDecoration(
                   labelText: 'Paper Format Size',
                   border: OutlineInputBorder(),
@@ -1156,7 +1159,7 @@ class _AdjustmentsPanelState extends State<_AdjustmentsPanel> {
               const SizedBox(height: 12),
               // Photo Standard Format Selector
               DropdownButtonFormField<PhotoFormat>(
-                value: widget.selectedPhotoFormat,
+                initialValue: widget.selectedPhotoFormat,
                 decoration: const InputDecoration(
                   labelText: 'Photo Size Standard',
                   border: OutlineInputBorder(),
