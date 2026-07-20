@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.0+23] - 2026-07-20
+
+### Fixed & Enhanced — Sprint 28: Header Resizing, Select-All Corner & Complete Insert Suite
+
+- **Dedicated Column & Row Edge Resizing**: Added dedicated 6px edge drag-resize strips to column right borders (`SystemMouseCursors.resizeColumn`) and row bottom borders (`SystemMouseCursors.resizeRow`), separating body selection from edge resizing.
+- **Select-All Top-Left Corner Box**: Tapping the top-left corner box selects all cells (`SetCellRange(0, 0, rowCount - 1, colCount - 1)`) and highlights the intersection box.
+- **Number Format Toolbar Picker**: Replaced `DropdownButtonFormField` with `_NumberFormatPicker` (`PopupMenuButton<NumberFormatType>`) to prevent text clipping (`General`, `Number`, `Decimal`, `Currency`, `Percent`, `Date`, `Time`, `Date Time`, `Scientific`).
+- **Complete Google Sheets Insert Suite**: Expanded top Menubar `Insert` dropdown to include Rows (Above/Below), Columns (Left/Right), Insert New Sheet, Format as Table, Chart, Functions (SUM, AVERAGE, COUNT, MAX, MIN), Comment (Ctrl+Alt+M), Hyperlink (Ctrl+K), Checkbox, and Dropdown.
+
 ## [2.8.0+22] - 2026-07-20
 
 ### Fixed — Sprint 27: AGP 8.9.1 Upgrade & Android Build Fix

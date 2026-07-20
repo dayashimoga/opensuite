@@ -1,5 +1,21 @@
 # OpenSuite Implementation Status
 
+## Sprint 28 — Header Resizing, Select-All Corner & Complete Insert Suite (v2.9.0+23) ✅
+
+### Verification Results
+| Check | Status |
+|-------|--------|
+| `flutter analyze` | ✅ 0 issues |
+| `dart format` | ✅ 0 files changed |
+| `flutter test test/features/spreadsheet` | ✅ 38/38 passed |
+| `flutter build web --release` | ✅ Built (`build/web` updated) |
+
+### Key Improvements
+- Added dedicated 6px edge drag-resize handles to column right borders (`resizeColumn`) and row bottom borders (`resizeRow`)
+- Enabled top-left corner Select-All (`SetCellRange(0, 0, rowCount - 1, colCount - 1)`)
+- Replaced `DropdownButtonFormField` with `_NumberFormatPicker` to eliminate text clipping
+- Expanded top Menubar `Insert` dropdown to match complete Google Sheets options
+
 ## Sprint 27 — AGP 8.9.1 Upgrade & Android Build Fix (v2.8.0+22) ✅
 
 ### Verification Results

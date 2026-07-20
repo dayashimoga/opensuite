@@ -240,6 +240,11 @@ class _EditorContentState extends State<_EditorContent> {
                           .read<SpreadsheetBloc>()
                           .add(ResizeColumn(col, width));
                     },
+                    onRowResize: (row, height) {
+                      context
+                          .read<SpreadsheetBloc>()
+                          .add(ResizeRow(row, height));
+                    },
                     onEditComplete: () => _gridFocusNode.requestFocus(),
                   ),
                 ),
@@ -504,21 +509,29 @@ class _EditorContentState extends State<_EditorContent> {
           _buildMenuDropdown(
             label: 'Insert',
             items: [
-              _menuItem('table', Icons.table_chart, 'Format as Table'),
               _menuItem('row_above', Icons.north, 'Insert Row Above'),
               _menuItem('row_below', Icons.south, 'Insert Row Below'),
               _menuItem('col_left', Icons.west, 'Insert Column Left'),
               _menuItem('col_right', Icons.east, 'Insert Column Right'),
+              _menuItem('add_sheet', Icons.add_to_photos, 'Insert New Sheet'),
+              _menuItem('table', Icons.table_chart, 'Format as Table'),
               _menuItem('chart', Icons.bar_chart, 'Insert Chart'),
-              _menuItem('comment', Icons.comment, 'Add Comment'),
-              _menuItem('link', Icons.link, 'Add Hyperlink'),
+              _menuItem('sum_func', Icons.functions, 'Function: SUM'),
+              _menuItem('avg_func', Icons.functions, 'Function: AVERAGE'),
+              _menuItem('count_func', Icons.functions, 'Function: COUNT'),
+              _menuItem('max_func', Icons.functions, 'Function: MAX'),
+              _menuItem('min_func', Icons.functions, 'Function: MIN'),
+              _menuItem('comment', Icons.comment, 'Add Comment (Ctrl+Alt+M)'),
+              _menuItem('link', Icons.link, 'Add Hyperlink (Ctrl+K)'),
+              _menuItem(
+                  'checkbox', Icons.check_box_outlined, 'Checkbox / Tick box'),
+              _menuItem('dropdown_opt', Icons.arrow_drop_down_circle_outlined,
+                  'Dropdown list options'),
             ],
             onSelected: (val) {
               final r = state.selectedCell?.row ?? 0;
               final c = state.selectedCell?.col ?? 0;
               switch (val) {
-                case 'table':
-                  bloc.add(const CreateTable());
                 case 'row_above':
                   bloc.add(InsertRow(r - 1));
                 case 'row_below':
@@ -527,12 +540,45 @@ class _EditorContentState extends State<_EditorContent> {
                   bloc.add(InsertColumn(c - 1));
                 case 'col_right':
                   bloc.add(InsertColumn(c));
+                case 'add_sheet':
+                  bloc.add(const AddSheet());
+                case 'table':
+                  bloc.add(const CreateTable());
                 case 'chart':
                   _showChartDialog(context, state);
+                case 'sum_func':
+                  if (state.selectedCell != null) {
+                    bloc.add(UpdateCell(state.selectedCell!, '=SUM(A1:A10)'));
+                  }
+                case 'avg_func':
+                  if (state.selectedCell != null) {
+                    bloc.add(
+                        UpdateCell(state.selectedCell!, '=AVERAGE(A1:A10)'));
+                  }
+                case 'count_func':
+                  if (state.selectedCell != null) {
+                    bloc.add(UpdateCell(state.selectedCell!, '=COUNT(A1:A10)'));
+                  }
+                case 'max_func':
+                  if (state.selectedCell != null) {
+                    bloc.add(UpdateCell(state.selectedCell!, '=MAX(A1:A10)'));
+                  }
+                case 'min_func':
+                  if (state.selectedCell != null) {
+                    bloc.add(UpdateCell(state.selectedCell!, '=MIN(A1:A10)'));
+                  }
                 case 'comment':
                   _showAddCommentDialog(context, state);
                 case 'link':
                   _showAddHyperlinkDialog(context, state);
+                case 'checkbox':
+                  if (state.selectedCell != null) {
+                    bloc.add(UpdateCell(state.selectedCell!, 'TRUE'));
+                  }
+                case 'dropdown_opt':
+                  if (state.selectedCell != null) {
+                    bloc.add(UpdateCell(state.selectedCell!, 'Option 1'));
+                  }
               }
             },
           ),
@@ -874,41 +920,11 @@ class _EditorContentState extends State<_EditorContent> {
             const VerticalDivider(width: 12, indent: 6, endIndent: 6),
 
             // Number format
-            SizedBox(
-              width: 95,
-              height: 28,
-              child: DropdownButtonFormField<NumberFormatType>(
-                initialValue: _getCellNumberFormat(state),
-                isDense: true,
-                isExpanded: true,
-                decoration: InputDecoration(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(4),
-                    borderSide: BorderSide(
-                        color: theme.colorScheme.outlineVariant, width: 0.5),
-                  ),
-                ),
-                style: theme.textTheme.bodySmall,
-                items: const [
-                  DropdownMenuItem(
-                      value: NumberFormatType.general, child: Text('General')),
-                  DropdownMenuItem(
-                      value: NumberFormatType.number, child: Text('Number')),
-                  DropdownMenuItem(
-                      value: NumberFormatType.currency,
-                      child: Text('Currency')),
-                  DropdownMenuItem(
-                      value: NumberFormatType.percentage,
-                      child: Text('Percent')),
-                ],
-                onChanged: (v) {
-                  if (v != null) {
-                    context.read<SpreadsheetBloc>().add(SetNumberFormat(v));
-                  }
-                },
-              ),
+            _NumberFormatPicker(
+              currentFormat: _getCellNumberFormat(state),
+              onFormatSelected: (v) {
+                context.read<SpreadsheetBloc>().add(SetNumberFormat(v));
+              },
             ),
             const VerticalDivider(width: 12, indent: 6, endIndent: 6),
 
@@ -1856,6 +1872,7 @@ class _VirtualSpreadsheetGrid extends StatefulWidget {
   final ValueChanged<CellRange> onRangeSelect;
   final void Function(CellPosition, Offset) onContextMenu;
   final void Function(int col, double width) onColumnResize;
+  final void Function(int row, double height) onRowResize;
   final VoidCallback onEditComplete;
 
   const _VirtualSpreadsheetGrid({
@@ -1870,6 +1887,7 @@ class _VirtualSpreadsheetGrid extends StatefulWidget {
     required this.onRangeSelect,
     required this.onContextMenu,
     required this.onColumnResize,
+    required this.onRowResize,
     required this.onEditComplete,
   });
 
@@ -2007,48 +2025,74 @@ class _VirtualSpreadsheetGridState extends State<_VirtualSpreadsheetGrid> {
   }
 
   Widget _buildColumnHeaders(ThemeData theme, int visibleCols) {
+    final isAllSelected = widget.selectedRange != null &&
+        widget.selectedRange!.start == const CellPosition(0, 0) &&
+        widget.selectedRange!.end ==
+            CellPosition(widget.sheet.rowCount - 1, widget.sheet.colCount - 1);
+
     return SizedBox(
       height: _VirtualSpreadsheetGrid._headerHeight,
       child: Row(
         children: [
-          GestureDetector(
-            onTap: () => widget.onRangeSelect(CellRange(
-              const CellPosition(0, 0),
-              CellPosition(
-                  widget.sheet.rowCount - 1, widget.sheet.colCount - 1),
-            )),
-            child: Container(
-              width: _VirtualSpreadsheetGrid._headerWidth,
-              height: _VirtualSpreadsheetGrid._headerHeight,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                border: Border.all(
-                    color: theme.colorScheme.outlineVariant, width: 0.5),
+          MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: GestureDetector(
+              onTap: () {
+                widget.onRangeSelect(CellRange(
+                  const CellPosition(0, 0),
+                  CellPosition(
+                      widget.sheet.rowCount - 1, widget.sheet.colCount - 1),
+                ));
+              },
+              child: Container(
+                width: _VirtualSpreadsheetGrid._headerWidth,
+                height: _VirtualSpreadsheetGrid._headerHeight,
+                decoration: BoxDecoration(
+                  color: isAllSelected
+                      ? theme.colorScheme.primaryContainer
+                      : theme.colorScheme.surfaceContainerHighest,
+                  border: Border.all(
+                      color: theme.colorScheme.outlineVariant, width: 0.5),
+                ),
+                alignment: Alignment.center,
+                child: const Icon(Icons.select_all, size: 14),
               ),
-              alignment: Alignment.center,
-              child: const Icon(Icons.select_all, size: 14),
             ),
           ),
           for (var col = 0; col < visibleCols; col++)
             if (!widget.sheet.hiddenCols.contains(col))
-              GestureDetector(
-                onTap: () => widget.onRangeSelect(CellRange(
-                  CellPosition(0, col),
-                  CellPosition(widget.sheet.rowCount - 1, col),
-                )),
-                onHorizontalDragUpdate: (details) {
-                  final currentWidth = widget.sheet.columnWidths[col] ??
-                      _VirtualSpreadsheetGrid._defaultColWidth;
-                  final newWidth =
-                      (currentWidth + details.delta.dx).clamp(40.0, 400.0);
-                  widget.onColumnResize(col, newWidth);
+              _buildColumnHeaderItem(theme, col),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildColumnHeaderItem(ThemeData theme, int col) {
+    final colWidth = widget.sheet.columnWidths[col] ??
+        _VirtualSpreadsheetGrid._defaultColWidth;
+    final isSelected = widget.selectedCell?.col == col ||
+        (widget.selectedRange != null &&
+            widget.selectedRange!.start.col <= col &&
+            widget.selectedRange!.end.col >= col);
+
+    return SizedBox(
+      width: colWidth,
+      height: _VirtualSpreadsheetGrid._headerHeight,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: () {
+                  widget.onRangeSelect(CellRange(
+                    CellPosition(0, col),
+                    CellPosition(widget.sheet.rowCount - 1, col),
+                  ));
                 },
                 child: Container(
-                  width: widget.sheet.columnWidths[col] ??
-                      _VirtualSpreadsheetGrid._defaultColWidth,
-                  height: _VirtualSpreadsheetGrid._headerHeight,
                   decoration: BoxDecoration(
-                    color: widget.selectedCell?.col == col
+                    color: isSelected
                         ? theme.colorScheme.primaryContainer
                         : theme.colorScheme.surfaceContainerHighest,
                     border: Border.all(
@@ -2063,6 +2107,28 @@ class _VirtualSpreadsheetGridState extends State<_VirtualSpreadsheetGrid> {
                   ),
                 ),
               ),
+            ),
+          ),
+          Positioned(
+            right: 0,
+            top: 0,
+            bottom: 0,
+            width: 6,
+            child: MouseRegion(
+              cursor: SystemMouseCursors.resizeColumn,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onHorizontalDragUpdate: (details) {
+                  final currentWidth = widget.sheet.columnWidths[col] ??
+                      _VirtualSpreadsheetGrid._defaultColWidth;
+                  final newWidth =
+                      (currentWidth + details.delta.dx).clamp(40.0, 500.0);
+                  widget.onColumnResize(col, newWidth);
+                },
+                child: Container(color: Colors.transparent),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -2071,32 +2137,69 @@ class _VirtualSpreadsheetGridState extends State<_VirtualSpreadsheetGrid> {
   Widget _buildDataRow(ThemeData theme, int row, int visibleCols) {
     final rowHeight = widget.sheet.rowHeights[row] ??
         _VirtualSpreadsheetGrid._defaultRowHeight;
+    final isSelected = widget.selectedCell?.row == row ||
+        (widget.selectedRange != null &&
+            widget.selectedRange!.start.row <= row &&
+            widget.selectedRange!.end.row >= row);
+
     return SizedBox(
       height: rowHeight,
       child: Row(
         children: [
-          GestureDetector(
-            onTap: () => widget.onRangeSelect(CellRange(
-              CellPosition(row, 0),
-              CellPosition(row, widget.sheet.colCount - 1),
-            )),
-            child: Container(
-              width: _VirtualSpreadsheetGrid._headerWidth,
-              height: rowHeight,
-              decoration: BoxDecoration(
-                color: widget.selectedCell?.row == row
-                    ? theme.colorScheme.primaryContainer
-                    : theme.colorScheme.surfaceContainerHighest,
-                border: Border.all(
-                    color: theme.colorScheme.outlineVariant, width: 0.5),
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                '${row + 1}',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
+          SizedBox(
+            width: _VirtualSpreadsheetGrid._headerWidth,
+            height: rowHeight,
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: GestureDetector(
+                      onTap: () => widget.onRangeSelect(CellRange(
+                        CellPosition(row, 0),
+                        CellPosition(row, widget.sheet.colCount - 1),
+                      )),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? theme.colorScheme.primaryContainer
+                              : theme.colorScheme.surfaceContainerHighest,
+                          border: Border.all(
+                              color: theme.colorScheme.outlineVariant,
+                              width: 0.5),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          '${row + 1}',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  height: 6,
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.resizeRow,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onVerticalDragUpdate: (details) {
+                        final currentHeight = widget.sheet.rowHeights[row] ??
+                            _VirtualSpreadsheetGrid._defaultRowHeight;
+                        final newHeight = (currentHeight + details.delta.dy)
+                            .clamp(20.0, 300.0);
+                        widget.onRowResize(row, newHeight);
+                      },
+                      child: Container(color: Colors.transparent),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           for (var col = 0; col < visibleCols; col++)
@@ -2762,6 +2865,88 @@ class _FontSizePicker extends StatelessWidget {
               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
             ),
             const SizedBox(width: 2),
+            const Icon(Icons.arrow_drop_down, size: 16),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NumberFormatPicker extends StatelessWidget {
+  final NumberFormatType currentFormat;
+  final ValueChanged<NumberFormatType> onFormatSelected;
+
+  const _NumberFormatPicker({
+    required this.currentFormat,
+    required this.onFormatSelected,
+  });
+
+  String _formatLabel(NumberFormatType format) {
+    switch (format) {
+      case NumberFormatType.general:
+        return 'General';
+      case NumberFormatType.number:
+        return 'Number';
+      case NumberFormatType.decimal:
+        return 'Decimal';
+      case NumberFormatType.currency:
+        return 'Currency';
+      case NumberFormatType.percentage:
+        return 'Percent';
+      case NumberFormatType.date:
+        return 'Date';
+      case NumberFormatType.time:
+        return 'Time';
+      case NumberFormatType.dateTime:
+        return 'Date Time';
+      case NumberFormatType.scientific:
+        return 'Scientific';
+      default:
+        return 'General';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return PopupMenuButton<NumberFormatType>(
+      onSelected: onFormatSelected,
+      tooltip: 'Number Format',
+      itemBuilder: (context) {
+        return NumberFormatType.values.map((fmt) {
+          return PopupMenuItem<NumberFormatType>(
+            value: fmt,
+            height: 32,
+            child: Text(
+              _formatLabel(fmt),
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight:
+                    fmt == currentFormat ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          );
+        }).toList();
+      },
+      child: Container(
+        height: 28,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        decoration: BoxDecoration(
+          border:
+              Border.all(color: theme.colorScheme.outlineVariant, width: 0.5),
+          borderRadius: BorderRadius.circular(4),
+          color:
+              theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              _formatLabel(currentFormat),
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(width: 4),
             const Icon(Icons.arrow_drop_down, size: 16),
           ],
         ),
