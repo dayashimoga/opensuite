@@ -1,6 +1,6 @@
 name: opensuite
 description: Open-source cross-platform Office & Productivity Suite.
-version: 2.4.0+18
+version: 2.5.0+19
 publish_to: none
 
 environment:

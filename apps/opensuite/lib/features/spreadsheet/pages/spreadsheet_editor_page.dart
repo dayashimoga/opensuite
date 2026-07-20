@@ -168,8 +168,8 @@ class _EditorContentState extends State<_EditorContent> {
                 // Top Desktop Menubar (File, Edit, View, Insert, Format, Data, Tools, Help)
                 _buildTopMenubar(context, state, theme),
 
-                // Ribbon toolbar
-                _buildRibbon(context, state, theme),
+                // Quick Access Formatting Toolbar
+                _buildQuickFormattingToolbar(context, state, theme),
 
                 // Formula bar
                 _FormulaBar(
@@ -718,13 +718,48 @@ class _EditorContentState extends State<_EditorContent> {
     );
   }
 
-  Widget _buildRibbon(
+  Widget _buildQuickFormattingToolbar(
       BuildContext context, SpreadsheetState state, ThemeData theme) {
-    return ToolbarRibbon(
-      tabs: [
-        RibbonTab(label: 'Home', groups: [
-          // Font group
-          RibbonGroup(label: 'Font', children: [
+    return Container(
+      height: 38,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
+        border: Border(
+          bottom:
+              BorderSide(color: theme.colorScheme.outlineVariant, width: 0.5),
+        ),
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            // Undo / Redo
+            IconButton(
+              icon: const Icon(Icons.undo, size: 18),
+              onPressed: state.canUndo
+                  ? () => context
+                      .read<SpreadsheetBloc>()
+                      .add(const UndoSpreadsheet())
+                  : null,
+              tooltip: 'Undo (Ctrl+Z)',
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              padding: const EdgeInsets.all(4),
+            ),
+            IconButton(
+              icon: const Icon(Icons.redo, size: 18),
+              onPressed: state.canRedo
+                  ? () => context
+                      .read<SpreadsheetBloc>()
+                      .add(const RedoSpreadsheet())
+                  : null,
+              tooltip: 'Redo (Ctrl+Y)',
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              padding: const EdgeInsets.all(4),
+            ),
+            const VerticalDivider(width: 12, indent: 6, endIndent: 6),
+
+            // Font Family
             SizedBox(
               width: 100,
               height: 28,
@@ -736,11 +771,6 @@ class _EditorContentState extends State<_EditorContent> {
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(4),
-                    borderSide: BorderSide(
-                        color: theme.colorScheme.outlineVariant, width: 0.5),
-                  ),
-                  enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(4),
                     borderSide: BorderSide(
                         color: theme.colorScheme.outlineVariant, width: 0.5),
@@ -763,8 +793,10 @@ class _EditorContentState extends State<_EditorContent> {
               ),
             ),
             const SizedBox(width: 4),
+
+            // Font Size
             SizedBox(
-              width: 56,
+              width: 58,
               height: 28,
               child: DropdownButtonFormField<double>(
                 initialValue: _selectedFontSize,
@@ -774,11 +806,6 @@ class _EditorContentState extends State<_EditorContent> {
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(4),
-                    borderSide: BorderSide(
-                        color: theme.colorScheme.outlineVariant, width: 0.5),
-                  ),
-                  enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(4),
                     borderSide: BorderSide(
                         color: theme.colorScheme.outlineVariant, width: 0.5),
@@ -804,7 +831,9 @@ class _EditorContentState extends State<_EditorContent> {
                 },
               ),
             ),
-            const SizedBox(width: 4),
+            const VerticalDivider(width: 12, indent: 6, endIndent: 6),
+
+            // Bold / Italic / Underline / Strikethrough
             RibbonButton(
               icon: Icons.format_bold,
               tooltip: 'Bold (Ctrl+B)',
@@ -837,9 +866,9 @@ class _EditorContentState extends State<_EditorContent> {
                   .read<SpreadsheetBloc>()
                   .add(const FormatCells('strikethrough')),
             ),
-          ]),
-          // Color group
-          RibbonGroup(label: 'Colors', children: [
+            const VerticalDivider(width: 12, indent: 6, endIndent: 6),
+
+            // Text / Fill Color
             _ColorPickerButton(
               icon: Icons.format_color_text,
               tooltip: 'Text Color',
@@ -855,9 +884,9 @@ class _EditorContentState extends State<_EditorContent> {
                   .read<SpreadsheetBloc>()
                   .add(SetBackgroundColor(color)),
             ),
-          ]),
-          // Alignment group
-          RibbonGroup(label: 'Alignment', children: [
+            const VerticalDivider(width: 12, indent: 6, endIndent: 6),
+
+            // Alignment
             RibbonButton(
               icon: Icons.format_align_left,
               tooltip: 'Align Left',
@@ -890,11 +919,11 @@ class _EditorContentState extends State<_EditorContent> {
                   .read<SpreadsheetBloc>()
                   .add(const FormatCells('wrapText')),
             ),
-          ]),
-          // Number format group
-          RibbonGroup(label: 'Number', children: [
+            const VerticalDivider(width: 12, indent: 6, endIndent: 6),
+
+            // Number format
             SizedBox(
-              width: 100,
+              width: 95,
               height: 28,
               child: DropdownButtonFormField<NumberFormatType>(
                 initialValue: _getCellNumberFormat(state),
@@ -908,11 +937,6 @@ class _EditorContentState extends State<_EditorContent> {
                     borderSide: BorderSide(
                         color: theme.colorScheme.outlineVariant, width: 0.5),
                   ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(4),
-                    borderSide: BorderSide(
-                        color: theme.colorScheme.outlineVariant, width: 0.5),
-                  ),
                 ),
                 style: theme.textTheme.bodySmall,
                 items: const [
@@ -921,16 +945,11 @@ class _EditorContentState extends State<_EditorContent> {
                   DropdownMenuItem(
                       value: NumberFormatType.number, child: Text('Number')),
                   DropdownMenuItem(
-                      value: NumberFormatType.decimal, child: Text('Decimal')),
-                  DropdownMenuItem(
                       value: NumberFormatType.currency,
                       child: Text('Currency')),
                   DropdownMenuItem(
                       value: NumberFormatType.percentage,
                       child: Text('Percent')),
-                  DropdownMenuItem(
-                      value: NumberFormatType.scientific,
-                      child: Text('Scientific')),
                 ],
                 onChanged: (v) {
                   if (v != null) {
@@ -939,164 +958,18 @@ class _EditorContentState extends State<_EditorContent> {
                 },
               ),
             ),
-          ]),
-          // Cell operations group
-          RibbonGroup(label: 'Cells', children: [
-            RibbonButton(
-              icon: Icons.table_chart,
-              tooltip: 'Format as Table',
-              onPressed: () =>
-                  context.read<SpreadsheetBloc>().add(const CreateTable()),
-            ),
-            RibbonButton(
-              icon: Icons.merge_type,
-              tooltip: 'Merge Cells',
-              onPressed: state.selectedRange != null &&
-                      !state.selectedRange!.isSingleCell
-                  ? () => context
-                      .read<SpreadsheetBloc>()
-                      .add(MergeCells(state.selectedRange!))
-                  : null,
-            ),
-            RibbonButton(
-              icon: Icons.border_all,
-              tooltip: 'Borders',
-              onPressed: () => context.read<SpreadsheetBloc>().add(
-                    SetBorders(CellBorders.all('#000000')),
-                  ),
-            ),
-          ]),
-        ]),
-        RibbonTab(label: 'Insert', groups: [
-          RibbonGroup(label: 'Tables', children: [
-            RibbonButton(
-              icon: Icons.table_chart,
-              tooltip: 'Insert Table',
-              onPressed: () =>
-                  context.read<SpreadsheetBloc>().add(const CreateTable()),
-            ),
-          ]),
-          RibbonGroup(label: 'Rows & Columns', children: [
-            RibbonButton(
-              icon: Icons.north,
-              tooltip: 'Insert Row Above',
-              onPressed: () {
-                final row = state.selectedCell?.row ?? 0;
-                context.read<SpreadsheetBloc>().add(InsertRow(row - 1));
-              },
-            ),
-            RibbonButton(
-              icon: Icons.south,
-              tooltip: 'Insert Row Below',
-              onPressed: () {
-                final row = state.selectedCell?.row ?? 0;
-                context.read<SpreadsheetBloc>().add(InsertRow(row));
-              },
-            ),
-            RibbonButton(
-              icon: Icons.west,
-              tooltip: 'Insert Column Left',
-              onPressed: () {
-                final col = state.selectedCell?.col ?? 0;
-                context.read<SpreadsheetBloc>().add(InsertColumn(col - 1));
-              },
-            ),
-            RibbonButton(
-              icon: Icons.east,
-              tooltip: 'Insert Column Right',
-              onPressed: () {
-                final col = state.selectedCell?.col ?? 0;
-                context.read<SpreadsheetBloc>().add(InsertColumn(col));
-              },
-            ),
-            RibbonButton(
-              icon: Icons.delete_sweep,
-              tooltip: 'Delete Row',
-              onPressed: () {
-                final row = state.selectedCell?.row ?? 0;
-                context.read<SpreadsheetBloc>().add(DeleteRow(row));
-              },
-            ),
-            RibbonButton(
-              icon: Icons.remove_circle_outline,
-              tooltip: 'Delete Column',
-              onPressed: () {
-                final col = state.selectedCell?.col ?? 0;
-                context.read<SpreadsheetBloc>().add(DeleteColumn(col));
-              },
-            ),
-          ]),
-          RibbonGroup(label: 'Content', children: [
-            RibbonButton(
-              icon: Icons.comment,
-              tooltip: 'Add Comment',
-              onPressed: () => _showAddCommentDialog(context, state),
-            ),
-            RibbonButton(
-              icon: Icons.link,
-              tooltip: 'Add Hyperlink',
-              onPressed: () => _showAddHyperlinkDialog(context, state),
-            ),
-          ]),
-        ]),
-        RibbonTab(label: 'Data', groups: [
-          RibbonGroup(label: 'Sort', children: [
-            RibbonButton(
-              icon: Icons.arrow_upward,
-              tooltip: 'Sort A→Z',
-              onPressed: () {
-                if (state.selectedCell != null) {
-                  context.read<SpreadsheetBloc>().add(
-                      SortColumn(state.selectedCell!.col, ascending: true));
-                }
-              },
-            ),
-            RibbonButton(
-              icon: Icons.arrow_downward,
-              tooltip: 'Sort Z→A',
-              onPressed: () {
-                if (state.selectedCell != null) {
-                  context.read<SpreadsheetBloc>().add(
-                      SortColumn(state.selectedCell!.col, ascending: false));
-                }
-              },
-            ),
-          ]),
-          RibbonGroup(label: 'Find', children: [
-            RibbonButton(
-              icon: Icons.search,
-              tooltip: 'Find & Replace (Ctrl+F)',
+            const VerticalDivider(width: 12, indent: 6, endIndent: 6),
+
+            IconButton(
+              icon: const Icon(Icons.search, size: 18),
               onPressed: () => setState(() => _showFindBar = !_showFindBar),
+              tooltip: 'Find & Replace (Ctrl+F)',
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              padding: const EdgeInsets.all(4),
             ),
-          ]),
-        ]),
-        RibbonTab(label: 'View', groups: [
-          RibbonGroup(label: 'Freeze', children: [
-            RibbonButton(
-              icon: Icons.push_pin_outlined,
-              tooltip: 'Freeze Panes',
-              onPressed: () => _showFreezeDialog(context, state),
-            ),
-          ]),
-          RibbonGroup(label: 'Visibility', children: [
-            RibbonButton(
-              icon: Icons.visibility_off,
-              tooltip: 'Hide Selected Rows',
-              onPressed: state.selectedCell != null
-                  ? () => context
-                      .read<SpreadsheetBloc>()
-                      .add(HideRows([state.selectedCell!.row]))
-                  : null,
-            ),
-            RibbonButton(
-              icon: Icons.visibility,
-              tooltip: 'Unhide All Rows',
-              onPressed: () =>
-                  context.read<SpreadsheetBloc>().add(const UnhideRows()),
-            ),
-          ]),
-        ]),
-      ],
+          ],
+        ),
+      ),
     );
   }
 
