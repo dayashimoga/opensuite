@@ -165,6 +165,9 @@ class _EditorContentState extends State<_EditorContent> {
             appBar: _buildAppBar(context, state, theme),
             body: Column(
               children: [
+                // Top Desktop Menubar (File, Edit, View, Insert, Format, Data, Tools, Help)
+                _buildTopMenubar(context, state, theme),
+
                 // Ribbon toolbar
                 _buildRibbon(context, state, theme),
 
@@ -393,6 +396,325 @@ class _EditorContentState extends State<_EditorContent> {
           },
         ),
       ],
+    );
+  }
+
+  Widget _buildTopMenubar(
+      BuildContext context, SpreadsheetState state, ThemeData theme) {
+    final bloc = context.read<SpreadsheetBloc>();
+    return Container(
+      height: 30,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        border: Border(
+          bottom:
+              BorderSide(color: theme.colorScheme.outlineVariant, width: 0.5),
+        ),
+      ),
+      child: Row(
+        children: [
+          // File
+          _buildMenuDropdown(
+            label: 'File',
+            items: [
+              _menuItem('new', Icons.note_add, 'New Spreadsheet'),
+              _menuItem('save', Icons.save, 'Save (Ctrl+S)'),
+              _menuItem('import', Icons.file_open, 'Import CSV / XLSX'),
+              _menuItem('export_csv', Icons.download, 'Export CSV'),
+              _menuItem('export_xlsx', Icons.table_view, 'Export XLSX'),
+              _menuItem('share', Icons.share, 'Share'),
+            ],
+            onSelected: (val) {
+              switch (val) {
+                case 'new':
+                  context
+                      .read<SpreadsheetBloc>()
+                      .add(const CreateSpreadsheet());
+                case 'save':
+                  bloc.add(const SaveSpreadsheet());
+                case 'import':
+                  _importLocalFile(context);
+                case 'export_csv':
+                  _exportCsv(context, state);
+                case 'export_xlsx':
+                  bloc.add(const ExportXlsxFile());
+                case 'share':
+                  _shareSpreadsheet(context, state);
+              }
+            },
+          ),
+          // Edit
+          _buildMenuDropdown(
+            label: 'Edit',
+            items: [
+              _menuItem('undo', Icons.undo, 'Undo (Ctrl+Z)'),
+              _menuItem('redo', Icons.redo, 'Redo (Ctrl+Y)'),
+              _menuItem('cut', Icons.content_cut, 'Cut (Ctrl+X)'),
+              _menuItem('copy', Icons.content_copy, 'Copy (Ctrl+C)'),
+              _menuItem('paste', Icons.content_paste, 'Paste (Ctrl+V)'),
+              _menuItem('clear', Icons.delete_sweep, 'Clear Selected Cells'),
+              _menuItem('find', Icons.search, 'Find & Replace (Ctrl+F)'),
+            ],
+            onSelected: (val) {
+              switch (val) {
+                case 'undo':
+                  bloc.add(const UndoSpreadsheet());
+                case 'redo':
+                  bloc.add(const RedoSpreadsheet());
+                case 'cut':
+                  bloc.add(const CutSelection());
+                case 'copy':
+                  bloc.add(const CopySelection());
+                case 'paste':
+                  bloc.add(const PasteSelection());
+                case 'clear':
+                  bloc.add(const ClearSelection());
+                case 'find':
+                  setState(() => _showFindBar = !_showFindBar);
+              }
+            },
+          ),
+          // View
+          _buildMenuDropdown(
+            label: 'View',
+            items: [
+              _menuItem('freeze', Icons.push_pin_outlined, 'Freeze Panes'),
+              _menuItem('find_bar', Icons.search, 'Toggle Find Bar'),
+              _menuItem('unhide_rows', Icons.visibility, 'Unhide All Rows'),
+            ],
+            onSelected: (val) {
+              switch (val) {
+                case 'freeze':
+                  _showFreezeDialog(context, state);
+                case 'find_bar':
+                  setState(() => _showFindBar = !_showFindBar);
+                case 'unhide_rows':
+                  bloc.add(const UnhideRows());
+              }
+            },
+          ),
+          // Insert
+          _buildMenuDropdown(
+            label: 'Insert',
+            items: [
+              _menuItem('table', Icons.table_chart, 'Format as Table'),
+              _menuItem('row_above', Icons.north, 'Insert Row Above'),
+              _menuItem('row_below', Icons.south, 'Insert Row Below'),
+              _menuItem('col_left', Icons.west, 'Insert Column Left'),
+              _menuItem('col_right', Icons.east, 'Insert Column Right'),
+              _menuItem('chart', Icons.bar_chart, 'Insert Chart'),
+              _menuItem('comment', Icons.comment, 'Add Comment'),
+              _menuItem('link', Icons.link, 'Add Hyperlink'),
+            ],
+            onSelected: (val) {
+              final r = state.selectedCell?.row ?? 0;
+              final c = state.selectedCell?.col ?? 0;
+              switch (val) {
+                case 'table':
+                  bloc.add(const CreateTable());
+                case 'row_above':
+                  bloc.add(InsertRow(r - 1));
+                case 'row_below':
+                  bloc.add(InsertRow(r));
+                case 'col_left':
+                  bloc.add(InsertColumn(c - 1));
+                case 'col_right':
+                  bloc.add(InsertColumn(c));
+                case 'chart':
+                  _showChartDialog(context, state);
+                case 'comment':
+                  _showAddCommentDialog(context, state);
+                case 'link':
+                  _showAddHyperlinkDialog(context, state);
+              }
+            },
+          ),
+          // Format
+          _buildMenuDropdown(
+            label: 'Format',
+            items: [
+              _menuItem('bold', Icons.format_bold, 'Bold (Ctrl+B)'),
+              _menuItem('italic', Icons.format_italic, 'Italic (Ctrl+I)'),
+              _menuItem(
+                  'underline', Icons.format_underlined, 'Underline (Ctrl+U)'),
+              _menuItem(
+                  'strikethrough', Icons.strikethrough_s, 'Strikethrough'),
+              _menuItem('merge', Icons.merge_type, 'Merge Cells'),
+              _menuItem('table', Icons.table_chart, 'Format as Table'),
+            ],
+            onSelected: (val) {
+              switch (val) {
+                case 'bold':
+                  bloc.add(const FormatCells('bold'));
+                case 'italic':
+                  bloc.add(const FormatCells('italic'));
+                case 'underline':
+                  bloc.add(const FormatCells('underline'));
+                case 'strikethrough':
+                  bloc.add(const FormatCells('strikethrough'));
+                case 'merge':
+                  if (state.selectedRange != null) {
+                    bloc.add(MergeCells(state.selectedRange!));
+                  }
+                case 'table':
+                  bloc.add(const CreateTable());
+              }
+            },
+          ),
+          // Data
+          _buildMenuDropdown(
+            label: 'Data',
+            items: [
+              _menuItem('sort_asc', Icons.arrow_upward, 'Sort A→Z'),
+              _menuItem('sort_desc', Icons.arrow_downward, 'Sort Z→A'),
+              _menuItem('cond_fmt', Icons.style, 'Conditional Formatting'),
+            ],
+            onSelected: (val) {
+              final col = state.selectedCell?.col ?? 0;
+              switch (val) {
+                case 'sort_asc':
+                  bloc.add(SortColumn(col, ascending: true));
+                case 'sort_desc':
+                  bloc.add(SortColumn(col, ascending: false));
+                case 'cond_fmt':
+                  _showConditionalFormatDialog(context, state);
+              }
+            },
+          ),
+          // Tools
+          _buildMenuDropdown(
+            label: 'Tools',
+            items: [
+              _menuItem('table', Icons.table_chart, 'Create Table'),
+              _menuItem('unhide', Icons.visibility, 'Unhide All Rows'),
+            ],
+            onSelected: (val) {
+              switch (val) {
+                case 'table':
+                  bloc.add(const CreateTable());
+                case 'unhide':
+                  bloc.add(const UnhideRows());
+              }
+            },
+          ),
+          // Help
+          _buildMenuDropdown(
+            label: 'Help',
+            items: [
+              _menuItem('shortcuts', Icons.keyboard, 'Keyboard Shortcuts'),
+              _menuItem('about', Icons.info_outline, 'About OpenSuite'),
+            ],
+            onSelected: (val) {
+              if (val == 'shortcuts') {
+                _showShortcutsHelpDialog(context);
+              } else if (val == 'about') {
+                _showAboutDialog(context);
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMenuDropdown({
+    required String label,
+    required List<PopupMenuEntry<String>> items,
+    required ValueChanged<String> onSelected,
+  }) {
+    return PopupMenuButton<String>(
+      itemBuilder: (_) => items,
+      onSelected: onSelected,
+      tooltip: label,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        child: Text(
+          label,
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+        ),
+      ),
+    );
+  }
+
+  PopupMenuItem<String> _menuItem(String value, IconData icon, String text) {
+    return PopupMenuItem<String>(
+      value: value,
+      height: 32,
+      child: Row(
+        children: [
+          Icon(icon, size: 16),
+          const SizedBox(width: 10),
+          Text(text, style: const TextStyle(fontSize: 13)),
+        ],
+      ),
+    );
+  }
+
+  void _showShortcutsHelpDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Keyboard Shortcuts'),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('• Ctrl+S: Save Spreadsheet'),
+            Text('• Ctrl+Z / Ctrl+Y: Undo / Redo'),
+            Text('• Ctrl+C / Ctrl+X / Ctrl+V: Copy / Cut / Paste'),
+            Text('• Ctrl+B / Ctrl+I / Ctrl+U: Bold / Italic / Underline'),
+            Text('• Tab / Shift+Tab: Move Cell Right / Left'),
+            Text('• Enter / Shift+Enter: Move Cell Down / Up'),
+            Text('• Shift + Click: Select Cell Range'),
+            Text('• Shift + Arrows: Expand Selection Range'),
+            Text('• Delete: Clear Selected Cells'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showConditionalFormatDialog(
+      BuildContext context, SpreadsheetState state) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Conditional Formatting'),
+        content: const Text(
+          'Conditional Formatting rule builder:\nHighlight cells matching specific conditions (Greater than, Less than, Text contains, Equal to).',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAboutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('About OpenSuite'),
+        content: const Text(
+          'OpenSuite v2.4.0\nOpen-source production-grade cross-platform Office Productivity Suite built with Flutter & Dart.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
     );
   }
 

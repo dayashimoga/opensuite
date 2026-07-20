@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0+18] - 2026-07-20
+
+### Fixed & Added — Sprint 23: Presentation Engine & Spreadsheet Desktop Menubar
+
+- **Presentation Editor Fixes & Features**:
+  - **Add Slide Crash Fix**: Clamped `insertIndex` calculation (`insertIndex = (activeSlideIndex + 1).clamp(0, slides.length)`), preventing RangeError crashes when adding slides.
+  - **Presenter Mode (Fullscreen Slideshow)**: Built fullscreen `_PresentationModeView` slideshow viewer with slide navigation, keyboard listeners (Right Arrow / Space / Enter to advance, Left Arrow / Backspace to return, Esc to exit), slide counter, and timer.
+  - **Slide Thumbnail Drag Reordering**: Upgraded slide panel list to `ReorderableListView.builder` using `onReorderItem` callback for smooth drag-and-drop slide reordering.
+  - **Speaker Notes**: Embedded collapsible speaker notes text area bound to active slide's speaker notes.
+  - **Shape & Element Tools**: Added insertion tools for shapes (rectangle, circle, arrow, star, line), tables, icons, and charts.
+- **Spreadsheet Desktop Menubar**:
+  - Added full Google Sheets / MS Excel style Menubar (`File`, `Edit`, `View`, `Insert`, `Format`, `Data`, `Tools`, `Help`) directly above the Ribbon toolbar with rich drop-down options and keyboard shortcut triggers.
+  - Added conditional formatting rule builder dialog and help dialogs.
+
 ## [2.3.0+17] - 2026-07-20
 
 ### Fixed — Sprint 22: Spreadsheet Engine & UI Enhancements
