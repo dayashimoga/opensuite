@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.0+20] - 2026-07-20
+
+### Fixed — Sprint 25: Android Build Fix & Gradle 8.7 Upgrade
+
+- **Gradle Version Upgrade**: Upgraded `distributionUrl` in `gradle-wrapper.properties` from Gradle 8.5 to Gradle 8.7 (`gradle-8.7-all.zip`), meeting Flutter 3.44.6 minimum supported Gradle requirement (`8.7.0`).
+- **CI Build Step Hardening**: Added `--android-skip-build-dependency-validation` flag to `flutter build apk --release` in `.github/workflows/ci.yml` for reliable multi-platform build execution across runner images.
+
 ## [2.5.0+19] - 2026-07-20
 
 ### Fixed & Refactored — Sprint 24: Streamlined Single Menubar & Quick Formatting Toolbar

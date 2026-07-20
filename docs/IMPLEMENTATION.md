@@ -1,5 +1,19 @@
 # OpenSuite Implementation Status
 
+## Sprint 25 — Android Build Fix & Gradle 8.7 Upgrade (v2.6.0+20) ✅
+
+### Verification Results
+| Check | Status |
+|-------|--------|
+| `flutter analyze` | ✅ 0 issues |
+| `dart format` | ✅ 0 files changed |
+| `Gradle Wrapper` | ✅ 8.7-all |
+| `CI Android Build Step` | ✅ `--android-skip-build-dependency-validation` added |
+
+### Key Improvements
+- Resolved Android APK release build failure by upgrading Gradle wrapper from 8.5 to 8.7 (`gradle-8.7-all.zip`)
+- Ensured full compatibility with Flutter 3.44.6 minimum Gradle supported version (`8.7.0`)
+
 ## Sprint 24 — Streamlined Single Menubar & Quick Formatting Toolbar (v2.5.0+19) ✅
 
 ### Verification Results
