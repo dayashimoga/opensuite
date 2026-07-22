@@ -919,6 +919,36 @@ class _EditorContentState extends State<_EditorContent> {
             ),
             const VerticalDivider(width: 12, indent: 6, endIndent: 6),
 
+            // Borders & Merge
+            _BordersPicker(
+              onBordersSelected: (b) =>
+                  context.read<SpreadsheetBloc>().add(SetBorders(b)),
+            ),
+            RibbonButton(
+              icon: Icons.merge_type,
+              tooltip: 'Merge / Unmerge Cells',
+              onPressed: () {
+                final range = state.selectedRange ??
+                    (state.selectedCell != null
+                        ? CellRange(state.selectedCell!, state.selectedCell!)
+                        : null);
+                if (range != null) {
+                  final activeSheet = state.activeSheet;
+                  final isMerged = activeSheet != null &&
+                      activeSheet.mergedCells.any(
+                          (m) => m.contains(state.selectedCell ?? range.start));
+                  if (isMerged) {
+                    context
+                        .read<SpreadsheetBloc>()
+                        .add(UnmergeCells(state.selectedCell ?? range.start));
+                  } else {
+                    context.read<SpreadsheetBloc>().add(MergeCells(range));
+                  }
+                }
+              },
+            ),
+            const VerticalDivider(width: 12, indent: 6, endIndent: 6),
+
             // Number format
             _NumberFormatPicker(
               currentFormat: _getCellNumberFormat(state),
@@ -2333,44 +2363,113 @@ class _GridCellState extends State<_GridCell> {
           widget.onTap();
           widget.onContextMenu(details.globalPosition);
         },
-        child: Container(
-          width: widget.width,
-          height: widget.height,
-          decoration: BoxDecoration(
-            color: bgColor,
-            border: Border.all(
-              color: widget.isSelected
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.outlineVariant,
-              width: widget.isSelected ? 2.0 : 0.5,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              width: widget.width,
+              height: widget.height,
+              decoration: BoxDecoration(
+                color: bgColor,
+                border: _getGridCellBorder(theme),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              alignment: _getAlignment(widget.cell.alignment),
+              child: _isEditing
+                  ? TextField(
+                      controller: _controller,
+                      autofocus: true,
+                      decoration: const InputDecoration(
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.zero,
+                        isDense: true,
+                      ),
+                      style: _getCellTextStyle(theme),
+                      onSubmitted: (value) {
+                        widget.onEdit(value);
+                        setState(() => _isEditing = false);
+                        widget.onEditComplete();
+                      },
+                      onTapOutside: (_) {
+                        widget.onEdit(_controller.text);
+                        setState(() => _isEditing = false);
+                        widget.onEditComplete();
+                      },
+                    )
+                  : _buildCellContent(theme),
             ),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          alignment: _getAlignment(widget.cell.alignment),
-          child: _isEditing
-              ? TextField(
-                  controller: _controller,
-                  autofocus: true,
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.zero,
-                    isDense: true,
+            if (widget.isSelected)
+              Positioned(
+                right: -4,
+                bottom: -4,
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.precise,
+                  child: GestureDetector(
+                    onPanUpdate: (details) {
+                      final range = CellRange(
+                        widget.position,
+                        CellPosition(
+                          widget.position.row + 3,
+                          widget.position.col,
+                        ),
+                      );
+                      context
+                          .read<SpreadsheetBloc>()
+                          .add(FillRange(widget.position, range));
+                    },
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary,
+                        border: Border.all(color: Colors.white, width: 1),
+                      ),
+                    ),
                   ),
-                  style: _getCellTextStyle(theme),
-                  onSubmitted: (value) {
-                    widget.onEdit(value);
-                    setState(() => _isEditing = false);
-                    widget.onEditComplete();
-                  },
-                  onTapOutside: (_) {
-                    widget.onEdit(_controller.text);
-                    setState(() => _isEditing = false);
-                    widget.onEditComplete();
-                  },
-                )
-              : _buildCellContent(theme),
+                ),
+              ),
+          ],
         ),
       ),
+    );
+  }
+
+  BoxBorder _getGridCellBorder(ThemeData theme) {
+    final b = widget.cell.borders;
+    if (b != null) {
+      final defaultSide = widget.isSelected
+          ? BorderSide(color: theme.colorScheme.primary, width: 2.0)
+          : BorderSide(color: theme.colorScheme.outlineVariant, width: 0.5);
+
+      return Border(
+        top: b.top != null
+            ? BorderSide(
+                color: _parseColor(b.top!) ?? theme.colorScheme.onSurface,
+                width: 1.5)
+            : defaultSide,
+        bottom: b.bottom != null
+            ? BorderSide(
+                color: _parseColor(b.bottom!) ?? theme.colorScheme.onSurface,
+                width: 1.5)
+            : defaultSide,
+        left: b.left != null
+            ? BorderSide(
+                color: _parseColor(b.left!) ?? theme.colorScheme.onSurface,
+                width: 1.5)
+            : defaultSide,
+        right: b.right != null
+            ? BorderSide(
+                color: _parseColor(b.right!) ?? theme.colorScheme.onSurface,
+                width: 1.5)
+            : defaultSide,
+      );
+    }
+
+    return Border.all(
+      color: widget.isSelected
+          ? theme.colorScheme.primary
+          : theme.colorScheme.outlineVariant,
+      width: widget.isSelected ? 2.0 : 0.5,
     );
   }
 
@@ -2947,8 +3046,194 @@ class _NumberFormatPicker extends StatelessWidget {
               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
             ),
             const SizedBox(width: 4),
-            const Icon(Icons.arrow_drop_down, size: 16),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BordersPicker extends StatelessWidget {
+  final ValueChanged<CellBorders> onBordersSelected;
+
+  const _BordersPicker({required this.onBordersSelected});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    const borderColorHex = '#000000';
+
+    return PopupMenuButton<String>(
+      tooltip: 'Borders',
+      onSelected: (val) {
+        switch (val) {
+          case 'all':
+            onBordersSelected(CellBorders.all(borderColorHex));
+          case 'top':
+            onBordersSelected(CellBorders(top: borderColorHex));
+          case 'bottom':
+            onBordersSelected(CellBorders(bottom: borderColorHex));
+          case 'left':
+            onBordersSelected(CellBorders(left: borderColorHex));
+          case 'right':
+            onBordersSelected(CellBorders(right: borderColorHex));
+          case 'outer':
+            onBordersSelected(CellBorders(
+              top: borderColorHex,
+              bottom: borderColorHex,
+              left: borderColorHex,
+              right: borderColorHex,
+            ));
+          case 'clear':
+            onBordersSelected(const CellBorders());
+        }
+      },
+      itemBuilder: (context) => const [
+        PopupMenuItem(
+            value: 'all',
+            child: Row(children: [
+              Icon(Icons.border_all, size: 18),
+              SizedBox(width: 8),
+              Text('All Borders')
+            ])),
+        PopupMenuItem(
+            value: 'outer',
+            child: Row(children: [
+              Icon(Icons.border_outer, size: 18),
+              SizedBox(width: 8),
+              Text('Outer Borders')
+            ])),
+        PopupMenuItem(
+            value: 'top',
+            child: Row(children: [
+              Icon(Icons.border_top, size: 18),
+              SizedBox(width: 8),
+              Text('Top Border')
+            ])),
+        PopupMenuItem(
+            value: 'bottom',
+            child: Row(children: [
+              Icon(Icons.border_bottom, size: 18),
+              SizedBox(width: 8),
+              Text('Bottom Border')
+            ])),
+        PopupMenuItem(
+            value: 'left',
+            child: Row(children: [
+              Icon(Icons.border_left, size: 18),
+              SizedBox(width: 8),
+              Text('Left Border')
+            ])),
+        PopupMenuItem(
+            value: 'right',
+            child: Row(children: [
+              Icon(Icons.border_right, size: 18),
+              SizedBox(width: 8),
+              Text('Right Border')
+            ])),
+        PopupMenuItem(
+            value: 'clear',
+            child: Row(children: [
+              Icon(Icons.border_clear, size: 18),
+              SizedBox(width: 8),
+              Text('Clear Borders')
+            ])),
+      ],
+      child: Container(
+        height: 28,
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        decoration: BoxDecoration(
+          border:
+              Border.all(color: theme.colorScheme.outlineVariant, width: 0.5),
+          borderRadius: BorderRadius.circular(4),
+          color:
+              theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        ),
+        child: const Row(
+          children: [
+            Icon(Icons.border_all, size: 16),
+            Icon(Icons.arrow_drop_down, size: 14),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class FormulaAutocompletePopover extends StatelessWidget {
+  final String text;
+  final ValueChanged<String> onSelected;
+
+  const FormulaAutocompletePopover({
+    super.key,
+    required this.text,
+    required this.onSelected,
+  });
+
+  static const List<Map<String, String>> _functions = [
+    {
+      'name': 'SUM',
+      'desc': 'Returns the sum of a series of numbers and/or cells'
+    },
+    {
+      'name': 'AVERAGE',
+      'desc': 'Returns the numerical average value in a dataset'
+    },
+    {
+      'name': 'COUNT',
+      'desc': 'Counts the number of numeric values in a dataset'
+    },
+    {'name': 'MAX', 'desc': 'Returns the maximum value in a numeric dataset'},
+    {'name': 'MIN', 'desc': 'Returns the minimum value in a numeric dataset'},
+    {
+      'name': 'IF',
+      'desc':
+          'Returns one value if a logical expression is TRUE and another if FALSE'
+    },
+    {'name': 'CONCATENATE', 'desc': 'Appends strings to one another'},
+    {'name': 'VLOOKUP', 'desc': 'Vertical lookup across a table column'},
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    if (!text.startsWith('=')) return const SizedBox.shrink();
+    final query = text.substring(1).toUpperCase();
+    final matches =
+        _functions.where((f) => f['name']!.startsWith(query)).take(5).toList();
+
+    if (matches.isEmpty) return const SizedBox.shrink();
+
+    final theme = Theme.of(context);
+    return Material(
+      elevation: 4,
+      borderRadius: BorderRadius.circular(6),
+      color: theme.colorScheme.surface,
+      child: Container(
+        width: 280,
+        decoration: BoxDecoration(
+          border: Border.all(color: theme.colorScheme.outlineVariant),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: matches.map((fn) {
+            return ListTile(
+              dense: true,
+              visualDensity: VisualDensity.compact,
+              title: Text(
+                '=${fn['name']!}(',
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+              ),
+              subtitle: Text(
+                fn['desc']!,
+                style: const TextStyle(fontSize: 10),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              onTap: () => onSelected('=${fn['name']!}('),
+            );
+          }).toList(),
         ),
       ),
     );

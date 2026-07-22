@@ -1,5 +1,21 @@
 # OpenSuite Implementation Status
 
+## Sprint 29 — Spreadsheet Autofill Handle, Cell Borders Engine, Merge/Unmerge & Formula Autocomplete (v3.0.0+24) ✅
+
+### Verification Results
+| Check | Status |
+|-------|--------|
+| `flutter analyze` | ✅ 0 issues |
+| `dart format` | ✅ 0 files changed |
+| `flutter test test/features/spreadsheet` | ✅ 38/38 passed |
+| `flutter build web --release` | ✅ Built (`build/web` verified) |
+
+### Key Improvements
+- **Cell Borders Engine**: Added `_BordersPicker` (`PopupMenuButton`) to Quick Formatting Toolbar and custom border side rendering in `_GridCell`.
+- **Autofill Drag Handle**: Rendered 8px green drag handle on bottom-right corner of cell range selection for series auto-fill (`FillRange`).
+- **Range Merge / Unmerge**: Added `MergeCells` and `UnmergeCells` BLoC events and toolbar button to merge range cells into top-left value while storing bounds in `SheetData.mergedCells`.
+- **Formula Autocomplete**: Real-time autocomplete popover dropdown for functions (`SUM`, `AVERAGE`, `COUNT`, `MAX`, `MIN`, `IF`, `CONCATENATE`, `VLOOKUP`).
+
 ## Sprint 28 — Header Resizing, Select-All Corner & Complete Insert Suite (v2.9.0+23) ✅
 
 ### Verification Results

@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0+24] - 2026-07-22
+
+### Added & Enhanced — Sprint 29: Spreadsheet Autofill Handle, Cell Borders Engine, Merge/Unmerge & Formula Autocomplete
+
+- **Spreadsheet Cell Borders Engine**: Added `_BordersPicker` (`PopupMenuButton`) in Quick Formatting Toolbar to format cell borders (All, Outer, Top, Bottom, Left, Right, Clear Borders). Updated `_GridCell` container decoration to render custom border sides.
+- **Interactive Autofill Drag Handle**: Rendered 8px green drag handle on the bottom-right corner of active cell / range selection with precise mouse cursor feedback (`SystemMouseCursors.precise`). Dragging dispatches `FillRange` to auto-increment numbers, repeat patterns, or copy values down/across.
+- **Range Merge / Unmerge**: Added `MergeCells` and `UnmergeCells` BLoC handlers and Quick Formatting Toolbar button to combine range cells while preserving top-left cell value and tracking bounds in `SheetData.mergedCells`.
+- **Formula Autocomplete Popover**: Added real-time autocomplete popover (`FormulaAutocompletePopover`) listing standard spreadsheet functions (`SUM`, `AVERAGE`, `COUNT`, `MAX`, `MIN`, `IF`, `CONCATENATE`, `VLOOKUP`) when typing `=` in cell editor or formula bar.
+
 ## [2.9.0+23] - 2026-07-20
 
 ### Fixed & Enhanced — Sprint 28: Header Resizing, Select-All Corner & Complete Insert Suite

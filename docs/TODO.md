@@ -1,173 +1,129 @@
-# OpenSuite — TODO
+# OpenSuite — TODO & Task Tracking
 
-## Sprint 20 — Presentation Animations Sidebar & Spreadsheet Range Selection fixes (v2.1.0) — COMPLETED ✅
+## Current Sprint — Sprint 29: Spreadsheet Autofill Handle, Cell Borders Engine, Merge/Unmerge & Formula Autocomplete (v3.0.0+24)
 
-### ✅ Completed in Sprint 20
-- [x] **Presentation Animations Sidebar**: Wired `AnimationPanel` right-side sidebar toggle button in Presentation editor with events `AddAnimation`, `RemoveAnimation`, `UpdateAnimation`, `ReorderAnimations`. Added BLoC unit tests.
-- [x] **Spreadsheet Drag Selection**: Refactored drag selection to use a grid-level `Listener` that calculates targeted cells based on pointer positions, scroll offsets, and cell bounds.
-- [x] **Spreadsheet Shift+Click Selection**: Enabled range extension using Shift + Click to select multiple cells.
-- [x] **Presentation SlideTable rendering**: Deserialized JSON table elements dynamically on the slide canvas and wired double-tap cell editing callbacks back to PresentationBloc.
-- [x] **CellData isEmpty Fix**: Prevented silent cell deletion by updating `CellData.isEmpty` to verify formatting properties alongside `rawValue` checks.
-- [x] **Keyboard focus restoration**: Fixed keyboard event listeners by programmatically restoring focus to the spreadsheet grid after completing cell edits.
+### 🔴 Critical
+- [x] **Header Edge Resizing & Cursors**: Dedicated 6px resize handles on column/row headers with `SystemMouseCursors.resizeColumn` and `SystemMouseCursors.resizeRow` (Sprint 28).
+- [x] **Select-All Corner Button**: Top-left corner box selects all cells (`SetCellRange(0, 0, rowCount - 1, colCount - 1)`) (Sprint 28).
+- [ ] **Multi-Cell Keyboard Range Selection**: Shift + Arrow keys and Ctrl + Shift + Arrow keys range expansion.
+- [ ] **Native Context Menu Override**: Prevent browser default right-click context menu popping over application context menu in web target.
 
-## Sprint Completion & Architectural Systems Overhaul (v1.6.1+8) — COMPLETED ✅
+### 🟠 High Priority
+- [ ] **Spreadsheet Autofill Handle**: Interactive drag handle on bottom-right corner of cell range selection for auto-increment and series fill.
+- [ ] **Spreadsheet Cell Borders Engine**: Visual rendering and BLoC formatting for cell borders (All, Outer, Inner, Top, Bottom, Left, Right).
+- [ ] **Range Merge / Unmerge**: Merge selected cell range into single cell with top-left value preservation and unmerge capability.
+- [ ] **Formula Autocomplete**: Real-time popover dropdown listing formula functions (SUM, AVERAGE, COUNT, VLOOKUP, IF...) while typing `=` in cell or formula bar.
+- [ ] **Slide Layer Ordering & Grouping**: Bring forward, send backward, bring to front, send to back, group, and ungroup slide canvas elements.
+- [ ] **Slide Transitions & Presentation PDF Export**: Animated transitions (fade, push, wipe, zoom) and export presentation to multi-page PDF.
 
-### ✅ Completed System Fixes & Sprints
+### 🟡 Medium Priority
+- [ ] **Column Filtering Dropdowns**: Column header dropdown menu with unique value checkboxes and text filter rules (Contains, Equals, Greater Than).
+- [ ] **Slide Alignment Guides & Snap-To-Grid**: Visual drag alignment guides (center, edges) and snap-to-grid for slide canvas elements.
+- [ ] **Document Rich Text Styles**: Expanded Quill editor styles for tables, block quotes, and code syntax highlighting.
+- [ ] **File Manager Native Tree Browsing**: Local filesystem directory tree view and multi-file drag-select operations.
 
-#### Shared Editor Foundation (Sprint 1)
-- [x] SaveManager<T> — generic auto-save with debounce and dirty-state tracking
-- [x] ExportManager — centralized export pipeline with codec registry
-- [x] ImportManager — unified import with format auto-detection
-- [x] BackgroundTaskManager — async task queue with progress/cancellation
-- [x] FileFormatRegistry — central format metadata registry (15+ formats)
-- [x] ContextMenuBuilder — reusable context menu framework
-- [x] ImageProcessor — real pixel manipulation via dart:ui canvas
-- [x] CsvCodec / TsvCodec — robust delimited text codecs
-- [x] Core barrel exports updated
-- [x] AppModule DI wiring (FileFormatRegistry init, CSV/TSV codec registration)
+### 🟢 Low Priority
+- [ ] **Dark / Light Theme Presets**: Expanded accent color themes and customizable UI density options.
+- [ ] **Audio Annotations**: Voice notes attachment in PDF Viewer.
 
-#### Spreadsheet Fixes (Sprint 2)
-- [x] CSV import (ImportCsv event + handler with type detection)
-- [x] CSV export (ExportCsvFile event + handler)
-- [x] Fill handle (FillRange event with numeric/text fill)
-- [x] Web interactivity fix: explicit FocusNode for grid and formula bar
-- [x] Web interactivity fix: KeyRepeatEvent handling for held-key navigation
-- [x] Web interactivity fix: Listener.onPointerDown for right-click context menu
-- [x] Web interactivity fix: focus return to grid after formula bar submit
-- [x] Web interactivity fix: _isEditingActive() checks specific FocusNode
+### 🔄 In Progress
+- [ ] **Sprint 29 — Core Editing & Grid Interactions (v3.0.0+24)**: Implementing Autofill handle, Cell Borders toolbar picker, Range Merge/Unmerge, and Formula Autocomplete.
 
-#### Presentation Editor (Sprint 3)
-- [x] RotateElement event + handler
-- [x] AlignElements event + handler (6 alignment modes)
-- [x] DuplicateElement event + handler (with offset + unique ID)
-- [x] GroupElements / UngroupElements events + handlers
-- [x] SlideElement model: added groupId, opacity, id in copyWith
+### ⛔ Blocked
+- *None*
 
-#### Image Editor Fixes (Sprint 5)
-- [x] CropImage handler registered (was missing)
-- [x] Real export via ImageProcessor (replaced fake Future.delayed)
-- [x] SetHue / SetExposure events + handlers
-- [x] Real image dimension detection on load
-- [x] exportedBytes in state for downstream saving
+### ✅ Completed
+- [x] **Sprint 28 (v2.9.0+23)**: Dedicated Column/Row edge resize handles with resize mouse cursors, Select-All corner button, unclipped `_NumberFormatPicker`, complete Google Sheets `Insert` menu dropdown.
+- [x] **Sprint 27 (v2.8.0+22)**: Upgraded Android Gradle Plugin (AGP) from 8.3.0 to 8.9.1 and Gradle wrapper to 8.11.1-all for Flutter 3.44.6 release build compatibility.
+- [x] **Sprint 26 (v2.7.0+21)**: Replaced `DropdownButtonFormField` widgets with `_FontFamilyPicker` & `_FontSizePicker`, 18 standard Google Sheets fonts, dynamic `GoogleFonts` cell rendering.
+- [x] **Sprint 25 (v2.6.0+20)**: Upgraded Gradle wrapper to 8.7-all and hardened CI Android build step.
+- [x] **Sprint 24 (v2.5.0+19)**: Eliminated duplicate menubar tab bar, single Google Sheets / MS Excel top Menubar + Quick Formatting Toolbar.
+- [x] **Sprint 23 (v2.4.0+18)**: Presentation mode slideshow viewer, slide list reordering with `onReorderItem`, top Menubar text dropdowns.
+- [x] **Sprint 22 (v2.3.0+17)**: Grid drag range selection, Shift+Click, Shift+Arrows, Enter/Tab navigation, Insert Row/Col.
+- [x] **Sprint 20 (v2.1.0)**: Presentation Animations Sidebar, Spreadsheet drag selection grid listener, SlideTable rendering.
+- [x] **Sprint 1-19**: Shared Editor Foundation, SaveManager, ExportManager, ImportManager, FormulaEngine, PDF pdfrx viewer, Image Editor canvas filters, Quill Document Editor, Version History.
 
-#### PDF Module (Sprint 6)
-- [x] PdfAnnotationDao wired for annotation persistence
-- [x] SaveAnnotations / LoadAnnotations handlers
-- [x] Auto-load annotations on PDF open
-- [x] Auto-save annotations on add/remove/update
-- [x] SetPageRange fix (was empty method body)
-- [x] ToggleAnnotationMode event + handler
-- [x] UpdateAnnotation event + handler
-- [x] currentPageAnnotations helper
-
-### 🔲 Remaining
-
-#### Document & Notes Editor (Sprint 4)
-- [ ] Replace plain TextField with flutter_quill for rich text editing
-- [ ] Wire formatting toolbar to Quill operations (bold, italic, headings, lists)
-- [ ] Image insertion in documents
-- [ ] Find & replace in documents
-- [ ] Notes: markdown rendering preview
-- [ ] DOCX import via archive + XML parser
-- [ ] DOCX export
-
-#### Spreadsheet Remaining
-- [ ] XLSX import/export via archive + XML
-- [ ] Conditional formatting engine
-- [ ] Charts via fl_chart integration
-- [ ] Wire version history on save
-
-#### Presentation Remaining
-- [ ] PPTX import/export via archive + XML
-- [ ] Tables in slides
-- [ ] Animation timeline
-
-#### File Manager (Sprint 7)
-- [ ] Local directory browsing (platform-aware)
-- [ ] File operations (copy, rename, delete, move)
-- [ ] Multi-select mode
-- [ ] Drag & drop support
-
-#### Cross-Platform & DevOps
-- [ ] CI/CD pipeline for Android APK build
-- [ ] CI/CD pipeline for Windows MSIX build
-- [ ] Docker-based test runner
-- [ ] Performance profiling pass
-- [ ] Full accessibility audit (Semantics, screen reader)
+### 📋 Backlog
+- [ ] Real-time collaborative multi-user editing (WebSockets / CRDTs).
+- [ ] Cloud Storage Provider Sync (Google Drive, OneDrive, S3).
 
 ---
 
-## Previous Sprints (Completed)
+## Detailed Historical Sprints Log (Preserved)
+
+### Sprint 28: Header Resizing, Select-All Corner & Complete Insert Suite (v2.9.0+23)
+- [x] Dedicated 6px right-edge resize handle on column headers with `SystemMouseCursors.resizeColumn`.
+- [x] Dedicated 6px bottom-edge resize handle on row headers with `SystemMouseCursors.resizeRow`.
+- [x] Select-All top-left corner box selecting full sheet grid (`SetCellRange(0, 0, rowCount - 1, colCount - 1)`).
+- [x] `_NumberFormatPicker` (`PopupMenuButton<NumberFormatType>`) eliminating text clipping.
+- [x] Google Sheets `Insert` menu dropdown (Rows, Columns, Sheet, Chart, Functions, Comment, Link, Checkbox, Dropdown).
+
+### Sprint 27: AGP 8.9.1 Upgrade & Android Build Fix (v2.8.0+22)
+- [x] Upgraded Android Gradle Plugin (AGP) version from 8.3.0 to 8.9.1 in `settings.gradle`.
+- [x] Upgraded Gradle wrapper to 8.11.1-all in `gradle-wrapper.properties`.
+- [x] Added `--no-tree-shake-icons` to Android build step in CI workflow.
+
+### Sprint 26: Spreadsheet Font Engine & Toolbar Alignment Fixes (v2.7.0+21)
+- [x] Replaced `DropdownButtonFormField` widgets with `_FontFamilyPicker` & `_FontSizePicker`.
+- [x] Added 18 standard Google Sheets / Excel font families and 16 font sizes.
+- [x] Updated `_getCellTextStyle` to apply `GoogleFonts.getFont(family)` dynamically.
+- [x] Synchronized active font family and font size on cell selection.
+
+### Sprint 25: Android Build Fix & Gradle 8.7 Upgrade (v2.6.0+20)
+- [x] Upgraded `distributionUrl` in `gradle-wrapper.properties` to `gradle-8.7-all.zip`.
+- [x] Added `--android-skip-build-dependency-validation` flag to `ci.yml`.
+
+### Sprint 24: Streamlined Single Menubar & Quick Formatting Toolbar (v2.5.0+19)
+- [x] Removed duplicate second tab row (`Home`, `Insert`, `Data`, `View`).
+- [x] Created single-row Quick Access Formatting Toolbar (`_buildQuickFormattingToolbar`).
+- [x] Top Menubar text dropdowns (`File`, `Edit`, `View`, `Insert`, `Format`, `Data`, `Tools`, `Help`).
+
+### Sprint 23: Presentation Engine & Spreadsheet Desktop Menubar (v2.4.0+18)
+- [x] Built Presenter Mode fullscreen slideshow viewer (`_PresentationModeView`).
+- [x] Updated slide list thumbnails to `ReorderableListView.builder` using `onReorderItem`.
+- [x] Sanitized `_onAddSlide` insert index clamping to prevent out of bounds RangeError crashes.
+
+### Sprint 22: Spreadsheet Engine Core Interactivity (v2.3.0+17)
+- [x] Grid drag range selection via pointer movement.
+- [x] Shift+Click range extension.
+- [x] Keyboard navigation (Tab, Shift+Tab, Enter, Shift+Enter, Arrows).
+- [x] Insert Row Above/Below & Col Left/Right.
+
+### Sprint 20: Presentation Animations Sidebar (v2.1.0)
+- [x] Wired `AnimationPanel` right-side sidebar toggle button in Presentation editor.
+- [x] Refactored drag selection to grid-level `Listener`.
+- [x] Deserialized JSON table elements dynamically on slide canvas.
+
+### Sprint 1: Shared Editor Foundation (v1.5.0)
+- [x] SaveManager<T> generic auto-save with debounce.
+- [x] ExportManager centralized export pipeline.
+- [x] ImportManager unified import.
+- [x] BackgroundTaskManager async queue.
+- [x] FileFormatRegistry format metadata.
+- [x] ImageProcessor real pixel manipulation (dart:ui).
+- [x] CsvCodec / TsvCodec delimited text codecs.
 
 ### Sprint 2: Document Editor (v1.0.0)
-- [x] Rich text editor with formatting toolbar (BLoC + Page)
-- [x] Document persistence (DocumentDao + DocumentEntity + DB migration)
-- [x] Keyboard shortcuts framework (KeyboardShortcutService)
-- [x] Document CRUD (create, open, save, delete, duplicate)
-- [x] Undo/Redo with history stack
-- [x] Autosave with configurable delay
-- [x] Document search and favorites
-- [x] Formatting toolbar (bold, italic, underline, strikethrough, headings, lists, quote, code, link)
-- [x] Word/character count status bar
-- [x] Document statistics dialog
-- [x] Navigation integration (6-tab nav with Documents)
+- [x] Rich text editor with formatting toolbar.
+- [x] Document persistence (DocumentDao + DocumentEntity).
+- [x] Keyboard shortcuts framework.
+- [x] Document CRUD (create, open, save, delete, duplicate).
 
 ### Sprint 3: Spreadsheet (v1.0.0)
-- [x] Custom grid widget with virtual scrolling
-- [x] Cell editing (text, number, date, formula)
-- [x] Formula engine (60+ functions: math, stats, text, date, logical, financial)
-- [x] Cell formatting (bold, italic, colors, alignment)
-- [x] Multiple sheets (add, rename, delete, switch)
-- [x] Sorting by column (ascending/descending)
-- [x] Freeze panes (frozen rows/cols)
-- [x] Spreadsheet persistence (SpreadsheetDao + SpreadsheetEntity + DB v3)
-- [x] Spreadsheet CRUD (create, open, save, delete, duplicate, favorites)
-- [x] Formula bar with cell reference
-- [x] Sheet tabs with rename/delete
-- [x] Autosave
+- [x] Custom grid widget with virtual scrolling.
+- [x] Cell editing (text, number, date, formula).
+- [x] Formula engine (60+ functions).
+- [x] Cell formatting (bold, italic, colors, alignment).
+- [x] Multiple sheets (add, rename, delete, switch).
 
 ### Sprint 4: Presentation (v1.0.0)
-- [x] Slide canvas with drag-and-drop elements
-- [x] Theme system with predefined layouts
-- [x] Text boxes, shapes (rectangle, circle, triangle, arrow)
-- [x] Speaker notes
-- [x] Full-screen presentation mode (keyboard nav: arrows, space, escape)
-- [x] Slide transitions (none, fade, slide, zoom)
-- [x] Slide panel with thumbnails
-- [x] Duplicate/delete slides
-- [x] Element move (drag) and resize
+- [x] Slide canvas with drag-and-drop elements.
+- [x] Theme system with predefined layouts.
+- [x] Text boxes, shapes, speaker notes, full-screen presentation mode.
 
 ### Sprint 5: PDF Suite (v1.0.0)
-- [x] PDF viewer page with canvas
-- [x] Page navigation (prev/next/go-to)
-- [x] Thumbnails sidebar
-- [x] Zoom controls (25%-500%)
-- [x] Text search dialog
-- [x] Annotations (highlight, underline, sticky note, freehand)
-- [x] Rotate pages
-- [x] Page range selection (for split/extract)
+- [x] PDF viewer page with canvas & pdfrx integration.
+- [x] Page navigation, zoom controls, text search dialog, annotations.
 
 ### Sprint 6: Image Editor (v1.0.0)
-- [x] Image viewing (zoom, pan via InteractiveViewer)
-- [x] Crop tool (free, 16:9, 4:3, 1:1 presets)
-- [x] Rotate (90°, -90°, free rotation slider)
-- [x] Resize with presets (50%, 75%, 1080p, 720p)
-- [x] Basic filters (brightness, contrast, saturation sliders)
-- [x] Flip horizontal/vertical
-- [x] Undo/redo stack
-- [x] Reset all edits
-- [x] Color matrix rendering
-- [x] Format conversion (JPEG, PNG, WebP export)
-
-### Sprint 7-12: Polish & Hardening (v1.1.0 — v1.3.2)
-- [x] WCAG AAA high contrast themes
-- [x] Version history (VersionEntity + VersionDao + DB v5)
-- [x] InputSanitizer (XSS, SQL injection, path traversal)
-- [x] Fix database PRAGMA crash
-- [x] PDF real rendering via pdfrx
-- [x] CI/CD pipeline (Cloudflare, Docker, GitHub Actions)
-- [x] 100+ BLoC unit tests
-- [x] Web build verification
-- [x] Documents inline formatting
-- [x] Slides image upload + canvas rendering
-- [x] PDF text search highlights + thumbnail sidebar
+- [x] Image crop, rotate, resize, filters, flip, color matrix rendering.
