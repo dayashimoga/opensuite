@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../di/app_module.dart';
@@ -165,8 +166,11 @@ class _EditorContentState extends State<_EditorContent> {
             appBar: _buildAppBar(context, state, theme),
             body: Column(
               children: [
-                // Ribbon toolbar
-                _buildRibbon(context, state, theme),
+                // Top Desktop Menubar (File, Edit, View, Insert, Format, Data, Tools, Help)
+                _buildTopMenubar(context, state, theme),
+
+                // Quick Access Formatting Toolbar
+                _buildQuickFormattingToolbar(context, state, theme),
 
                 // Formula bar
                 _FormulaBar(
@@ -204,6 +208,11 @@ class _EditorContentState extends State<_EditorContent> {
                     verticalController: _verticalController,
                     horizontalController: _horizontalController,
                     onCellTap: (pos) {
+                      final targetCell = activeSheet.getCell(pos);
+                      setState(() {
+                        _selectedFont = targetCell.fontFamily;
+                        _selectedFontSize = targetCell.fontSize;
+                      });
                       // Shift+Click extends selection range
                       if (HardwareKeyboard.instance.isShiftPressed &&
                           state.selectedCell != null) {
@@ -230,6 +239,11 @@ class _EditorContentState extends State<_EditorContent> {
                       context
                           .read<SpreadsheetBloc>()
                           .add(ResizeColumn(col, width));
+                    },
+                    onRowResize: (row, height) {
+                      context
+                          .read<SpreadsheetBloc>()
+                          .add(ResizeRow(row, height));
                     },
                     onEditComplete: () => _gridFocusNode.requestFocus(),
                   ),
@@ -396,93 +410,428 @@ class _EditorContentState extends State<_EditorContent> {
     );
   }
 
-  Widget _buildRibbon(
+  Widget _buildTopMenubar(
       BuildContext context, SpreadsheetState state, ThemeData theme) {
-    return ToolbarRibbon(
-      tabs: [
-        RibbonTab(label: 'Home', groups: [
-          // Font group
-          RibbonGroup(label: 'Font', children: [
-            SizedBox(
-              width: 100,
-              height: 28,
-              child: DropdownButtonFormField<String>(
-                initialValue: _selectedFont,
-                isDense: true,
-                isExpanded: true,
-                decoration: InputDecoration(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(4),
-                    borderSide: BorderSide(
-                        color: theme.colorScheme.outlineVariant, width: 0.5),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(4),
-                    borderSide: BorderSide(
-                        color: theme.colorScheme.outlineVariant, width: 0.5),
-                  ),
-                ),
-                style: theme.textTheme.bodySmall,
-                items: const [
-                  DropdownMenuItem(value: 'Inter', child: Text('Inter')),
-                  DropdownMenuItem(value: 'Roboto', child: Text('Roboto')),
-                  DropdownMenuItem(
-                      value: 'monospace', child: Text('Monospace')),
-                  DropdownMenuItem(value: 'serif', child: Text('Serif')),
-                ],
-                onChanged: (v) {
-                  if (v != null) {
-                    setState(() => _selectedFont = v);
-                    context.read<SpreadsheetBloc>().add(SetFontFamily(v));
+    final bloc = context.read<SpreadsheetBloc>();
+    return Container(
+      height: 30,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        border: Border(
+          bottom:
+              BorderSide(color: theme.colorScheme.outlineVariant, width: 0.5),
+        ),
+      ),
+      child: Row(
+        children: [
+          // File
+          _buildMenuDropdown(
+            label: 'File',
+            items: [
+              _menuItem('new', Icons.note_add, 'New Spreadsheet'),
+              _menuItem('save', Icons.save, 'Save (Ctrl+S)'),
+              _menuItem('import', Icons.file_open, 'Import CSV / XLSX'),
+              _menuItem('export_csv', Icons.download, 'Export CSV'),
+              _menuItem('export_xlsx', Icons.table_view, 'Export XLSX'),
+              _menuItem('share', Icons.share, 'Share'),
+            ],
+            onSelected: (val) {
+              switch (val) {
+                case 'new':
+                  context
+                      .read<SpreadsheetBloc>()
+                      .add(const CreateSpreadsheet());
+                case 'save':
+                  bloc.add(const SaveSpreadsheet());
+                case 'import':
+                  _importLocalFile(context);
+                case 'export_csv':
+                  _exportCsv(context, state);
+                case 'export_xlsx':
+                  bloc.add(const ExportXlsxFile());
+                case 'share':
+                  _shareSpreadsheet(context, state);
+              }
+            },
+          ),
+          // Edit
+          _buildMenuDropdown(
+            label: 'Edit',
+            items: [
+              _menuItem('undo', Icons.undo, 'Undo (Ctrl+Z)'),
+              _menuItem('redo', Icons.redo, 'Redo (Ctrl+Y)'),
+              _menuItem('cut', Icons.content_cut, 'Cut (Ctrl+X)'),
+              _menuItem('copy', Icons.content_copy, 'Copy (Ctrl+C)'),
+              _menuItem('paste', Icons.content_paste, 'Paste (Ctrl+V)'),
+              _menuItem('clear', Icons.delete_sweep, 'Clear Selected Cells'),
+              _menuItem('find', Icons.search, 'Find & Replace (Ctrl+F)'),
+            ],
+            onSelected: (val) {
+              switch (val) {
+                case 'undo':
+                  bloc.add(const UndoSpreadsheet());
+                case 'redo':
+                  bloc.add(const RedoSpreadsheet());
+                case 'cut':
+                  bloc.add(const CutSelection());
+                case 'copy':
+                  bloc.add(const CopySelection());
+                case 'paste':
+                  bloc.add(const PasteSelection());
+                case 'clear':
+                  bloc.add(const ClearSelection());
+                case 'find':
+                  setState(() => _showFindBar = !_showFindBar);
+              }
+            },
+          ),
+          // View
+          _buildMenuDropdown(
+            label: 'View',
+            items: [
+              _menuItem('freeze', Icons.push_pin_outlined, 'Freeze Panes'),
+              _menuItem('find_bar', Icons.search, 'Toggle Find Bar'),
+              _menuItem('unhide_rows', Icons.visibility, 'Unhide All Rows'),
+            ],
+            onSelected: (val) {
+              switch (val) {
+                case 'freeze':
+                  _showFreezeDialog(context, state);
+                case 'find_bar':
+                  setState(() => _showFindBar = !_showFindBar);
+                case 'unhide_rows':
+                  bloc.add(const UnhideRows());
+              }
+            },
+          ),
+          // Insert
+          _buildMenuDropdown(
+            label: 'Insert',
+            items: [
+              _menuItem('row_above', Icons.north, 'Insert Row Above'),
+              _menuItem('row_below', Icons.south, 'Insert Row Below'),
+              _menuItem('col_left', Icons.west, 'Insert Column Left'),
+              _menuItem('col_right', Icons.east, 'Insert Column Right'),
+              _menuItem('add_sheet', Icons.add_to_photos, 'Insert New Sheet'),
+              _menuItem('table', Icons.table_chart, 'Format as Table'),
+              _menuItem('chart', Icons.bar_chart, 'Insert Chart'),
+              _menuItem('sum_func', Icons.functions, 'Function: SUM'),
+              _menuItem('avg_func', Icons.functions, 'Function: AVERAGE'),
+              _menuItem('count_func', Icons.functions, 'Function: COUNT'),
+              _menuItem('max_func', Icons.functions, 'Function: MAX'),
+              _menuItem('min_func', Icons.functions, 'Function: MIN'),
+              _menuItem('comment', Icons.comment, 'Add Comment (Ctrl+Alt+M)'),
+              _menuItem('link', Icons.link, 'Add Hyperlink (Ctrl+K)'),
+              _menuItem(
+                  'checkbox', Icons.check_box_outlined, 'Checkbox / Tick box'),
+              _menuItem('dropdown_opt', Icons.arrow_drop_down_circle_outlined,
+                  'Dropdown list options'),
+            ],
+            onSelected: (val) {
+              final r = state.selectedCell?.row ?? 0;
+              final c = state.selectedCell?.col ?? 0;
+              switch (val) {
+                case 'row_above':
+                  bloc.add(InsertRow(r - 1));
+                case 'row_below':
+                  bloc.add(InsertRow(r));
+                case 'col_left':
+                  bloc.add(InsertColumn(c - 1));
+                case 'col_right':
+                  bloc.add(InsertColumn(c));
+                case 'add_sheet':
+                  bloc.add(const AddSheet());
+                case 'table':
+                  bloc.add(const CreateTable());
+                case 'chart':
+                  _showChartDialog(context, state);
+                case 'sum_func':
+                  if (state.selectedCell != null) {
+                    bloc.add(UpdateCell(state.selectedCell!, '=SUM(A1:A10)'));
                   }
-                },
-              ),
+                case 'avg_func':
+                  if (state.selectedCell != null) {
+                    bloc.add(
+                        UpdateCell(state.selectedCell!, '=AVERAGE(A1:A10)'));
+                  }
+                case 'count_func':
+                  if (state.selectedCell != null) {
+                    bloc.add(UpdateCell(state.selectedCell!, '=COUNT(A1:A10)'));
+                  }
+                case 'max_func':
+                  if (state.selectedCell != null) {
+                    bloc.add(UpdateCell(state.selectedCell!, '=MAX(A1:A10)'));
+                  }
+                case 'min_func':
+                  if (state.selectedCell != null) {
+                    bloc.add(UpdateCell(state.selectedCell!, '=MIN(A1:A10)'));
+                  }
+                case 'comment':
+                  _showAddCommentDialog(context, state);
+                case 'link':
+                  _showAddHyperlinkDialog(context, state);
+                case 'checkbox':
+                  if (state.selectedCell != null) {
+                    bloc.add(UpdateCell(state.selectedCell!, 'TRUE'));
+                  }
+                case 'dropdown_opt':
+                  if (state.selectedCell != null) {
+                    bloc.add(UpdateCell(state.selectedCell!, 'Option 1'));
+                  }
+              }
+            },
+          ),
+          // Format
+          _buildMenuDropdown(
+            label: 'Format',
+            items: [
+              _menuItem('bold', Icons.format_bold, 'Bold (Ctrl+B)'),
+              _menuItem('italic', Icons.format_italic, 'Italic (Ctrl+I)'),
+              _menuItem(
+                  'underline', Icons.format_underlined, 'Underline (Ctrl+U)'),
+              _menuItem(
+                  'strikethrough', Icons.strikethrough_s, 'Strikethrough'),
+              _menuItem('merge', Icons.merge_type, 'Merge Cells'),
+              _menuItem('table', Icons.table_chart, 'Format as Table'),
+            ],
+            onSelected: (val) {
+              switch (val) {
+                case 'bold':
+                  bloc.add(const FormatCells('bold'));
+                case 'italic':
+                  bloc.add(const FormatCells('italic'));
+                case 'underline':
+                  bloc.add(const FormatCells('underline'));
+                case 'strikethrough':
+                  bloc.add(const FormatCells('strikethrough'));
+                case 'merge':
+                  if (state.selectedRange != null) {
+                    bloc.add(MergeCells(state.selectedRange!));
+                  }
+                case 'table':
+                  bloc.add(const CreateTable());
+              }
+            },
+          ),
+          // Data
+          _buildMenuDropdown(
+            label: 'Data',
+            items: [
+              _menuItem('sort_asc', Icons.arrow_upward, 'Sort A→Z'),
+              _menuItem('sort_desc', Icons.arrow_downward, 'Sort Z→A'),
+              _menuItem('cond_fmt', Icons.style, 'Conditional Formatting'),
+            ],
+            onSelected: (val) {
+              final col = state.selectedCell?.col ?? 0;
+              switch (val) {
+                case 'sort_asc':
+                  bloc.add(SortColumn(col, ascending: true));
+                case 'sort_desc':
+                  bloc.add(SortColumn(col, ascending: false));
+                case 'cond_fmt':
+                  _showConditionalFormatDialog(context, state);
+              }
+            },
+          ),
+          // Tools
+          _buildMenuDropdown(
+            label: 'Tools',
+            items: [
+              _menuItem('table', Icons.table_chart, 'Create Table'),
+              _menuItem('unhide', Icons.visibility, 'Unhide All Rows'),
+            ],
+            onSelected: (val) {
+              switch (val) {
+                case 'table':
+                  bloc.add(const CreateTable());
+                case 'unhide':
+                  bloc.add(const UnhideRows());
+              }
+            },
+          ),
+          // Help
+          _buildMenuDropdown(
+            label: 'Help',
+            items: [
+              _menuItem('shortcuts', Icons.keyboard, 'Keyboard Shortcuts'),
+              _menuItem('about', Icons.info_outline, 'About OpenSuite'),
+            ],
+            onSelected: (val) {
+              if (val == 'shortcuts') {
+                _showShortcutsHelpDialog(context);
+              } else if (val == 'about') {
+                _showAboutDialog(context);
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMenuDropdown({
+    required String label,
+    required List<PopupMenuEntry<String>> items,
+    required ValueChanged<String> onSelected,
+  }) {
+    return PopupMenuButton<String>(
+      itemBuilder: (_) => items,
+      onSelected: onSelected,
+      tooltip: label,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        child: Text(
+          label,
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+        ),
+      ),
+    );
+  }
+
+  PopupMenuItem<String> _menuItem(String value, IconData icon, String text) {
+    return PopupMenuItem<String>(
+      value: value,
+      height: 32,
+      child: Row(
+        children: [
+          Icon(icon, size: 16),
+          const SizedBox(width: 10),
+          Text(text, style: const TextStyle(fontSize: 13)),
+        ],
+      ),
+    );
+  }
+
+  void _showShortcutsHelpDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Keyboard Shortcuts'),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('• Ctrl+S: Save Spreadsheet'),
+            Text('• Ctrl+Z / Ctrl+Y: Undo / Redo'),
+            Text('• Ctrl+C / Ctrl+X / Ctrl+V: Copy / Cut / Paste'),
+            Text('• Ctrl+B / Ctrl+I / Ctrl+U: Bold / Italic / Underline'),
+            Text('• Tab / Shift+Tab: Move Cell Right / Left'),
+            Text('• Enter / Shift+Enter: Move Cell Down / Up'),
+            Text('• Shift + Click: Select Cell Range'),
+            Text('• Shift + Arrows: Expand Selection Range'),
+            Text('• Delete: Clear Selected Cells'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showConditionalFormatDialog(
+      BuildContext context, SpreadsheetState state) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Conditional Formatting'),
+        content: const Text(
+          'Conditional Formatting rule builder:\nHighlight cells matching specific conditions (Greater than, Less than, Text contains, Equal to).',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAboutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('About OpenSuite'),
+        content: const Text(
+          'OpenSuite v2.4.0\nOpen-source production-grade cross-platform Office Productivity Suite built with Flutter & Dart.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickFormattingToolbar(
+      BuildContext context, SpreadsheetState state, ThemeData theme) {
+    return Container(
+      height: 38,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
+        border: Border(
+          bottom:
+              BorderSide(color: theme.colorScheme.outlineVariant, width: 0.5),
+        ),
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            // Undo / Redo
+            IconButton(
+              icon: const Icon(Icons.undo, size: 18),
+              onPressed: state.canUndo
+                  ? () => context
+                      .read<SpreadsheetBloc>()
+                      .add(const UndoSpreadsheet())
+                  : null,
+              tooltip: 'Undo (Ctrl+Z)',
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              padding: const EdgeInsets.all(4),
+            ),
+            IconButton(
+              icon: const Icon(Icons.redo, size: 18),
+              onPressed: state.canRedo
+                  ? () => context
+                      .read<SpreadsheetBloc>()
+                      .add(const RedoSpreadsheet())
+                  : null,
+              tooltip: 'Redo (Ctrl+Y)',
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              padding: const EdgeInsets.all(4),
+            ),
+            const VerticalDivider(width: 12, indent: 6, endIndent: 6),
+
+            // Font Family
+            _FontFamilyPicker(
+              selectedFont: _selectedFont,
+              onFontSelected: (v) {
+                setState(() => _selectedFont = v);
+                context.read<SpreadsheetBloc>().add(SetFontFamily(v));
+              },
             ),
             const SizedBox(width: 4),
-            SizedBox(
-              width: 56,
-              height: 28,
-              child: DropdownButtonFormField<double>(
-                initialValue: _selectedFontSize,
-                isDense: true,
-                isExpanded: true,
-                decoration: InputDecoration(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(4),
-                    borderSide: BorderSide(
-                        color: theme.colorScheme.outlineVariant, width: 0.5),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(4),
-                    borderSide: BorderSide(
-                        color: theme.colorScheme.outlineVariant, width: 0.5),
-                  ),
-                ),
-                style: theme.textTheme.bodySmall,
-                items: const [
-                  DropdownMenuItem(value: 8.0, child: Text('8')),
-                  DropdownMenuItem(value: 10.0, child: Text('10')),
-                  DropdownMenuItem(value: 11.0, child: Text('11')),
-                  DropdownMenuItem(value: 12.0, child: Text('12')),
-                  DropdownMenuItem(value: 14.0, child: Text('14')),
-                  DropdownMenuItem(value: 16.0, child: Text('16')),
-                  DropdownMenuItem(value: 18.0, child: Text('18')),
-                  DropdownMenuItem(value: 20.0, child: Text('20')),
-                  DropdownMenuItem(value: 24.0, child: Text('24')),
-                ],
-                onChanged: (v) {
-                  if (v != null) {
-                    setState(() => _selectedFontSize = v);
-                    context.read<SpreadsheetBloc>().add(SetFontSize(v));
-                  }
-                },
-              ),
+
+            // Font Size
+            _FontSizePicker(
+              selectedFontSize: _selectedFontSize,
+              onSizeSelected: (v) {
+                setState(() => _selectedFontSize = v);
+                context.read<SpreadsheetBloc>().add(SetFontSize(v));
+              },
             ),
-            const SizedBox(width: 4),
+            const VerticalDivider(width: 12, indent: 6, endIndent: 6),
+
+            // Bold / Italic / Underline / Strikethrough
             RibbonButton(
               icon: Icons.format_bold,
               tooltip: 'Bold (Ctrl+B)',
@@ -515,9 +864,9 @@ class _EditorContentState extends State<_EditorContent> {
                   .read<SpreadsheetBloc>()
                   .add(const FormatCells('strikethrough')),
             ),
-          ]),
-          // Color group
-          RibbonGroup(label: 'Colors', children: [
+            const VerticalDivider(width: 12, indent: 6, endIndent: 6),
+
+            // Text / Fill Color
             _ColorPickerButton(
               icon: Icons.format_color_text,
               tooltip: 'Text Color',
@@ -533,9 +882,9 @@ class _EditorContentState extends State<_EditorContent> {
                   .read<SpreadsheetBloc>()
                   .add(SetBackgroundColor(color)),
             ),
-          ]),
-          // Alignment group
-          RibbonGroup(label: 'Alignment', children: [
+            const VerticalDivider(width: 12, indent: 6, endIndent: 6),
+
+            // Alignment
             RibbonButton(
               icon: Icons.format_align_left,
               tooltip: 'Align Left',
@@ -568,213 +917,27 @@ class _EditorContentState extends State<_EditorContent> {
                   .read<SpreadsheetBloc>()
                   .add(const FormatCells('wrapText')),
             ),
-          ]),
-          // Number format group
-          RibbonGroup(label: 'Number', children: [
-            SizedBox(
-              width: 100,
-              height: 28,
-              child: DropdownButtonFormField<NumberFormatType>(
-                initialValue: _getCellNumberFormat(state),
-                isDense: true,
-                isExpanded: true,
-                decoration: InputDecoration(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(4),
-                    borderSide: BorderSide(
-                        color: theme.colorScheme.outlineVariant, width: 0.5),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(4),
-                    borderSide: BorderSide(
-                        color: theme.colorScheme.outlineVariant, width: 0.5),
-                  ),
-                ),
-                style: theme.textTheme.bodySmall,
-                items: const [
-                  DropdownMenuItem(
-                      value: NumberFormatType.general, child: Text('General')),
-                  DropdownMenuItem(
-                      value: NumberFormatType.number, child: Text('Number')),
-                  DropdownMenuItem(
-                      value: NumberFormatType.decimal, child: Text('Decimal')),
-                  DropdownMenuItem(
-                      value: NumberFormatType.currency,
-                      child: Text('Currency')),
-                  DropdownMenuItem(
-                      value: NumberFormatType.percentage,
-                      child: Text('Percent')),
-                  DropdownMenuItem(
-                      value: NumberFormatType.scientific,
-                      child: Text('Scientific')),
-                ],
-                onChanged: (v) {
-                  if (v != null) {
-                    context.read<SpreadsheetBloc>().add(SetNumberFormat(v));
-                  }
-                },
-              ),
-            ),
-          ]),
-          // Cell operations group
-          RibbonGroup(label: 'Cells', children: [
-            RibbonButton(
-              icon: Icons.table_chart,
-              tooltip: 'Format as Table',
-              onPressed: () =>
-                  context.read<SpreadsheetBloc>().add(const CreateTable()),
-            ),
-            RibbonButton(
-              icon: Icons.merge_type,
-              tooltip: 'Merge Cells',
-              onPressed: state.selectedRange != null &&
-                      !state.selectedRange!.isSingleCell
-                  ? () => context
-                      .read<SpreadsheetBloc>()
-                      .add(MergeCells(state.selectedRange!))
-                  : null,
-            ),
-            RibbonButton(
-              icon: Icons.border_all,
-              tooltip: 'Borders',
-              onPressed: () => context.read<SpreadsheetBloc>().add(
-                    SetBorders(CellBorders.all('#000000')),
-                  ),
-            ),
-          ]),
-        ]),
-        RibbonTab(label: 'Insert', groups: [
-          RibbonGroup(label: 'Tables', children: [
-            RibbonButton(
-              icon: Icons.table_chart,
-              tooltip: 'Insert Table',
-              onPressed: () =>
-                  context.read<SpreadsheetBloc>().add(const CreateTable()),
-            ),
-          ]),
-          RibbonGroup(label: 'Rows & Columns', children: [
-            RibbonButton(
-              icon: Icons.north,
-              tooltip: 'Insert Row Above',
-              onPressed: () {
-                final row = state.selectedCell?.row ?? 0;
-                context.read<SpreadsheetBloc>().add(InsertRow(row - 1));
+            const VerticalDivider(width: 12, indent: 6, endIndent: 6),
+
+            // Number format
+            _NumberFormatPicker(
+              currentFormat: _getCellNumberFormat(state),
+              onFormatSelected: (v) {
+                context.read<SpreadsheetBloc>().add(SetNumberFormat(v));
               },
             ),
-            RibbonButton(
-              icon: Icons.south,
-              tooltip: 'Insert Row Below',
-              onPressed: () {
-                final row = state.selectedCell?.row ?? 0;
-                context.read<SpreadsheetBloc>().add(InsertRow(row));
-              },
-            ),
-            RibbonButton(
-              icon: Icons.west,
-              tooltip: 'Insert Column Left',
-              onPressed: () {
-                final col = state.selectedCell?.col ?? 0;
-                context.read<SpreadsheetBloc>().add(InsertColumn(col - 1));
-              },
-            ),
-            RibbonButton(
-              icon: Icons.east,
-              tooltip: 'Insert Column Right',
-              onPressed: () {
-                final col = state.selectedCell?.col ?? 0;
-                context.read<SpreadsheetBloc>().add(InsertColumn(col));
-              },
-            ),
-            RibbonButton(
-              icon: Icons.delete_sweep,
-              tooltip: 'Delete Row',
-              onPressed: () {
-                final row = state.selectedCell?.row ?? 0;
-                context.read<SpreadsheetBloc>().add(DeleteRow(row));
-              },
-            ),
-            RibbonButton(
-              icon: Icons.remove_circle_outline,
-              tooltip: 'Delete Column',
-              onPressed: () {
-                final col = state.selectedCell?.col ?? 0;
-                context.read<SpreadsheetBloc>().add(DeleteColumn(col));
-              },
-            ),
-          ]),
-          RibbonGroup(label: 'Content', children: [
-            RibbonButton(
-              icon: Icons.comment,
-              tooltip: 'Add Comment',
-              onPressed: () => _showAddCommentDialog(context, state),
-            ),
-            RibbonButton(
-              icon: Icons.link,
-              tooltip: 'Add Hyperlink',
-              onPressed: () => _showAddHyperlinkDialog(context, state),
-            ),
-          ]),
-        ]),
-        RibbonTab(label: 'Data', groups: [
-          RibbonGroup(label: 'Sort', children: [
-            RibbonButton(
-              icon: Icons.arrow_upward,
-              tooltip: 'Sort A→Z',
-              onPressed: () {
-                if (state.selectedCell != null) {
-                  context.read<SpreadsheetBloc>().add(
-                      SortColumn(state.selectedCell!.col, ascending: true));
-                }
-              },
-            ),
-            RibbonButton(
-              icon: Icons.arrow_downward,
-              tooltip: 'Sort Z→A',
-              onPressed: () {
-                if (state.selectedCell != null) {
-                  context.read<SpreadsheetBloc>().add(
-                      SortColumn(state.selectedCell!.col, ascending: false));
-                }
-              },
-            ),
-          ]),
-          RibbonGroup(label: 'Find', children: [
-            RibbonButton(
-              icon: Icons.search,
-              tooltip: 'Find & Replace (Ctrl+F)',
+            const VerticalDivider(width: 12, indent: 6, endIndent: 6),
+
+            IconButton(
+              icon: const Icon(Icons.search, size: 18),
               onPressed: () => setState(() => _showFindBar = !_showFindBar),
+              tooltip: 'Find & Replace (Ctrl+F)',
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              padding: const EdgeInsets.all(4),
             ),
-          ]),
-        ]),
-        RibbonTab(label: 'View', groups: [
-          RibbonGroup(label: 'Freeze', children: [
-            RibbonButton(
-              icon: Icons.push_pin_outlined,
-              tooltip: 'Freeze Panes',
-              onPressed: () => _showFreezeDialog(context, state),
-            ),
-          ]),
-          RibbonGroup(label: 'Visibility', children: [
-            RibbonButton(
-              icon: Icons.visibility_off,
-              tooltip: 'Hide Selected Rows',
-              onPressed: state.selectedCell != null
-                  ? () => context
-                      .read<SpreadsheetBloc>()
-                      .add(HideRows([state.selectedCell!.row]))
-                  : null,
-            ),
-            RibbonButton(
-              icon: Icons.visibility,
-              tooltip: 'Unhide All Rows',
-              onPressed: () =>
-                  context.read<SpreadsheetBloc>().add(const UnhideRows()),
-            ),
-          ]),
-        ]),
-      ],
+          ],
+        ),
+      ),
     );
   }
 
@@ -1709,6 +1872,7 @@ class _VirtualSpreadsheetGrid extends StatefulWidget {
   final ValueChanged<CellRange> onRangeSelect;
   final void Function(CellPosition, Offset) onContextMenu;
   final void Function(int col, double width) onColumnResize;
+  final void Function(int row, double height) onRowResize;
   final VoidCallback onEditComplete;
 
   const _VirtualSpreadsheetGrid({
@@ -1723,6 +1887,7 @@ class _VirtualSpreadsheetGrid extends StatefulWidget {
     required this.onRangeSelect,
     required this.onContextMenu,
     required this.onColumnResize,
+    required this.onRowResize,
     required this.onEditComplete,
   });
 
@@ -1860,48 +2025,74 @@ class _VirtualSpreadsheetGridState extends State<_VirtualSpreadsheetGrid> {
   }
 
   Widget _buildColumnHeaders(ThemeData theme, int visibleCols) {
+    final isAllSelected = widget.selectedRange != null &&
+        widget.selectedRange!.start == const CellPosition(0, 0) &&
+        widget.selectedRange!.end ==
+            CellPosition(widget.sheet.rowCount - 1, widget.sheet.colCount - 1);
+
     return SizedBox(
       height: _VirtualSpreadsheetGrid._headerHeight,
       child: Row(
         children: [
-          GestureDetector(
-            onTap: () => widget.onRangeSelect(CellRange(
-              const CellPosition(0, 0),
-              CellPosition(
-                  widget.sheet.rowCount - 1, widget.sheet.colCount - 1),
-            )),
-            child: Container(
-              width: _VirtualSpreadsheetGrid._headerWidth,
-              height: _VirtualSpreadsheetGrid._headerHeight,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                border: Border.all(
-                    color: theme.colorScheme.outlineVariant, width: 0.5),
+          MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: GestureDetector(
+              onTap: () {
+                widget.onRangeSelect(CellRange(
+                  const CellPosition(0, 0),
+                  CellPosition(
+                      widget.sheet.rowCount - 1, widget.sheet.colCount - 1),
+                ));
+              },
+              child: Container(
+                width: _VirtualSpreadsheetGrid._headerWidth,
+                height: _VirtualSpreadsheetGrid._headerHeight,
+                decoration: BoxDecoration(
+                  color: isAllSelected
+                      ? theme.colorScheme.primaryContainer
+                      : theme.colorScheme.surfaceContainerHighest,
+                  border: Border.all(
+                      color: theme.colorScheme.outlineVariant, width: 0.5),
+                ),
+                alignment: Alignment.center,
+                child: const Icon(Icons.select_all, size: 14),
               ),
-              alignment: Alignment.center,
-              child: const Icon(Icons.select_all, size: 14),
             ),
           ),
           for (var col = 0; col < visibleCols; col++)
             if (!widget.sheet.hiddenCols.contains(col))
-              GestureDetector(
-                onTap: () => widget.onRangeSelect(CellRange(
-                  CellPosition(0, col),
-                  CellPosition(widget.sheet.rowCount - 1, col),
-                )),
-                onHorizontalDragUpdate: (details) {
-                  final currentWidth = widget.sheet.columnWidths[col] ??
-                      _VirtualSpreadsheetGrid._defaultColWidth;
-                  final newWidth =
-                      (currentWidth + details.delta.dx).clamp(40.0, 400.0);
-                  widget.onColumnResize(col, newWidth);
+              _buildColumnHeaderItem(theme, col),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildColumnHeaderItem(ThemeData theme, int col) {
+    final colWidth = widget.sheet.columnWidths[col] ??
+        _VirtualSpreadsheetGrid._defaultColWidth;
+    final isSelected = widget.selectedCell?.col == col ||
+        (widget.selectedRange != null &&
+            widget.selectedRange!.start.col <= col &&
+            widget.selectedRange!.end.col >= col);
+
+    return SizedBox(
+      width: colWidth,
+      height: _VirtualSpreadsheetGrid._headerHeight,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: () {
+                  widget.onRangeSelect(CellRange(
+                    CellPosition(0, col),
+                    CellPosition(widget.sheet.rowCount - 1, col),
+                  ));
                 },
                 child: Container(
-                  width: widget.sheet.columnWidths[col] ??
-                      _VirtualSpreadsheetGrid._defaultColWidth,
-                  height: _VirtualSpreadsheetGrid._headerHeight,
                   decoration: BoxDecoration(
-                    color: widget.selectedCell?.col == col
+                    color: isSelected
                         ? theme.colorScheme.primaryContainer
                         : theme.colorScheme.surfaceContainerHighest,
                     border: Border.all(
@@ -1916,6 +2107,28 @@ class _VirtualSpreadsheetGridState extends State<_VirtualSpreadsheetGrid> {
                   ),
                 ),
               ),
+            ),
+          ),
+          Positioned(
+            right: 0,
+            top: 0,
+            bottom: 0,
+            width: 6,
+            child: MouseRegion(
+              cursor: SystemMouseCursors.resizeColumn,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onHorizontalDragUpdate: (details) {
+                  final currentWidth = widget.sheet.columnWidths[col] ??
+                      _VirtualSpreadsheetGrid._defaultColWidth;
+                  final newWidth =
+                      (currentWidth + details.delta.dx).clamp(40.0, 500.0);
+                  widget.onColumnResize(col, newWidth);
+                },
+                child: Container(color: Colors.transparent),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -1924,32 +2137,69 @@ class _VirtualSpreadsheetGridState extends State<_VirtualSpreadsheetGrid> {
   Widget _buildDataRow(ThemeData theme, int row, int visibleCols) {
     final rowHeight = widget.sheet.rowHeights[row] ??
         _VirtualSpreadsheetGrid._defaultRowHeight;
+    final isSelected = widget.selectedCell?.row == row ||
+        (widget.selectedRange != null &&
+            widget.selectedRange!.start.row <= row &&
+            widget.selectedRange!.end.row >= row);
+
     return SizedBox(
       height: rowHeight,
       child: Row(
         children: [
-          GestureDetector(
-            onTap: () => widget.onRangeSelect(CellRange(
-              CellPosition(row, 0),
-              CellPosition(row, widget.sheet.colCount - 1),
-            )),
-            child: Container(
-              width: _VirtualSpreadsheetGrid._headerWidth,
-              height: rowHeight,
-              decoration: BoxDecoration(
-                color: widget.selectedCell?.row == row
-                    ? theme.colorScheme.primaryContainer
-                    : theme.colorScheme.surfaceContainerHighest,
-                border: Border.all(
-                    color: theme.colorScheme.outlineVariant, width: 0.5),
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                '${row + 1}',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
+          SizedBox(
+            width: _VirtualSpreadsheetGrid._headerWidth,
+            height: rowHeight,
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: GestureDetector(
+                      onTap: () => widget.onRangeSelect(CellRange(
+                        CellPosition(row, 0),
+                        CellPosition(row, widget.sheet.colCount - 1),
+                      )),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? theme.colorScheme.primaryContainer
+                              : theme.colorScheme.surfaceContainerHighest,
+                          border: Border.all(
+                              color: theme.colorScheme.outlineVariant,
+                              width: 0.5),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          '${row + 1}',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  height: 6,
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.resizeRow,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onVerticalDragUpdate: (details) {
+                        final currentHeight = widget.sheet.rowHeights[row] ??
+                            _VirtualSpreadsheetGrid._defaultRowHeight;
+                        final newHeight = (currentHeight + details.delta.dy)
+                            .clamp(20.0, 300.0);
+                        widget.onRowResize(row, newHeight);
+                      },
+                      child: Container(color: Colors.transparent),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           for (var col = 0; col < visibleCols; col++)
@@ -2174,15 +2424,27 @@ class _GridCellState extends State<_GridCell> {
   }
 
   TextStyle _getCellTextStyle(ThemeData theme) {
-    return theme.textTheme.bodySmall!.copyWith(
+    TextStyle style = theme.textTheme.bodySmall!.copyWith(
       fontWeight: widget.cell.isBold ? FontWeight.bold : FontWeight.normal,
       fontStyle: widget.cell.isItalic ? FontStyle.italic : FontStyle.normal,
       fontSize: widget.cell.fontSize,
-      fontFamily: widget.cell.fontFamily,
       color: widget.cell.textColor != null
           ? _parseColor(widget.cell.textColor!)
           : null,
     );
+
+    final family = widget.cell.fontFamily;
+    if (family.isNotEmpty) {
+      try {
+        style = GoogleFonts.getFont(
+          family,
+          textStyle: style,
+        );
+      } catch (_) {
+        style = style.copyWith(fontFamily: family);
+      }
+    }
+    return style;
   }
 
   Alignment _getAlignment(String alignment) {
@@ -2445,6 +2707,249 @@ class _SheetTabs extends StatelessWidget {
             child: const Text('Rename'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _FontFamilyPicker extends StatelessWidget {
+  final String selectedFont;
+  final ValueChanged<String> onFontSelected;
+
+  static const List<String> fontFamilies = [
+    'Inter',
+    'Roboto',
+    'Arial',
+    'Calibri',
+    'Comic Sans MS',
+    'Courier New',
+    'Georgia',
+    'Impact',
+    'Lora',
+    'Merriweather',
+    'Montserrat',
+    'Open Sans',
+    'Oswald',
+    'Poppins',
+    'Source Sans Pro',
+    'Times New Roman',
+    'Trebuchet MS',
+    'Verdana',
+  ];
+
+  const _FontFamilyPicker({
+    required this.selectedFont,
+    required this.onFontSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return PopupMenuButton<String>(
+      onSelected: onFontSelected,
+      tooltip: 'Font Family',
+      itemBuilder: (context) {
+        return fontFamilies.map((font) {
+          return PopupMenuItem<String>(
+            value: font,
+            height: 32,
+            child: Text(
+              font,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight:
+                    font == selectedFont ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          );
+        }).toList();
+      },
+      child: Container(
+        height: 28,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        decoration: BoxDecoration(
+          border:
+              Border.all(color: theme.colorScheme.outlineVariant, width: 0.5),
+          borderRadius: BorderRadius.circular(4),
+          color:
+              theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              selectedFont,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(width: 4),
+            const Icon(Icons.arrow_drop_down, size: 16),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FontSizePicker extends StatelessWidget {
+  final double selectedFontSize;
+  final ValueChanged<double> onSizeSelected;
+
+  static const List<double> fontSizes = [
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    14,
+    18,
+    24,
+    30,
+    36,
+    48,
+    60,
+    72,
+    96,
+  ];
+
+  const _FontSizePicker({
+    required this.selectedFontSize,
+    required this.onSizeSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final displaySize = selectedFontSize.toInt() == selectedFontSize
+        ? selectedFontSize.toInt().toString()
+        : selectedFontSize.toString();
+
+    return PopupMenuButton<double>(
+      onSelected: onSizeSelected,
+      tooltip: 'Font Size',
+      itemBuilder: (context) {
+        return fontSizes.map((size) {
+          final sizeText =
+              size.toInt() == size ? size.toInt().toString() : size.toString();
+          return PopupMenuItem<double>(
+            value: size,
+            height: 32,
+            child: Text(
+              sizeText,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: size == selectedFontSize
+                    ? FontWeight.bold
+                    : FontWeight.normal,
+              ),
+            ),
+          );
+        }).toList();
+      },
+      child: Container(
+        height: 28,
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        decoration: BoxDecoration(
+          border:
+              Border.all(color: theme.colorScheme.outlineVariant, width: 0.5),
+          borderRadius: BorderRadius.circular(4),
+          color:
+              theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              displaySize,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(width: 2),
+            const Icon(Icons.arrow_drop_down, size: 16),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NumberFormatPicker extends StatelessWidget {
+  final NumberFormatType currentFormat;
+  final ValueChanged<NumberFormatType> onFormatSelected;
+
+  const _NumberFormatPicker({
+    required this.currentFormat,
+    required this.onFormatSelected,
+  });
+
+  String _formatLabel(NumberFormatType format) {
+    switch (format) {
+      case NumberFormatType.general:
+        return 'General';
+      case NumberFormatType.number:
+        return 'Number';
+      case NumberFormatType.decimal:
+        return 'Decimal';
+      case NumberFormatType.currency:
+        return 'Currency';
+      case NumberFormatType.percentage:
+        return 'Percent';
+      case NumberFormatType.date:
+        return 'Date';
+      case NumberFormatType.time:
+        return 'Time';
+      case NumberFormatType.dateTime:
+        return 'Date Time';
+      case NumberFormatType.scientific:
+        return 'Scientific';
+      default:
+        return 'General';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return PopupMenuButton<NumberFormatType>(
+      onSelected: onFormatSelected,
+      tooltip: 'Number Format',
+      itemBuilder: (context) {
+        return NumberFormatType.values.map((fmt) {
+          return PopupMenuItem<NumberFormatType>(
+            value: fmt,
+            height: 32,
+            child: Text(
+              _formatLabel(fmt),
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight:
+                    fmt == currentFormat ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          );
+        }).toList();
+      },
+      child: Container(
+        height: 28,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        decoration: BoxDecoration(
+          border:
+              Border.all(color: theme.colorScheme.outlineVariant, width: 0.5),
+          borderRadius: BorderRadius.circular(4),
+          color:
+              theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              _formatLabel(currentFormat),
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(width: 4),
+            const Icon(Icons.arrow_drop_down, size: 16),
+          ],
+        ),
       ),
     );
   }

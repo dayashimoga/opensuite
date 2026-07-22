@@ -636,11 +636,13 @@ class PresentationBloc extends Bloc<PresentationEvent, PresentationState> {
       layout: event.layout,
       elements: event.initialElements ?? const [],
     );
+    final insertIndex =
+        (state.activeSlideIndex + 1).clamp(0, state.slides.length);
     final newSlides = List<SlideData>.from(state.slides)
-      ..insert(state.activeSlideIndex + 1, newSlide);
+      ..insert(insertIndex, newSlide);
     emit(state.copyWith(
       slides: newSlides,
-      activeSlideIndex: state.activeSlideIndex + 1,
+      activeSlideIndex: insertIndex,
       hasUnsavedChanges: true,
     ));
     _scheduleAutoSave();

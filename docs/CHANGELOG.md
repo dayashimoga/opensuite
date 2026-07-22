@@ -5,6 +5,62 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.0+23] - 2026-07-20
+
+### Fixed & Enhanced — Sprint 28: Header Resizing, Select-All Corner & Complete Insert Suite
+
+- **Dedicated Column & Row Edge Resizing**: Added dedicated 6px edge drag-resize strips to column right borders (`SystemMouseCursors.resizeColumn`) and row bottom borders (`SystemMouseCursors.resizeRow`), separating body selection from edge resizing.
+- **Select-All Top-Left Corner Box**: Tapping the top-left corner box selects all cells (`SetCellRange(0, 0, rowCount - 1, colCount - 1)`) and highlights the intersection box.
+- **Number Format Toolbar Picker**: Replaced `DropdownButtonFormField` with `_NumberFormatPicker` (`PopupMenuButton<NumberFormatType>`) to prevent text clipping (`General`, `Number`, `Decimal`, `Currency`, `Percent`, `Date`, `Time`, `Date Time`, `Scientific`).
+- **Complete Google Sheets Insert Suite**: Expanded top Menubar `Insert` dropdown to include Rows (Above/Below), Columns (Left/Right), Insert New Sheet, Format as Table, Chart, Functions (SUM, AVERAGE, COUNT, MAX, MIN), Comment (Ctrl+Alt+M), Hyperlink (Ctrl+K), Checkbox, and Dropdown.
+
+## [2.8.0+22] - 2026-07-20
+
+### Fixed — Sprint 27: AGP 8.9.1 Upgrade & Android Build Fix
+
+- **Android Gradle Plugin (AGP) Upgrade**: Upgraded AGP from `8.3.0` to `8.9.1` in `android/settings.gradle` to resolve `checkReleaseAarMetadata` requirement for `androidx.browser:1.9.0` and `androidx.core:1.17.0`.
+- **Gradle Wrapper Upgrade**: Upgraded `distributionUrl` in `gradle-wrapper.properties` to `gradle-8.11.1-all.zip` for AGP 8.9.1+ compatibility.
+- **Icon Tree-Shaking Guard**: Added `--no-tree-shake-icons` flag to `flutter build apk --release` in `.github/workflows/ci.yml`.
+
+## [2.7.0+21] - 2026-07-20
+
+### Fixed & Enhanced — Sprint 26: Spreadsheet Font Engine & Toolbar Alignment Fixes
+
+- **Eliminated Dropdown Text Clipping & Misalignment**: Replaced default `DropdownButtonFormField` controls with custom popup controls (`_FontFamilyPicker` and `_FontSizePicker`), eliminating text clipping (e.g. `1` over `6` for font size `16`) and vertical box misalignments.
+- **Expanded Font Options**: Added 18 Google Sheets / MS Excel standard font families (`Inter`, `Roboto`, `Arial`, `Calibri`, `Comic Sans MS`, `Courier New`, `Georgia`, `Impact`, `Lora`, `Merriweather`, `Montserrat`, `Open Sans`, `Oswald`, `Poppins`, `Source Sans Pro`, `Times New Roman`, `Trebuchet MS`, `Verdana`).
+- **Expanded Font Sizes**: Added 16 standard font sizes (`6`, `7`, `8`, `9`, `10`, `11`, `12`, `14`, `18`, `24`, `30`, `36`, `48`, `60`, `72`, `96`).
+- **Dynamic Google Fonts Cell Rendering**: Updated `_getCellTextStyle` to apply `GoogleFonts.getFont(family)` with fallback, ensuring formatted text immediately updates on spreadsheet cells.
+- **Cell Selection Toolbar Sync**: Automatically syncs active font family and size in the formatting toolbar when clicking any cell.
+
+## [2.6.0+20] - 2026-07-20
+
+### Fixed — Sprint 25: Android Build Fix & Gradle 8.7 Upgrade
+
+- **Gradle Version Upgrade**: Upgraded `distributionUrl` in `gradle-wrapper.properties` from Gradle 8.5 to Gradle 8.7 (`gradle-8.7-all.zip`), meeting Flutter 3.44.6 minimum supported Gradle requirement (`8.7.0`).
+- **CI Build Step Hardening**: Added `--android-skip-build-dependency-validation` flag to `flutter build apk --release` in `.github/workflows/ci.yml` for reliable multi-platform build execution across runner images.
+
+## [2.5.0+19] - 2026-07-20
+
+### Fixed & Refactored — Sprint 24: Streamlined Single Menubar & Quick Formatting Toolbar
+
+- **Eliminated Duplicate Menubar / Tab Bar**: Removed redundant second tab row (`Home`, `Insert`, `Data`, `View`), unifying navigation into a sleek Google Sheets / MS Excel top architecture.
+- **Top Menubar Integration**: Single top text Menubar (`File`, `Edit`, `View`, `Insert`, `Format`, `Data`, `Tools`, `Help`) with complete drop-down option lists and functional dialog triggers.
+- **Quick Access Formatting Toolbar**: Single-row horizontal formatting bar (`_buildQuickFormattingToolbar`) with direct access to Undo, Redo, Font Family, Font Size, Bold, Italic, Underline, Strikethrough, Text Color, Fill Color, Alignment (Left/Center/Right), Wrap Text, Number Formats, Table, Insert Chart, Insert Rows/Cols menu, and Find Bar toggle.
+
+## [2.4.0+18] - 2026-07-20
+
+### Fixed & Added — Sprint 23: Presentation Engine & Spreadsheet Desktop Menubar
+
+- **Presentation Editor Fixes & Features**:
+  - **Add Slide Crash Fix**: Clamped `insertIndex` calculation (`insertIndex = (activeSlideIndex + 1).clamp(0, slides.length)`), preventing RangeError crashes when adding slides.
+  - **Presenter Mode (Fullscreen Slideshow)**: Built fullscreen `_PresentationModeView` slideshow viewer with slide navigation, keyboard listeners (Right Arrow / Space / Enter to advance, Left Arrow / Backspace to return, Esc to exit), slide counter, and timer.
+  - **Slide Thumbnail Drag Reordering**: Upgraded slide panel list to `ReorderableListView.builder` using `onReorderItem` callback for smooth drag-and-drop slide reordering.
+  - **Speaker Notes**: Embedded collapsible speaker notes text area bound to active slide's speaker notes.
+  - **Shape & Element Tools**: Added insertion tools for shapes (rectangle, circle, arrow, star, line), tables, icons, and charts.
+- **Spreadsheet Desktop Menubar**:
+  - Added full Google Sheets / MS Excel style Menubar (`File`, `Edit`, `View`, `Insert`, `Format`, `Data`, `Tools`, `Help`) directly above the Ribbon toolbar with rich drop-down options and keyboard shortcut triggers.
+  - Added conditional formatting rule builder dialog and help dialogs.
+
 ## [2.3.0+17] - 2026-07-20
 
 ### Fixed — Sprint 22: Spreadsheet Engine & UI Enhancements

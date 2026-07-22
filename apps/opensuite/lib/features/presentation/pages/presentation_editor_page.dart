@@ -254,9 +254,7 @@ class _EditorContentState extends State<_EditorContent> {
                   const SizedBox(width: 8),
                   // Present button
                   FilledButton.tonalIcon(
-                    onPressed: () => context
-                        .read<PresentationBloc>()
-                        .add(const TogglePresentationMode()),
+                    onPressed: () => _startPresenterMode(context, state),
                     icon: const Icon(Icons.slideshow, size: 18),
                     label: const Text('Present'),
                   ),
@@ -364,6 +362,39 @@ class _EditorContentState extends State<_EditorContent> {
               ),
             ),
           ),
+        );
+      },
+    );
+  }
+
+  void _startPresenterMode(BuildContext context, PresentationState state) {
+    if (state.slides.isEmpty) return;
+    int currentIndex = state.activeSlideIndex.clamp(0, state.slides.length - 1);
+
+    showDialog(
+      context: context,
+      useSafeArea: false,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            final currentSlide = state.slides[currentIndex];
+            return _PresentationModeView(
+              slide: currentSlide,
+              slideIndex: currentIndex,
+              totalSlides: state.slides.length,
+              onExit: () => Navigator.of(dialogContext).pop(),
+              onNext: () {
+                if (currentIndex < state.slides.length - 1) {
+                  setDialogState(() => currentIndex++);
+                }
+              },
+              onPrevious: () {
+                if (currentIndex > 0) {
+                  setDialogState(() => currentIndex--);
+                }
+              },
+            );
+          },
         );
       },
     );
@@ -726,12 +757,18 @@ class _SlidePanel extends StatelessWidget {
       child: Column(
         children: [
           Expanded(
-            child: ListView.builder(
+            child: ReorderableListView.builder(
               padding: const EdgeInsets.all(8),
               itemCount: slides.length,
+              onReorderItem: (oldIndex, newIndex) {
+                context
+                    .read<PresentationBloc>()
+                    .add(ReorderSlides(oldIndex, newIndex));
+              },
               itemBuilder: (context, index) {
                 final isActive = index == activeIndex;
                 return GestureDetector(
+                  key: ValueKey(slides[index].id),
                   onTap: () => onSelect(index),
                   onLongPress: () => _showSlideMenu(context, index),
                   child: Container(

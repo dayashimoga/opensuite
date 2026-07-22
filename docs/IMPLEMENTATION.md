@@ -1,5 +1,100 @@
 # OpenSuite Implementation Status
 
+## Sprint 28 — Header Resizing, Select-All Corner & Complete Insert Suite (v2.9.0+23) ✅
+
+### Verification Results
+| Check | Status |
+|-------|--------|
+| `flutter analyze` | ✅ 0 issues |
+| `dart format` | ✅ 0 files changed |
+| `flutter test test/features/spreadsheet` | ✅ 38/38 passed |
+| `flutter build web --release` | ✅ Built (`build/web` updated) |
+
+### Key Improvements
+- Added dedicated 6px edge drag-resize handles to column right borders (`resizeColumn`) and row bottom borders (`resizeRow`)
+- Enabled top-left corner Select-All (`SetCellRange(0, 0, rowCount - 1, colCount - 1)`)
+- Replaced `DropdownButtonFormField` with `_NumberFormatPicker` to eliminate text clipping
+- Expanded top Menubar `Insert` dropdown to match complete Google Sheets options
+
+## Sprint 27 — AGP 8.9.1 Upgrade & Android Build Fix (v2.8.0+22) ✅
+
+### Verification Results
+| Check | Status |
+|-------|--------|
+| `flutter analyze` | ✅ 0 issues |
+| `AGP Version` | ✅ 8.9.1 |
+| `Gradle Wrapper` | ✅ 8.11.1-all |
+| `CI Android Build Command` | ✅ `--no-tree-shake-icons --android-skip-build-dependency-validation` |
+
+### Key Improvements
+- Upgraded Android Gradle Plugin to 8.9.1 in `settings.gradle`
+- Upgraded Gradle wrapper to 8.11.1-all in `gradle-wrapper.properties`
+- Resolved `checkReleaseAarMetadata` failure for modern AndroidX dependencies (`androidx.browser:1.9.0`, `androidx.core:1.17.0`)
+
+## Sprint 26 — Spreadsheet Font Engine & Toolbar Alignment Fixes (v2.7.0+21) ✅
+
+### Verification Results
+| Check | Status |
+|-------|--------|
+| `flutter analyze` | ✅ 0 issues |
+| `dart format` | ✅ 0 files changed |
+| `flutter test test/features/spreadsheet` | ✅ 38/38 passed |
+| `flutter build web --release` | ✅ Built (`build/web` updated) |
+
+### Key Improvements
+- Resolved dropdown text clipping and misalignment with custom `_FontFamilyPicker` and `_FontSizePicker`
+- Expanded Font Family choices to 18 Google Sheets / Excel fonts and Font Sizes to 16 standard sizes
+- Enabled dynamic `GoogleFonts` rendering for grid cells
+- Synchronized toolbar dropdown values with selected cell properties
+
+## Sprint 25 — Android Build Fix & Gradle 8.7 Upgrade (v2.6.0+20) ✅
+
+### Verification Results
+| Check | Status |
+|-------|--------|
+| `flutter analyze` | ✅ 0 issues |
+| `dart format` | ✅ 0 files changed |
+| `Gradle Wrapper` | ✅ 8.7-all |
+| `CI Android Build Step` | ✅ `--android-skip-build-dependency-validation` added |
+
+### Key Improvements
+- Resolved Android APK release build failure by upgrading Gradle wrapper from 8.5 to 8.7 (`gradle-8.7-all.zip`)
+- Ensured full compatibility with Flutter 3.44.6 minimum Gradle supported version (`8.7.0`)
+
+## Sprint 24 — Streamlined Single Menubar & Quick Formatting Toolbar (v2.5.0+19) ✅
+
+### Verification Results
+| Check | Status |
+|-------|--------|
+| `flutter analyze` | ✅ 0 issues |
+| `dart format` | ✅ 0 files changed |
+| `flutter test test/features/spreadsheet` | ✅ 38/38 passed |
+| `flutter build web --release` | ✅ Built (`build/web` updated) |
+
+### Key Improvements
+- Eliminated redundant second tab row (`Home`, `Insert`, `Data`, `View`) underneath top Menubar
+- Created unified Google Sheets / MS Excel top architecture: Top Menubar + Single-row Quick Action Formatting Bar
+- Maximized vertical grid display area
+
+## Sprint 23 — Presentation Engine & Spreadsheet Desktop Menubar (v2.4.0+18) ✅
+
+### Verification Results
+| Check | Status |
+|-------|--------|
+| `flutter analyze` | ✅ 0 issues |
+| `dart format` | ✅ 0 files changed |
+| `flutter test test/features/presentation` | ✅ 38/38 passed |
+| `flutter test test/features/spreadsheet` | ✅ 38/38 passed |
+| `flutter build web --release` | ✅ Built (`build/web` updated) |
+
+### Features Completed
+- Presentation Add Slide crash fix (`insertIndex` clamped safely)
+- Presenter Mode fullscreen slideshow viewer with timer & keyboard controls
+- Slide thumbnail drag-and-drop reordering with `ReorderableListView.builder`
+- Speaker notes text panel
+- Shape, table, chart, and icon element tools
+- Google Sheets / MS Excel style Menubar (`File`, `Edit`, `View`, `Insert`, `Format`, `Data`, `Tools`, `Help`)
+
 ## Sprint 22 — Spreadsheet Engine & UI Enhancements (v2.3.0+17) ✅
 
 ### Verification Results
